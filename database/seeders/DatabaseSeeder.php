@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder {
             'role'     => 'admin',
         ]);
 
-        // Create staff user
+        // Create regular user
         User::create([
             'name'     => 'Staff User',
             'email'    => 'staff@gym.com',
