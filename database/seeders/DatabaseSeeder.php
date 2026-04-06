@@ -17,10 +17,10 @@ class DatabaseSeeder extends Seeder {
             'role'     => 'admin',
         ]);
 
-        // Create regular user
+        // Create Staff user
         User::create([
-            'name'     => 'Regular User',
-            'email'    => 'user@gym.com',
+            'name'     => 'Staff User',
+            'email'    => 'staff@gym.com',
             'password' => Hash::make('password'),
             'role'     => 'user',
         ]);
