@@ -6,27 +6,55 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn() => redirect()->route('dashboard'));
+/*
+|--------------------------------------------------------------------------
+| Public Routes (NO AUTH)
+|--------------------------------------------------------------------------
+*/
+
+// ✅ Landing Page (Main Entry)
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return view('landing'); // make sure landing.blade.php exists
+})->name('landing');
+
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard
+    // ✅ Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Plans - all authenticated users
+    // ✅ Plans
     Route::get('/plans', fn() => view('plans'))->name('plans');
 
-    // Members - all authenticated users can VIEW
+    // ✅ Members (View)
     Route::get('/members', [MemberController::class, 'index'])->name('members.index');
 
-    // Members CREATE - admin AND staff can add members
+    // ✅ Members (Create - Admin & Staff)
     Route::get('/members/create', [MemberController::class, 'create'])->name('members.create');
     Route::post('/members', [MemberController::class, 'store'])->name('members.store');
 
-    // Admin-only routes
+    // ✅ Members (Show)
+    Route::get('/members/{member}', [MemberController::class, 'show'])->name('members.show');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Only Routes
+    |--------------------------------------------------------------------------
+    */
+
     Route::middleware('admin')->group(function () {
 
-        // Members - only admin can EDIT and DELETE
+        // Members (Edit/Delete)
         Route::get('/members/{member}/edit', [MemberController::class, 'edit'])->name('members.edit');
         Route::put('/members/{member}', [MemberController::class, 'update'])->name('members.update');
         Route::delete('/members/{member}', [MemberController::class, 'destroy'])->name('members.destroy');
@@ -36,16 +64,19 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
         Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
 
-        // Manage Users
+        // Users
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::patch('/users/{user}/promote', [UserController::class, 'promoteToAdmin'])->name('users.promote');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
-
-    // /members/{member} must come AFTER /members/create
-    Route::get('/members/{member}', [MemberController::class, 'show'])->name('members.show');
-
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| Auth Routes (Breeze)
+|--------------------------------------------------------------------------
+*/
 
 require __DIR__.'/auth.php';
