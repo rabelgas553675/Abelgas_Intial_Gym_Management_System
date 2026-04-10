@@ -9,15 +9,15 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
+ public function up(): void
 {
     Schema::create('payments', function (Blueprint $table) {
         $table->id();
         $table->foreignId('member_id')->constrained()->onDelete('cascade');
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
+        $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
         $table->decimal('amount', 10, 2);
         $table->date('payment_date');
-        $table->enum('method', ['Cash', 'GCash', 'Bank Transfer', 'Card']);
+        $table->string('method')->nullable();
         $table->text('notes')->nullable();
         $table->timestamps();
     });
