@@ -69,6 +69,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::patch('/users/{user}/promote', [UserController::class, 'promoteToAdmin'])->name('users.promote');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // Receipt — accessible to admin and staff
+        Route::get('/members/{member}/receipt', [MemberController::class, 'receipt'])
+        ->name('members.receipt');
     });
 });
 

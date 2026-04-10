@@ -35,57 +35,57 @@ class MemberController extends Controller
         return view('members.create');
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'first_name'      => 'required|string|max:255',
-            'last_name'       => 'required|string|max:255',
-            'email'           => 'required|email|unique:members,email',
-            'phone'           => 'nullable|string|max:20',
-            'gender'          => 'required|in:Male,Female,Other',
-            'birthdate'       => 'required|date',
-            'address'         => 'required|string',
-            'membership_type' => 'required|in:Trial,Monthly,Yearly',
-            'start_date'      => 'required|date',
-            'end_date'        => 'required|date',
-            'fee'             => 'required|numeric|min:0',
-            'photo'           => 'nullable|image|max:3072',
-        ]);
+   public function store(Request $request)
+{
+    $request->validate([
+        'first_name'      => 'required|string|max:255',
+        'last_name'       => 'required|string|max:255',
+        'email'           => 'required|email|unique:members,email',
+        'phone'           => 'nullable|string|max:20',
+        'gender'          => 'required|in:Male,Female,Other',
+        'birthdate'       => 'required|date',
+        'address'         => 'required|string',
+        'membership_type' => 'required|in:Monthly,Quarterly,Semi-Annual,Annual',
+        'start_date'      => 'required|date',
+        'end_date'        => 'required|date',
+        'fee'             => 'required|numeric|min:0',
+        'photo'           => 'nullable|image|max:3072',
+    ]);
 
-        // Handle photo upload
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('members', 'public');
-        }
-
-        // Auto-calculate end_date as backup (in case JS didn't run)
-        $start    = Carbon::parse($request->start_date);
-        $end_date = $request->end_date ?? match($request->membership_type) {
-            'Trial'   => $start->copy()->addDays(7)->toDateString(),
-            'Monthly' => $start->copy()->addMonth()->toDateString(),
-            'Yearly'  => $start->copy()->addYear()->toDateString(),
-        };
-
-        Member::create([
-            'name'            => $request->first_name . ' ' . $request->last_name,
-            'first_name'      => $request->first_name,
-            'last_name'       => $request->last_name,
-            'email'           => $request->email,
-            'phone'           => $request->phone,
-            'gender'          => $request->gender,
-            'birthdate'       => $request->birthdate,
-            'address'         => $request->address,
-            'membership_type' => $request->membership_type,
-            'start_date'      => $start->toDateString(),
-            'end_date'        => $end_date,
-            'fee'             => $request->fee,
-            'status'          => 'Active',
-            'photo'           => $photoPath,
-        ]);
-
-        return redirect()->route('members.index')
-            ->with('success', 'Member registered successfully!');
+    $photoPath = null;
+    if ($request->hasFile('photo')) {
+        $photoPath = $request->file('photo')->store('members', 'public');
     }
+
+    $start    = \Carbon\Carbon::parse($request->start_date);
+    $end_date = $request->end_date ?? match($request->membership_type) {
+        'Monthly'     => $start->copy()->addMonth()->toDateString(),
+        'Quarterly'   => $start->copy()->addMonths(3)->toDateString(),
+        'Semi-Annual' => $start->copy()->addMonths(6)->toDateString(),
+        'Annual'      => $start->copy()->addYear()->toDateString(),
+    };
+
+    $member = Member::create([
+        'name'            => $request->first_name . ' ' . $request->last_name,
+        'first_name'      => $request->first_name,
+        'last_name'       => $request->last_name,
+        'email'           => $request->email,
+        'phone'           => $request->phone,
+        'gender'          => $request->gender,
+        'birthdate'       => $request->birthdate,
+        'address'         => $request->address,
+        'membership_type' => $request->membership_type,
+        'start_date'      => $start->toDateString(),
+        'end_date'        => $end_date,
+        'fee'             => $request->fee,
+        'status'          => 'Active',
+        'photo'           => $photoPath,
+    ]);
+
+    // ← Redirect to receipt page instead of members list
+    return redirect()->route('members.receipt', $member)
+                     ->with('success', 'Member registered successfully!');
+}
 
     public function show(Member $member)
     {
@@ -161,4 +161,10 @@ class MemberController extends Controller
         return redirect()->route('members.index')
             ->with('success', 'Member deleted.');
     }
+
+    public function receipt(Member $member)
+{
+    return view('members.receipt', compact('member'));
+}
+
 }
