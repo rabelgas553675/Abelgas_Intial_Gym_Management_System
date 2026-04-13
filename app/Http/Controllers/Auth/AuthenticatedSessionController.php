@@ -28,7 +28,29 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = auth()->user();
+        $loginRole = $request->input('login_role');
+
+        // Verify the selected role matches the actual role
+        if ($loginRole && $user->role !== $loginRole) {
+            auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()
+                ->withInput($request->only('email', 'login_role'))
+                ->withErrors(['email' => 'The selected role does not match your account.']);
+        }
+
+        // Update last login
+        $user->update(['last_login_at' => now()]);
+
+        // Redirect based on role
+        return match($user->role) {
+            'member'     => redirect()->route('member.dashboard'),
+            'instructor' => redirect()->route('instructor.dashboard'),
+            default      => redirect()->intended(route('dashboard')),
+        };
     }
 
     /**

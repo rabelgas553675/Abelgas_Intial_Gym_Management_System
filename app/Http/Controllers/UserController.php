@@ -10,18 +10,21 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users        = User::latest()->get();
-        $memberCount  = Member::count(); // total members in system
-        return view('users.index', compact('users', 'memberCount'));
+        $instructors = User::where('role', 'instructor')->latest()->get();
+        $staff       = User::where('role', 'staff')->latest()->get();
+        $members     = User::where('role', 'member')->latest()->get();
+        $admins      = User::where('role', 'admin')->latest()->get();
+
+        return view('users.index', compact('instructors', 'staff', 'members', 'admins'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users',
+            'email'    => 'required|email:rfc|unique:users',
             'password' => 'required|min:6',
-            'role'     => 'required|in:admin,staff',
+            'role'     => 'required|in:admin,staff,instructor,member',
         ]);
 
         User::create([
@@ -38,6 +41,12 @@ class UserController extends Controller
     {
         $user->update(['role' => 'admin']);
         return back()->with('success', "{$user->name} promoted to Admin.");
+    }
+
+    public function makeInstructor(User $user)
+    {
+        $user->update(['role' => 'instructor']);
+        return back()->with('success', "{$user->name} is now an Instructor.");
     }
 
     public function destroy(User $user)

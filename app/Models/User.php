@@ -11,6 +11,9 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'role',
+        'phone', 'gender', 'birthdate', 'address',
+        'photo', 'specialization', 'experience_years',
+        'last_login_at',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -20,6 +23,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
+            'last_login_at'     => 'datetime',
+            'birthdate'         => 'date',
         ];
     }
 
@@ -35,17 +40,44 @@ class User extends Authenticatable
         return $this->role === 'staff';
     }
 
-    // ── Relationships ──────────────────────────────────────────
-
-    public function members()
+    public function isMember(): bool
     {
-        return $this->hasMany(\App\Models\Member::class, 'created_by');
+        return $this->role === 'member';
     }
 
-    // ── Helpers ────────────────────────────────────────────────
-
-    public function membersAddedCount(): int
+    public function isInstructor(): bool
     {
-        return Member::count();
+        return $this->role === 'instructor';
+    }
+
+    public function canManageMembers(): bool
+    {
+        return in_array($this->role, ['admin', 'staff']);
+    }
+
+    // ── Relationships ──────────────────────────────────────────
+
+    /**
+     * Get the member profile associated with the user (if role is member).
+     */
+    public function memberProfile()
+    {
+        return $this->hasOne(Member::class, 'user_id');
+    }
+
+    /**
+     * Get the members assigned to this user (if role is instructor).
+     */
+    public function assignedMembers()
+    {
+        return $this->hasMany(Member::class, 'instructor_id');
+    }
+
+    /**
+     * Get the workout plans created by this user (instructor).
+     */
+    public function createdWorkoutPlans()
+    {
+        return $this->hasMany(WorkoutPlan::class, 'instructor_id');
     }
 }

@@ -8,16 +8,19 @@ use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
-   public function index()
-{
-    $members  = Member::orderBy('name')->get();  // ← fixed
-    $payments = Payment::with(['member', 'recordedBy'])
-                    ->latest()
-                    ->get();
+    public function index()
+    {
+        $members        = Member::orderBy('name')->get();
+        $payments       = Payment::with('member')->latest()->get();
+        $thisMonth      = Payment::whereMonth('payment_date', now()->month)
+                                 ->whereYear('payment_date', now()->year)
+                                 ->sum('amount');
+        $totalCollected = Payment::sum('amount');
+        $totalCount     = Payment::count();
 
-  return view('payment.index', compact('members', 'payments'));  // singular
+        return view('payment.index', compact('members', 'payments', 'thisMonth', 'totalCollected', 'totalCount'));
+    }
 
-}
     public function store(Request $request)
     {
         $request->validate([
@@ -33,11 +36,11 @@ class PaymentController extends Controller
             'user_id'      => auth()->id(),
             'amount'       => $request->amount,
             'payment_date' => $request->payment_date,
-            'method'       => $request->input('method'),
+            'method'       => $request->method,
             'notes'        => $request->notes,
         ]);
 
-    return back()->with('success', 'Payment recorded!');  
+        return back()->with('success', 'Payment recorded successfully!');
     }
 
     public function destroy(Payment $payment)

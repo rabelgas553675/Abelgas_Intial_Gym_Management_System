@@ -7,21 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     protected $fillable = [
-        'member_id', 'user_id', 'amount',
-        'payment_date', 'method', 'notes',
+        'member_id', 'processed_by', 'receipt_number',
+        'fitness_plan', 'membership_type',
+        'amount', 'payment_date', 'method', 'status', 'notes',
     ];
 
-    protected $casts = [
-        'payment_date' => 'date',
-    ];
+  protected $casts = [
+    'payment_date' => 'date',
+];
 
     public function member()
     {
         return $this->belongsTo(Member::class);
     }
 
-    public function recordedBy()
+    public function processedBy()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    public static function generateReceiptNumber(): string
+    {
+        return 'RCP-' . strtoupper(uniqid());
     }
 }

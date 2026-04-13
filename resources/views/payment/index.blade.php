@@ -1,14 +1,51 @@
-@extends('layouts.app')
-@section('title', 'Payments – IRONFORGE')
+@extends('layouts.admin')
+@section('title', 'Payment Transactions – IRONFORGE')
 @section('page_title', 'Payments')
+@section('active_nav', 'payments')
 
 @section('content')
-<div style="display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start;">
+
+<div style="margin-bottom:28px;">
+  <h1 style="font-size:30px;font-weight:700;margin-bottom:4px;">Payment Transactions</h1>
+  <p style="color:var(--muted);font-size:14px;">Record and manage all member payment transactions.</p>
+</div>
+
+{{-- Summary Cards --}}
+<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px;">
+  <div class="stat-card">
+    <div>
+      <div class="stat-label">Total Transactions</div>
+      <div class="stat-value">{{ $totalCount }}</div>
+      <div class="stat-sub">All time</div>
+    </div>
+  </div>
+  <div class="stat-card green">
+    <div>
+      <div class="stat-label">This Month</div>
+      <div class="stat-value" style="font-size:26px;color:var(--warning);">
+        ₱{{ number_format($thisMonth, 0) }}
+      </div>
+      <div class="stat-sub">Current month collections</div>
+    </div>
+  </div>
+  <div class="stat-card blue">
+    <div>
+      <div class="stat-label">Total Collected</div>
+      <div class="stat-value" style="font-size:26px;color:var(--success);">
+        ₱{{ number_format($totalCollected, 0) }}
+      </div>
+      <div class="stat-sub">All time revenue</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start;">
 
   {{-- LEFT: Record Payment Form --}}
-  <div class="card" style="padding:24px;">
-    <div style="font-size:14px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
-      <span style="color:var(--success);">⊕</span> Record Payment
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:20px;padding-bottom:14px;
+                border-bottom:1px solid var(--border);">
+      + Record Payment
     </div>
 
     @if(session('success'))
@@ -21,10 +58,10 @@
     <form method="POST" action="{{ route('payments.store') }}">
       @csrf
 
-      <div class="form-group">
-        <label class="form-label">Member *</label>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Member</label>
         <select name="member_id" class="form-control" required>
-          <option value="">Select Member</option>
+          <option value="">— Select Member —</option>
           @foreach($members as $member)
             <option value="{{ $member->id }}" {{ old('member_id') == $member->id ? 'selected' : '' }}>
               {{ $member->name }}
@@ -36,8 +73,8 @@
         @enderror
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Amount (₱) *</label>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Amount (₱)</label>
         <input type="number" name="amount" class="form-control"
                step="0.01" min="0" placeholder="0.00"
                value="{{ old('amount') }}" required/>
@@ -46,8 +83,8 @@
         @enderror
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Payment Date *</label>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Payment Date</label>
         <input type="date" name="payment_date" class="form-control"
                value="{{ old('payment_date', date('Y-m-d')) }}" required/>
         @error('payment_date')
@@ -55,14 +92,12 @@
         @enderror
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Method *</label>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Method</label>
         <select name="method" class="form-control" required>
-          <option value="">Select Method</option>
-          @foreach(['Cash','GCash','Bank Transfer','Card'] as $method)
-            <option value="{{ $method }}" {{ old('method') == $method ? 'selected' : '' }}>
-              {{ $method }}
-            </option>
+          <option value="">— Select Method —</option>
+          @foreach(['Cash','GCash','Bank Transfer','Card'] as $m)
+            <option value="{{ $m }}" {{ old('method') == $m ? 'selected' : '' }}>{{ $m }}</option>
           @endforeach
         </select>
         @error('method')
@@ -70,76 +105,82 @@
         @enderror
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Notes</label>
-        <textarea name="notes" class="form-control"
-                  rows="3" placeholder="Optional note...">{{ old('notes') }}</textarea>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">Notes (optional)</label>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="Any additional notes...">{{ old('notes') }}</textarea>
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;">
+      <button type="submit" class="btn btn-primary"
+              style="width:100%;justify-content:center;padding:12px;">
         ✓ Record Payment
       </button>
     </form>
   </div>
 
-  {{-- RIGHT: Recent Payments Table --}}
+  {{-- RIGHT: Transactions Table --}}
   <div>
     <div class="section-header">
-      <div class="section-title" style="display:flex;align-items:center;gap:8px;">
-        <span style="color:var(--info);">💳</span> Recent Payments
-      </div>
-      <div style="font-size:13px;color:var(--muted);">
-        Total collected:
-        <strong style="color:var(--success);font-size:15px;">
-          ₱{{ number_format($payments->sum('amount'), 2) }}
-        </strong>
-      </div>
+      <div class="section-title">All Transactions</div>
     </div>
 
     <div class="card">
       <table>
         <thead>
           <tr>
-            <th>#</th>
+            <th>Transaction ID</th>
             <th>Member</th>
             <th>Amount</th>
             <th>Date</th>
             <th>Method</th>
-            <th>Recorded By</th>
-            <th></th>
+            <th>Status</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          @forelse($payments as $i => $payment)
+          @forelse($payments as $payment)
           <tr>
-            <td style="color:var(--muted)">{{ $i + 1 }}</td>
-            <td><strong>{{ $payment->member->name ?? '—' }}</strong></td>
-            <td style="color:var(--success);font-weight:600;">
-              ₱{{ number_format($payment->amount, 2) }}
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">
+              {{ $payment->receipt_number ?? 'TXN-'.str_pad($payment->id, 5, '0', STR_PAD_LEFT) }}
             </td>
-            <td style="color:var(--muted)">
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:30px;height:30px;border-radius:50%;background:rgba(200,255,0,0.08);
+                            border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
+                            justify-content:center;font-size:10px;font-weight:700;
+                            color:var(--accent);flex-shrink:0;">
+                  {{ strtoupper(substr($payment->member->name ?? '?', 0, 2)) }}
+                </div>
+                <span style="font-weight:600;">{{ $payment->member->name ?? '—' }}</span>
+              </div>
+            </td>
+            <td style="font-weight:700;color:var(--accent);">
+              ₱{{ number_format($payment->amount, 0) }}
+            </td>
+            <td style="color:var(--muted);">
               {{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}
             </td>
             <td>
-              <span class="badge" style="background:var(--surface3);color:var(--text);border:1px solid var(--border);">
-                {{ $payment->method }}
+              <span style="background:var(--surface2);border:1px solid var(--border);
+                           padding:3px 10px;border-radius:6px;font-size:12px;">
+                {{ $payment->method ?? 'Cash' }}
               </span>
             </td>
-            <td style="color:var(--muted)">
-              {{ $payment->recordedBy->name ?? '—' }}
+            <td>
+              <span class="badge badge-paid">Paid</span>
             </td>
             <td>
               <form method="POST" action="{{ route('payments.destroy', $payment) }}"
-                    onsubmit="return confirm('Delete this payment?')">
+                    onsubmit="return confirm('Delete this transaction?')">
                 @csrf @method('DELETE')
-                <button type="submit" class="btn btn-danger btn-sm">🗑</button>
+                <button type="submit" class="btn btn-danger-soft btn-sm">🗑</button>
               </form>
             </td>
           </tr>
           @empty
           <tr>
-            <td colspan="7" style="text-align:center;color:var(--muted);padding:40px;">
-              No payments recorded yet.
+            <td colspan="7" style="text-align:center;color:var(--muted);padding:48px;">
+              No transactions recorded yet.
             </td>
           </tr>
           @endforelse
@@ -149,4 +190,5 @@
   </div>
 
 </div>
+
 @endsection

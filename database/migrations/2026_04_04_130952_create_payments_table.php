@@ -9,15 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
- public function up(): void
+public function up(): void
 {
     Schema::create('payments', function (Blueprint $table) {
         $table->id();
         $table->foreignId('member_id')->constrained()->onDelete('cascade');
-        $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
+        $table->foreignId('processed_by')->nullable()->constrained('users')->onDelete('set null');
+        $table->string('receipt_number')->unique();
+        $table->string('fitness_plan')->nullable();
+        $table->string('membership_type')->nullable();
         $table->decimal('amount', 10, 2);
         $table->date('payment_date');
-        $table->string('method')->nullable();
+        $table->string('method')->default('Cash');
+        $table->enum('status', ['Paid', 'Pending', 'Expired'])->default('Paid');
         $table->text('notes')->nullable();
         $table->timestamps();
     });
