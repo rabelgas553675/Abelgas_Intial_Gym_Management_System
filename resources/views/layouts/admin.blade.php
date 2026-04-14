@@ -187,6 +187,17 @@
         </svg>
         Members
       </a>
+      {{-- Attendance for Staff --}}
+      <a href="{{ route('attendance.scan') }}"
+         class="nav-item {{ $activeNav === 'attendance' ? 'active' : '' }}">
+        <svg viewBox="0 0 24 24" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14 17h3m3 0h-3m0 0v-3m0 3v3"/>
+        </svg>
+        Attendance
+      </a>
       <a href="{{ route('staff.payments') }}"
          class="nav-item {{ $activeNav === 'staff.payments' ? 'active' : '' }}">
         <svg viewBox="0 0 24 24" stroke-width="2">
@@ -223,6 +234,18 @@
                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
         </svg>
         Members
+      </a>
+      {{-- Attendance for Admin --}}
+      <a href="{{ route('attendance.scan') }}"
+         class="nav-item {{ $activeNav === 'attendance' ? 'active' : '' }}">
+        <svg viewBox="0 0 24 24" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14 17h3m3 0h-3m0 0v-3m0 3v3"/>
+        </svg>
+        Attendance
+      </a>
       <a href="{{ route('payments.index') }}"
          class="nav-item {{ $activeNav === 'payments' ? 'active' : '' }}">
         <svg viewBox="0 0 24 24" stroke-width="2">

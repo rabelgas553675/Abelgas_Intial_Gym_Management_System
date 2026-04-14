@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(auth()->user()->isAdmin() ? 'layouts.admin' : 'layouts.staff')
 @section('title', 'Edit Member')
 @section('page_title', 'Edit Member')
 

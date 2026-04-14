@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.staff')
 @section('title', 'Payment Transactions – IRONFORGE')
 @section('page_title', 'Payment Transactions')
 @section('active_nav', 'staff.payments')

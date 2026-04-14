@@ -4,8 +4,34 @@
 
 @section('content')
 
+{{-- ADD YOUR STYLES HERE --}}
+<style>
+    /* Ensure the button is styled to be larger and centered */
+    [id^="add-"] {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 24px;      
+        height: 24px;     
+        font-size: 18px;  
+        font-weight: bold;
+        padding: 0;
+        cursor: pointer;
+        border-radius: 50%; 
+        transition: all 0.2s ease;
+    }
+
+    /* Make it pop more on hover */
+    [id^="add-"]:hover {
+        transform: scale(1.2);
+        background-color: var(--accent);
+        color: #111;
+    }
+</style>
+
 {{-- Header --}}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+...
   <div>
     <h1 style="font-size:28px;font-weight:700;margin-bottom:4px;">Workout Scheduler</h1>
     <p style="color:var(--muted);font-size:14px;">Create and assign monthly workout plans to your members</p>
@@ -464,9 +490,10 @@ function addEditExercise() {
 
 // Hover effect for calendar day quick-add buttons
 document.querySelectorAll('[id^="add-"]').forEach(btn => {
-  btn.closest('div').addEventListener('mouseenter', () => btn.style.opacity = '1');
-  btn.closest('div').addEventListener('mouseleave', () => btn.style.opacity = '0');
-});
+        const cell = btn.closest('div');
+        cell.addEventListener('mouseenter', () => btn.style.opacity = '1');
+        cell.addEventListener('mouseleave', () => btn.style.opacity = '0');
+    });
 </script>
 
 @endsection

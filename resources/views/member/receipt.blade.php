@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.member')
 @section('title', 'Receipt – IRONFORGE')
 @section('page_title', 'Payment Receipt')
 

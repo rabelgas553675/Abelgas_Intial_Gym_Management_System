@@ -8,6 +8,7 @@ use App\Http\Controllers\MemberDashboardController;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\WorkoutPlanController;
+use App\Http\Controllers\AttendanceController; // Added Import
 use Illuminate\Support\Facades\Route;
 
 // Landing page (public)
@@ -72,6 +73,30 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/workout/{workoutPlan}',   [WorkoutPlanController::class, 'update']) ->name('workout.update');
     Route::delete('/workout/{workoutPlan}',[WorkoutPlanController::class, 'destroy'])->name('workout.destroy');
 
+    // ── ATTENDANCE MANAGEMENT ────────────────────────────────────
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        // Scanner page (instructors + admin + staff)
+        Route::get('/scan',    [AttendanceController::class, 'scan'])->name('scan');
+
+        // AJAX endpoints for scanner
+        Route::post('/scan/process', [AttendanceController::class, 'processQr'])->name('scan.process');
+        Route::post('/manual',       [AttendanceController::class, 'manualEntry'])->name('manual');
+
+        // Full log (admin + staff only)
+        Route::get('/',              [AttendanceController::class, 'index'])->name('index');
+        Route::post('/timeout',      [AttendanceController::class, 'timeOut'])->name('timeout');
+        Route::post('/destroy',      [AttendanceController::class, 'destroy'])->name('destroy');
+        Route::post('/add-manual',   [AttendanceController::class, 'addManual'])->name('add-manual');
+
+        // QR code list (admin + staff)
+        Route::get('/qr-list',       [AttendanceController::class, 'qrList'])->name('qr-list');
+
+        // Generate tokens (admin only)
+        Route::get('/generate-tokens', [AttendanceController::class, 'generateTokens'])
+             ->middleware('admin')
+             ->name('generate-tokens');
+    });
+
     // ── ADMIN AREA ──────────────────────────────────────────────
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/members', [MemberController::class, 'index'])->name('members.index');
@@ -102,4 +127,4 @@ Route::middleware(['auth'])->group(function () {
 
 });
 
-require __DIR__.'/auth.php';
+require __DIR__.'/auth.php';        

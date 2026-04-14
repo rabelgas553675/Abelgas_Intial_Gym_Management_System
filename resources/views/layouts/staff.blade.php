@@ -524,6 +524,18 @@
       Members
     </a>
 
+    {{-- ATTENDANCE LINK ADDED HERE --}}
+    <a href="{{ route('attendance.scan') }}"
+       class="nav-link {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
+      <svg viewBox="0 0 24 24" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M14 17h3m3 0h-3m0 0v-3m0 3v3"/>
+      </svg>
+      Attendance
+    </a>
+
     <a href="{{ route('staff.payments') }}"
        class="nav-link {{ request()->routeIs('staff.payments') ? 'active' : '' }}">
       <svg viewBox="0 0 24 24" stroke-width="2">

@@ -1,7 +1,6 @@
 @extends('layouts.member')
 @section('title', 'Edit Profile – IRONFORGE')
 @section('active', 'profile')
-
 @section('content')
 
 <div style="margin-bottom:28px;">

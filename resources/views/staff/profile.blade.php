@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('layouts.staff')
 @section('title', 'My Profile – IRONFORGE')
 @section('page_title', 'My Profile')
 @section('active_nav', 'staff.profile')

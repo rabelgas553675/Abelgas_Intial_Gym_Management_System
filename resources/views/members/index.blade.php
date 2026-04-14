@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends(auth()->user()->isAdmin() ? 'layouts.admin' : 'layouts.staff')
 @section('title', 'Members – IRONFORGE')
 @section('page_title', 'Members')
 @section('active_nav', 'members')

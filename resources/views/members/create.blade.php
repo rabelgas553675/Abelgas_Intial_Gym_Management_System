@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends(auth()->user()->isAdmin() ? 'layouts.admin' : 'layouts.staff')
 @section('title', 'Add Member – IRONFORGE')
 @section('page_title', 'Add New Member')
 

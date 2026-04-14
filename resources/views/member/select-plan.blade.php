@@ -73,15 +73,15 @@
   @enderror
 </div>
 
-{{-- ── 2. SUBSCRIPTION DURATION ── --}}
+{{-- ── 2. Coach Subscription ── --}}
 <div style="margin-bottom:48px;">
-  <h2 style="font-size:22px;font-weight:700;margin-bottom:20px;">Subscription Duration</h2>
+  <h2 style="font-size:22px;font-weight:700;margin-bottom:20px;">Coach Subscription</h2>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
     @php
       $durations = [
-        ['type'=>'Monthly',   'price'=>'₱800',   'sub'=>'₱800/month'],
-        ['type'=>'Quarterly', 'price'=>'₱2,100', 'sub'=>'₱700/month'],
-        ['type'=>'Annually',  'price'=>'₱7,500', 'sub'=>'₱625/month'],
+        ['type'=>'Monthly',   'price'=>'₱300',   'sub'=>'₱300/Monthly'],
+        ['type'=>'Quarterly', 'price'=>'₱1,200', 'sub'=>'₱1,200/Quarterly'],
+        ['type'=>'Annually',  'price'=>'₱3,600', 'sub'=>'₱3,600/Annually'],
       ];
     @endphp
     @foreach($durations as $d)

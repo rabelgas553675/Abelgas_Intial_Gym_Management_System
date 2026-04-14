@@ -43,16 +43,47 @@
     </div>
 
     @if($member)
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-        <span style="font-size:28px;">
-          @php
-            $icons = ['Calisthenics'=>'🤸','Bodybuilding'=>'💪','Plyometrics'=>'⚡','Powerlifting'=>'🏋️','Endurance'=>'🏃','Functional Training'=>'🔄','Hybrid Training'=>'🎯'];
-          @endphp
-          {{ $icons[$member->fitness_plan] ?? '🏋️' }}
-        </span>
-        <div style="font-size:22px;font-weight:700;">{{ $member->fitness_plan }}</div>
-      </div>
+      @php
+    // Define your SVGs once for clean reusability
+    $plans = [
+        'Calisthenics'      => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>',
+        'Bodybuilding'      => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 28 Q10 24 14 20 Q18 16 22 20 L26 28 Q30 32 26 36 Q22 40 18 36 Z"/><path d="M26 28 Q30 24 34 20"/><path d="M6 22 L14 20"/><path d="M34 20 L42 18"/><path d="M6 26 L14 28"/><path d="M34 28 L42 26"/></svg>',
+        'Plyometrics'       => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M24 11 L18 22 L24 20 L20 34"/><path d="M24 20 L30 18 L26 30"/><path d="M16 38 L32 38"/></svg>',
+        'Powerlifting'      => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>',
+        'Endurance'         => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>',
+        'Functional Training'=> '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>',
+        'Hybrid Training'   => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="24,6 28,18 40,18 30,26 34,38 24,30 14,38 18,26 8,18 20,18"/></svg>'
+    ];
+    
+    $icon = $plans[$member->fitness_plan] ?? '<circle cx="24" cy="24" r="20"/>';
+@endphp
 
+<div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+    <div style="
+        width: 52px; 
+        height: 52px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        background-color: rgba(232, 255, 42, 0.15); 
+        color: var(--accent); 
+        border-radius: 14px;
+        flex-shrink: 0;
+    ">
+        <div style="width: 28px; height: 28px;">
+            {!! $icon !!}
+        </div>
+    </div>
+    
+    <div>
+        <div style="font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+            Fitness Plan
+        </div>
+        <div style="font-size: 20px; font-weight: 700; color: #ffffff;">
+            {{ $member->fitness_plan }}
+        </div>
+    </div>
+</div>
       <div style="display:grid;gap:12px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">Duration</div>
@@ -70,16 +101,25 @@
         </div>
       </div>
 
-      <div style="display:flex;gap:10px;">
-        <a href="{{ route('member.select-plan') }}" class="btn btn-primary" style="flex:1;justify-content:center;">
-          ⚡ {{ $member->isExpired() ? 'Renew Plan' : 'Change Plan' }}
-        </a>
-        <button type="button" class="btn btn-secondary"
-                onclick="document.getElementById('editSubModal').style.display='flex'"
-                style="padding:8px 14px;">
-          ✏️
-        </button>
-      </div>
+     <div style="display:flex; gap:10px;">
+    <a href="{{ route('member.select-plan') }}" class="btn btn-primary" style="flex:1; justify-content:center; display:flex; align-items:center; gap:8px;">
+    {{-- SVG Zap Icon --}}
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+    {{ $member->isExpired() ? 'Renew Plan' : 'Change Plan' }}
+</a>
+
+    {{-- Edit Button with SVG Icon --}}
+    <button type="button" class="btn btn-secondary"
+            onclick="document.getElementById('editSubModal').style.display='flex'"
+            style="padding: 8px 12px; display: flex; align-items: center; justify-content: center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+    </button>
+</div>
 
     @else
       <div style="text-align:center;padding:32px 0;">
