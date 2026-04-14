@@ -16,11 +16,14 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('auth.login');
+        return view('landing');
     }
 
     /**
      * Handle an incoming authentication request.
+     *
+     * Role is determined entirely from the database after authentication.
+     * No role input is accepted from the UI.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
@@ -28,27 +31,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $user = auth()->user();
-        $loginRole = $request->input('login_role');
+        $role = Auth::user()->role;
 
-        // Verify the selected role matches the actual role
-        if ($loginRole && $user->role !== $loginRole) {
-            auth()->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return back()
-                ->withInput($request->only('email', 'login_role'))
-                ->withErrors(['email' => 'The selected role does not match your account.']);
-        }
-
-        // Update last login
-        $user->update(['last_login_at' => now()]);
-
-        // Redirect based on role
-        return match($user->role) {
-            'member'     => redirect()->route('member.dashboard'),
-            'instructor' => redirect()->route('instructor.dashboard'),
+        // Role-based redirect — determined from backend, never from UI input
+        return match($role) {
+            'member'     => redirect()->intended(route('member.dashboard')),
+            'instructor' => redirect()->intended(route('instructor.dashboard')),
+            'admin'      => redirect()->intended(route('admin.dashboard')),
+            'staff'      => redirect()->intended(route('dashboard')),
             default      => redirect()->intended(route('dashboard')),
         };
     }

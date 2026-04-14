@@ -20,50 +20,39 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        return view('landing');
     }
 
     /**
      * Handle an incoming registration request.
+     *
+     * Public registration always creates a member account.
+     * Admin / Staff / Instructor accounts must be created by an Admin
+     * from inside the admin panel — never via this public endpoint.
      *
      * @throws ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name'          => ['required', 'string', 'max:255'],
-            'email'         => ['required', 'string', 'email:rfc', 'max:255', 'unique:'.User::class],
-            'password'      => ['required', 'confirmed', Rules\Password::defaults()],
-            'role'          => ['required', 'in:admin,staff,instructor,member'],
-            'instructor_id' => ['nullable', 'exists:users,id'],
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'string', 'email:rfc', 'max:255', 'unique:' . User::class],
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Role is ALWAYS member for public registrations — never trust UI input
         $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => $request->role,
+            'role'     => 'member',   // hardcoded — no role field from request
         ]);
 
-        // If registering as member and selected an instructor,
-        // create their member profile immediately with the instructor assigned
-        if ($request->role === 'member' && $request->instructor_id) {
-            \App\Models\Member::create([
-                'user_id'       => $user->id,
-                'instructor_id' => $request->instructor_id,
-                'name'          => $user->name,
-                'email'         => $user->email,
-                'status'        => 'Pending',
-            ]);
-        }
-
         event(new Registered($user));
+
         Auth::login($user);
 
-        return match($user->role) {
-            'member'     => redirect()->route('member.dashboard'),
-            'instructor' => redirect()->route('instructor.dashboard'),
-            default      => redirect()->route('dashboard'),
-        };
+        // Members always go to the member dashboard
+        return redirect()->route('member.dashboard');
     }
 }

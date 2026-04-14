@@ -63,7 +63,7 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s;}
 .modal-overlay.open{opacity:1;pointer-events:all;}
-.modal{background:#111;border:1px solid rgba(200,255,0,0.15);border-radius:20px;width:100%;max-width:480px;padding:36px 40px;position:relative;transform:translateY(20px) scale(0.97);transition:all 0.25s;max-height:90vh;overflow-y:auto;}
+.modal{background:#111;border:1px solid rgba(200,255,0,0.15);border-radius:20px;width:100%;max-width:440px;padding:36px 40px;position:relative;transform:translateY(20px) scale(0.97);transition:all 0.25s;max-height:90vh;overflow-y:auto;}
 .modal-overlay.open .modal{transform:translateY(0) scale(1);}
 .modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#666;font-size:18px;transition:all 0.15s;}
 .modal-close:hover{color:#fff;border-color:#c8ff00;}
@@ -88,47 +88,15 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 .fm-footer{text-align:center;font-size:13px;color:#555;margin-top:14px;}
 .fm-footer a{color:#c8ff00;text-decoration:none;cursor:pointer;}
 .fm-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#ef4444;}
-
-/* ── ROLE CARDS ── */
-.role-selector{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
-.role-option{cursor:pointer;}
-.role-option input[type="radio"]{display:none;}
-.role-box{
-  border:1.5px solid rgba(255,255,255,0.07);
-  border-radius:14px;
-  padding:18px 6px 14px;
-  text-align:center;
-  background:#161616;
-  transition:all 0.2s ease;
-  display:flex;flex-direction:column;align-items:center;gap:10px;
-}
-.role-box:hover{
-  border-color:rgba(200,255,0,0.3);
-  background:rgba(200,255,0,0.03);
-}
-.role-option input[type="radio"]:checked + .role-box{
-  border-color:#c8ff00;
+.fm-member-badge{
+  display:flex;align-items:center;gap:10px;
   background:rgba(200,255,0,0.06);
-  box-shadow:0 0 20px rgba(200,255,0,0.1), inset 0 0 14px rgba(200,255,0,0.04);
+  border:1px solid rgba(200,255,0,0.2);
+  border-radius:10px;padding:10px 14px;
+  margin-bottom:18px;
 }
-.role-icon-wrap{width:40px;height:40px;display:flex;align-items:center;justify-content:center;}
-.role-icon-wrap svg{
-  width:34px;height:34px;
-  stroke:rgba(255,255,255,0.2);
-  fill:none;
-  stroke-width:1.5;
-  stroke-linecap:round;
-  stroke-linejoin:round;
-  transition:stroke 0.2s;
-}
-.role-option input[type="radio"]:checked + .role-box .role-icon-wrap svg{stroke:#c8ff00;}
-.role-name{
-  font-family:'Barlow Condensed',sans-serif;
-  font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(255,255,255,0.2);
-  transition:color 0.2s;
-}
-.role-option input[type="radio"]:checked + .role-box .role-name{color:#c8ff00;}
+.fm-member-badge svg{width:16px;height:16px;stroke:#c8ff00;flex-shrink:0;}
+.fm-member-badge-text{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#c8ff00;}
 
 /* SECTIONS */
 .section{padding:80px 60px;position:relative;}
@@ -237,7 +205,11 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   <div class="footer-copy">© 2026 IRONFORGE. Built with Laravel + Breeze.</div>
 </footer>
 
-<!-- MODAL -->
+<!-- ══════════════════════════════════════════════
+     MODAL  —  role selectors REMOVED
+     Registration always creates role = member
+     Login determines role from backend only
+     ══════════════════════════════════════════════ -->
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">×</button>
@@ -250,187 +222,94 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
       <button class="modal-tab" id="tab-register" onclick="switchTab('register')">Register</button>
     </div>
 
-    <!-- LOGIN -->
+    <!-- ── LOGIN ── -->
     <div class="form-panel active" id="panel-login">
       <div class="modal-heading">WELCOME BACK</div>
       <div class="modal-sub">Sign in to your account</div>
-      @if($errors->has('email'))
+
+      @if($errors->has('email') && old('_form') === 'login')
         <div class="fm-error">{{ $errors->first('email') }}</div>
       @endif
+
       <form method="POST" action="{{ route('login') }}">
         @csrf
-        <div class="fm-group">
-          <div class="fm-label">I am logging in as</div>
-          <div class="role-selector">
-            <!-- ADMIN -->
-            <label class="role-option">
-              <input type="radio" name="login_role" value="admin" {{ old('login_role','member')==='admin'?'checked':'' }}/>
-              <div class="role-box">
-                <div class="role-icon-wrap">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M12 3L4 7v5c0 4.97 3.45 9.62 8 10.93C16.55 21.62 20 16.97 20 12V7L12 3z"/>
-                    <polyline points="9,12 11,14 15,10"/>
-                  </svg>
-                </div>
-                <div class="role-name">Admin</div>
-              </div>
-            </label>
-            <!-- STAFF -->
-            <label class="role-option">
-              <input type="radio" name="login_role" value="staff" {{ old('login_role','member')==='staff'?'checked':'' }}/>
-              <div class="role-box">
-                <div class="role-icon-wrap">
-                  <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="7" r="3"/>
-                    <path d="M5.5 21v-1.5a5 5 0 015-5h3a5 5 0 015 5V21"/>
-                    <line x1="15" y1="11" x2="19" y2="11"/>
-                    <line x1="15" y1="14" x2="18" y2="14"/>
-                  </svg>
-                </div>
-                <div class="role-name">Staff</div>
-              </div>
-            </label>
-            <!-- INSTRUCTOR -->
-            <label class="role-option">
-              <input type="radio" name="login_role" value="instructor" {{ old('login_role','member')==='instructor'?'checked':'' }}/>
-              <div class="role-box">
-                <div class="role-icon-wrap">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M4 17 Q7 10 12 10 Q15 10 17 7"/>
-                    <path d="M17 7 Q20 4 22 7 Q24 10 21 12 Q18 14 16 17"/>
-                    <circle cx="19.5" cy="5.5" r="1.5"/>
-                  </svg>
-                </div>
-                <div class="role-name">Trainer</div>
-              </div>
-            </label>
-            <!-- MEMBER -->
-            <label class="role-option">
-              <input type="radio" name="login_role" value="member" {{ old('login_role','member')==='member'?'checked':'' }}/>
-              <div class="role-box">
-                <div class="role-icon-wrap">
-                  <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="4" r="2"/>
-                    <line x1="12" y1="6" x2="12" y2="13"/>
-                    <line x1="8" y1="9" x2="16" y2="9"/>
-                    <line x1="12" y1="13" x2="9" y2="20"/>
-                    <line x1="12" y1="13" x2="15" y2="20"/>
-                    <line x1="4" y1="10" x2="8" y2="9"/>
-                    <line x1="20" y1="10" x2="16" y2="9"/>
-                    <rect x="2.5" y="9" width="2" height="1.5" rx="0.75"/>
-                    <rect x="19.5" y="9" width="2" height="1.5" rx="0.75"/>
-                  </svg>
-                </div>
-                <div class="role-name">Member</div>
-              </div>
-            </label>
-          </div>
-        </div>
+        {{-- Hidden field so we can identify which form errored --}}
+        <input type="hidden" name="_form" value="login"/>
+
         <div class="fm-group">
           <label class="fm-label">Email</label>
-          <input type="email" name="email" class="fm-input" value="{{ old('email') }}" placeholder="you@example.com" required/>
+          <input type="email" name="email" class="fm-input"
+                 value="{{ old('email') }}"
+                 placeholder="you@example.com" required autofocus/>
         </div>
         <div class="fm-group">
           <label class="fm-label">Password</label>
-          <input type="password" name="password" class="fm-input" placeholder="••••••••" required/>
+          <input type="password" name="password" class="fm-input"
+                 placeholder="••••••••" required/>
         </div>
-        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
-          <a href="/forgot-password" style="font-size:12px;color:#444;text-decoration:none;">Forgot password?</a>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+          <a href="/forgot-password" style="font-size:12px;color:#444;text-decoration:none;">
+            Forgot password?
+          </a>
         </div>
         <button type="submit" class="btn-submit">Sign In →</button>
       </form>
       <div class="fm-footer">No account? <a onclick="switchTab('register')">Create one</a></div>
     </div>
 
-    <!-- REGISTER -->
+    <!-- ── REGISTER ── -->
     <div class="form-panel" id="panel-register">
       <div class="modal-heading">JOIN NOW</div>
       <div class="modal-sub">Create your free account</div>
+
+      {{-- Member role badge --}}
+      <div class="fm-member-badge">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="4" r="2"/>
+          <line x1="12" y1="6" x2="12" y2="13"/>
+          <line x1="8" y1="9" x2="16" y2="9"/>
+          <line x1="12" y1="13" x2="9" y2="20"/>
+          <line x1="12" y1="13" x2="15" y2="20"/>
+        </svg>
+        <span class="fm-member-badge-text">Registering as Member</span>
+      </div>
+
+      @if($errors->any() && old('_form') === 'register')
+        <div class="fm-error">
+          @foreach($errors->all() as $error)
+            {{ $error }}<br>
+          @endforeach
+        </div>
+      @endif
+
       <form method="POST" action="{{ route('register') }}">
         @csrf
-        <div class="fm-group">
-          <div class="fm-label">I am registering as</div>
-          <div class="role-selector">
-            <!-- ADMIN -->
-            <label class="role-option">
-              <input type="radio" name="role" value="admin" {{ old('role','member')==='admin'?'checked':'' }}/>
-              <div class="role-box">
-                <div class="role-icon-wrap">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M12 3L4 7v5c0 4.97 3.45 9.62 8 10.93C16.55 21.62 20 16.97 20 12V7L12 3z"/>
-                    <polyline points="9,12 11,14 15,10"/>
-                  </svg>
-                </div>
-                <div class="role-name">Admin</div>
-              </div>
-            </label>
-            <!-- STAFF -->
-            <label class="role-option">
-              <input type="radio" name="role" value="staff" {{ old('role','member')==='staff'?'checked':'' }}/>
-              <div class="role-box">
-                <div class="role-icon-wrap">
-                  <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="7" r="3"/>
-                    <path d="M5.5 21v-1.5a5 5 0 015-5h3a5 5 0 015 5V21"/>
-                    <line x1="15" y1="11" x2="19" y2="11"/>
-                    <line x1="15" y1="14" x2="18" y2="14"/>
-                  </svg>
-                </div>
-                <div class="role-name">Staff</div>
-              </div>
-            </label>
-            <!-- INSTRUCTOR -->
-            <label class="role-option">
-              <input type="radio" name="role" value="instructor" {{ old('role','member')==='instructor'?'checked':'' }}/>
-              <div class="role-box">
-                <div class="role-icon-wrap">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M4 17 Q7 10 12 10 Q15 10 17 7"/>
-                    <path d="M17 7 Q20 4 22 7 Q24 10 21 12 Q18 14 16 17"/>
-                    <circle cx="19.5" cy="5.5" r="1.5"/>
-                  </svg>
-                </div>
-                <div class="role-name">Trainer</div>
-              </div>
-            </label>
-            <!-- MEMBER -->
-            <label class="role-option">
-              <input type="radio" name="role" value="member" {{ old('role','member')==='member'?'checked':'' }}/>
-              <div class="role-box">
-                <div class="role-icon-wrap">
-                  <svg viewBox="0 0 24 24">
-                    <circle cx="12" cy="4" r="2"/>
-                    <line x1="12" y1="6" x2="12" y2="13"/>
-                    <line x1="8" y1="9" x2="16" y2="9"/>
-                    <line x1="12" y1="13" x2="9" y2="20"/>
-                    <line x1="12" y1="13" x2="15" y2="20"/>
-                    <line x1="4" y1="10" x2="8" y2="9"/>
-                    <line x1="20" y1="10" x2="16" y2="9"/>
-                    <rect x="2.5" y="9" width="2" height="1.5" rx="0.75"/>
-                    <rect x="19.5" y="9" width="2" height="1.5" rx="0.75"/>
-                  </svg>
-                </div>
-                <div class="role-name">Member</div>
-              </div>
-            </label>
-          </div>
-        </div>
+        {{-- Hidden field so we can identify which form errored --}}
+        <input type="hidden" name="_form" value="register"/>
+        {{-- Role is always member — set on backend, NOT from UI --}}
+
         <div class="fm-group">
           <label class="fm-label">Full Name</label>
-          <input type="text" name="name" class="fm-input" value="{{ old('name') }}" placeholder="Juan Dela Cruz" required/>
+          <input type="text" name="name" class="fm-input"
+                 value="{{ old('name') }}"
+                 placeholder="Juan Dela Cruz" required/>
         </div>
         <div class="fm-group">
           <label class="fm-label">Email</label>
-          <input type="email" name="email" class="fm-input" value="{{ old('email') }}" placeholder="juan@email.com" required/>
+          <input type="email" name="email" class="fm-input"
+                 value="{{ old('email') }}"
+                 placeholder="juan@email.com" required/>
         </div>
         <div class="fm-row">
           <div class="fm-group">
             <label class="fm-label">Password</label>
-            <input type="password" name="password" class="fm-input" placeholder="••••••••" required/>
+            <input type="password" name="password" class="fm-input"
+                   placeholder="••••••••" required/>
           </div>
           <div class="fm-group">
             <label class="fm-label">Confirm</label>
-            <input type="password" name="password_confirmation" class="fm-input" placeholder="••••••••" required/>
+            <input type="password" name="password_confirmation" class="fm-input"
+                   placeholder="••••••••" required/>
           </div>
         </div>
         <button type="submit" class="btn-submit">Create Account →</button>
@@ -471,9 +350,12 @@ function switchTab(tab){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
+// Re-open modal on validation error and restore correct tab
 @if($errors->any())
-  @if(old('login_role')) openModal('login');
-  @elseif(old('role')) openModal('register');
+  @if(old('_form') === 'login')
+    openModal('login');
+  @elseif(old('_form') === 'register')
+    openModal('register');
   @endif
 @endif
 
