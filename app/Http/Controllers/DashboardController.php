@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -43,6 +44,32 @@ class DashboardController extends Controller
 
     public function updateProfile(Request $request)
     {
-        // Add update logic
+        $user = Auth::user();
+
+        $request->validate([
+            'name'      => 'required|string|max:255',
+            'phone'     => 'nullable|string|max:20',
+            'birthdate' => 'nullable|date',
+            'gender'    => 'nullable|in:Male,Female,Other',
+            'address'   => 'nullable|string|max:500',
+            'photo'     => 'nullable|image|max:3072',
+        ]);
+
+        // Handle photo upload
+        if ($request->hasFile('photo')) {
+            if ($user->photo) {
+                Storage::disk('public')->delete($user->photo);
+            }
+            $user->photo = $request->file('photo')->store('profiles', 'public');
+        }
+
+        $user->name      = $request->name;
+        $user->phone     = $request->phone;
+        $user->birthdate = $request->birthdate;
+        $user->gender    = $request->gender;
+        $user->address   = $request->address;
+        $user->save();
+
+        return redirect()->route('admin.profile')->with('success', 'Profile updated successfully!');
     }
 }

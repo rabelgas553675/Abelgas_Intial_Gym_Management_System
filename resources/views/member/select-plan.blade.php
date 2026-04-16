@@ -5,24 +5,24 @@
 @section('content')
 
 {{-- Page Header --}}
-<div style="text-align:center;margin-bottom:48px;">
-  <h1 style="font-size:48px;font-weight:800;margin-bottom:12px;">
-    Choose Your <span style="color:var(--accent);">Plan</span>
-  </h1>
-  <p style="color:var(--muted);font-size:16px;">Select a fitness program that matches your goals</p>
+<div class="page-header">
+  <h1>Choose Your <span class="text-accent">Plan</span></h1>
+  <p>Select a fitness program and subscription that matches your goals</p>
 </div>
 
 @if(session('success'))
-  <div class="alert alert-success" style="margin-bottom:24px;">✓ {{ session('success') }}</div>
+  <div class="alert alert-success" style="background: rgba(40, 167, 69, 0.1); border: 1px solid #28a745; color: #28a745; padding: 15px; border-radius: 10px; margin-bottom: 25px;">
+    ✓ {{ session('success') }}
+  </div>
 @endif
 
 <form action="{{ route('member.subscribe') }}" method="POST" id="plan-form">
 @csrf
 
 {{-- ── 1. FITNESS PLAN ── --}}
-<div style="margin-bottom:48px;">
-  <h2 style="font-size:22px;font-weight:700;margin-bottom:20px;">Fitness Plan</h2>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+<div class="section-group">
+  <h2 class="section-title">1. Fitness Plan</h2>
+  <div class="grid-3">
     @php
       $plans = [
         ['name'=>'Calisthenics',       'desc'=>'Build strength using bodyweight exercises',           'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>'],
@@ -31,181 +31,144 @@
         ['name'=>'Powerlifting',        'desc'=>'Maximum strength in squat, bench, deadlift',         'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>'],
         ['name'=>'Endurance',           'desc'=>'Cardiovascular fitness and stamina',                  'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>'],
         ['name'=>'Functional Training', 'desc'=>'Movement patterns for daily life',                    'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>'],
-        ['name'=>'Hybrid Training',     'desc'=>'Combines multiple training styles',                   'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="24,6 28,18 40,18 30,26 34,38 24,30 14,38 18,26 8,18 20,18"/></svg>'],
       ];
     @endphp
 
     @foreach($plans as $plan)
-      @php $isCurrent = $member?->fitness_plan === $plan['name']; @endphp
-      <label style="cursor:pointer;position:relative;">
+      @php $isCurrent = old('fitness_plan', $member?->fitness_plan) === $plan['name']; @endphp
+      <label class="selectable-label">
         <input type="radio" name="fitness_plan" value="{{ $plan['name'] }}"
-               style="display:none;" class="plan-radio"
-               {{ old('fitness_plan', $member?->fitness_plan) == $plan['name'] ? 'checked' : '' }}/>
-        <div class="plan-card {{ $isCurrent ? 'plan-selected' : '' }}"
-             style="background:var(--surface);border:1.5px solid {{ $isCurrent ? 'var(--accent)' : 'var(--border)' }};
-                    border-radius:14px;padding:28px 24px;transition:all 0.2s;height:100%;
-                    {{ $isCurrent ? 'background:rgba(232,255,42,0.04);' : '' }}">
-
-          @if($isCurrent)
-            <div style="position:absolute;top:14px;right:14px;background:var(--accent);color:#111;
-                        font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;
-                        letter-spacing:0.5px;">Current Plan</div>
-          @endif
-
-          <div style="width:44px;height:44px;margin-bottom:16px;color:rgba(255,255,255,0.3);"
-               class="plan-icon">
-            {!! $plan['svg'] !!}
-          </div>
-          <div style="font-size:18px;font-weight:700;margin-bottom:8px;">{{ $plan['name'] }}</div>
-          <div style="font-size:13px;color:var(--muted);line-height:1.5;">{{ $plan['desc'] }}</div>
-
-          <div class="selected-indicator"
-               style="margin-top:16px;font-size:13px;font-weight:600;color:var(--accent);
-                      display:{{ $isCurrent ? 'flex' : 'none' }};align-items:center;gap:6px;">
-            ✓ Selected
-          </div>
+               class="plan-radio" style="display:none;" {{ $isCurrent ? 'checked' : '' }}/>
+        <div class="card plan-card {{ $isCurrent ? 'selected' : '' }}">
+          @if($isCurrent) <div class="badge">Current Plan</div> @endif
+          <div class="icon-box">{!! $plan['svg'] !!}</div>
+          <div class="card-title">{{ $plan['name'] }}</div>
+          <div class="card-desc">{{ $plan['desc'] }}</div>
+          <div class="selected-indicator" style="{{ $isCurrent ? 'display:flex' : 'display:none' }}">✓ Selected</div>
         </div>
       </label>
     @endforeach
   </div>
-  @error('fitness_plan')
-    <div style="color:var(--danger);font-size:12px;margin-top:8px;">{{ $message }}</div>
-  @enderror
 </div>
 
-{{-- ── 2. Coach Subscription ── --}}
-<div style="margin-bottom:48px;">
-  <h2 style="font-size:22px;font-weight:700;margin-bottom:20px;">Coach Subscription</h2>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+{{-- ── 2. GYM SUBSCRIPTION ── --}}
+<div class="section-group">
+  <h2 class="section-title">2. Gym Subscription</h2>
+  <div class="grid-3">
     @php
-      $durations = [
-        ['type'=>'Monthly',   'price'=>'₱300',   'sub'=>'₱300/Monthly'],
-        ['type'=>'Quarterly', 'price'=>'₱1,200', 'sub'=>'₱1,200/Quarterly'],
-        ['type'=>'Annually',  'price'=>'₱3,600', 'sub'=>'₱3,600/Annually'],
+      $gymDurations = [
+        ['type'=>'Monthly',   'price'=>'800',   'label'=>'₱800/Month'],
+        ['type'=>'Quarterly', 'price'=>'3200',  'label'=>'₱3,200/Quarter'],
+        ['type'=>'Annually',  'price'=>'9600',  'label'=>'₱9,600/Year'],
       ];
     @endphp
-    @foreach($durations as $d)
-      @php $isDur = old('membership_type', $member?->membership_type) == $d['type']; @endphp
-      <label style="cursor:pointer;">
-        <input type="radio" name="membership_type" value="{{ $d['type'] }}"
-               style="display:none;" class="duration-radio"
-               {{ $isDur ? 'checked' : '' }}/>
-        <div class="duration-card {{ $isDur ? 'plan-selected' : '' }}"
-             style="background:var(--surface);border:1.5px solid {{ $isDur ? 'var(--accent)' : 'var(--border)' }};
-                    border-radius:14px;padding:28px 24px;transition:all 0.2s;
-                    {{ $isDur ? 'background:rgba(232,255,42,0.04);' : '' }}">
-          <div style="font-size:16px;font-weight:600;margin-bottom:10px;">{{ $d['type'] }}</div>
-          <div style="font-size:36px;font-weight:800;margin-bottom:6px;">{{ $d['price'] }}</div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">{{ $d['sub'] }}</div>
-          <div class="selected-indicator"
-               style="font-size:13px;font-weight:600;color:var(--accent);
-                      display:{{ $isDur ? 'flex' : 'none' }};align-items:center;gap:6px;">
-            ✓ Selected
-          </div>
+    @foreach($gymDurations as $d)
+      @php $isSelected = old('membership_type', $member?->membership_type) == $d['type']; @endphp
+      <label class="selectable-label">
+        <input type="radio" name="membership_type" value="{{ $d['type'] }}" data-price="{{ $d['price'] }}"
+               class="gym-radio" style="display:none;" {{ $isSelected ? 'checked' : '' }}/>
+        <div class="card gym-card {{ $isSelected ? 'selected' : '' }}">
+          <div class="card-subtitle">{{ $d['type'] }}</div>
+          <div class="card-price">₱{{ number_format($d['price']) }}</div>
+          <div class="card-desc">{{ $d['label'] }}</div>
+          <div class="selected-indicator" style="{{ $isSelected ? 'display:flex' : 'display:none' }}">✓ Selected</div>
         </div>
       </label>
     @endforeach
   </div>
-  @error('membership_type')
-    <div style="color:var(--danger);font-size:12px;margin-top:8px;">{{ $message }}</div>
-  @enderror
 </div>
 
-{{-- ── 3. SELECT INSTRUCTOR ── --}}
-<div style="margin-bottom:48px;">
-  <h2 style="font-size:22px;font-weight:700;margin-bottom:20px;">Select Instructor</h2>
-  @if($instructors->isEmpty())
-    <div style="color:var(--muted);padding:24px;background:var(--surface);border-radius:14px;
-                border:1px solid var(--border);text-align:center;">
-      No instructors available yet.
-    </div>
-  @else
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+{{-- ── 3. SELECT INSTRUCTOR & COACH PLAN ── --}}
+<div class="section-group">
+  <h2 class="section-title">3. Personal Coaching (Optional)</h2>
+  
+  <div class="grid-3" style="margin-bottom: 24px;">
+    {{-- No Instructor option --}}
+    @php $noInst = !old('instructor_id', $member?->instructor_id); @endphp
+    <label class="selectable-label">
+      <input type="radio" name="instructor_id" value="" class="instructor-radio"
+             style="display:none;" {{ $noInst ? 'checked' : '' }}/>
+      <div class="card instructor-card {{ $noInst ? 'selected' : '' }}">
+        <div class="avatar-placeholder">🚫</div>
+        <div class="card-title">No Instructor</div>
+        <div class="card-desc">Train independently</div>
+        <div class="selected-indicator" style="{{ $noInst ? 'display:flex' : 'display:none' }}">✓ Selected</div>
+      </div>
+    </label>
 
-      {{-- No Instructor option --}}
-      <label style="cursor:pointer;">
-        <input type="radio" name="instructor_id" value=""
-               style="display:none;" class="instructor-radio"
-               {{ !old('instructor_id', $member?->instructor_id) ? 'checked' : '' }}/>
-        <div class="instructor-card"
-             style="background:var(--surface);border:1.5px solid var(--border);
-                    border-radius:14px;padding:24px;transition:all 0.2s;">
-          <div style="width:52px;height:52px;border-radius:50%;background:#2a2a2a;
-                      display:flex;align-items:center;justify-content:center;
-                      font-size:20px;margin-bottom:14px;">🚫</div>
-          <div style="font-size:16px;font-weight:700;margin-bottom:4px;">No Instructor</div>
-          <div style="font-size:13px;color:var(--muted);">Train independently</div>
+    @foreach($instructors as $inst)
+      @php $isInst = old('instructor_id', $member?->instructor_id) == $inst->id; @endphp
+      <label class="selectable-label">
+        <input type="radio" name="instructor_id" value="{{ $inst->id }}" class="instructor-radio"
+               style="display:none;" {{ $isInst ? 'checked' : '' }}/>
+        <div class="card instructor-card {{ $isInst ? 'selected' : '' }}">
+          @if($inst->photo)
+            <img src="{{ asset('storage/'.$inst->photo) }}" class="avatar-img"/>
+          @else
+            <div class="avatar-placeholder">{{ strtoupper(substr($inst->name,0,1)) }}</div>
+          @endif
+          <div class="card-title">{{ $inst->name }}</div>
+          <div class="card-desc">{{ $inst->specialization ?? 'Professional Coach' }}</div>
+          <div class="selected-indicator" style="{{ $isInst ? 'display:flex' : 'display:none' }}">✓ Selected</div>
         </div>
       </label>
+    @endforeach
+  </div>
 
-      @foreach($instructors as $inst)
-        @php $isInst = old('instructor_id', $member?->instructor_id) == $inst->id; @endphp
-        <label style="cursor:pointer;">
-          <input type="radio" name="instructor_id" value="{{ $inst->id }}"
-                 style="display:none;" class="instructor-radio"
-                 {{ $isInst ? 'checked' : '' }}/>
-          <div class="instructor-card {{ $isInst ? 'plan-selected' : '' }}"
-               style="background:var(--surface);border:1.5px solid {{ $isInst ? 'var(--accent)' : 'var(--border)' }};
-                      border-radius:14px;padding:24px;transition:all 0.2s;
-                      {{ $isInst ? 'background:rgba(232,255,42,0.04);' : '' }}">
-            @if($inst->photo)
-              <img src="{{ asset('storage/'.$inst->photo) }}"
-                   style="width:52px;height:52px;border-radius:50%;object-fit:cover;margin-bottom:14px;"/>
-            @else
-              <div style="width:52px;height:52px;border-radius:50%;
-                          background:rgba(100,120,50,0.4);
-                          display:flex;align-items:center;justify-content:center;
-                          font-size:20px;font-weight:700;color:#fff;
-                          margin-bottom:14px;letter-spacing:0;">
-                {{ strtoupper(substr($inst->name,0,1)) }}
-              </div>
-            @endif
-            <div style="font-size:16px;font-weight:700;margin-bottom:4px;">{{ $inst->name }}</div>
-            @if($inst->specialization)
-              <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">{{ $inst->specialization }}</div>
-            @endif
-            @if($inst->experience_years)
-              <div style="font-size:13px;color:var(--muted);">{{ $inst->experience_years }} years</div>
-            @endif
+  <div id="coach-duration-container">
+    <h3 class="card-subtitle" style="margin-bottom:15px;">Coach Subscription Duration</h3>
+    <div class="grid-3">
+      @php
+        $coachDurations = [
+          ['type'=>'Monthly',   'price'=>'300',   'label'=>'₱300/Month'],
+          ['type'=>'Quarterly', 'price'=>'1200',  'label'=>'₱1,200/Quarter'],
+          ['type'=>'Annually',  'price'=>'3600',  'label'=>'₱3,600/Year'],
+        ];
+      @endphp
+      @foreach($coachDurations as $d)
+        @php $isCSelected = old('coach_membership_type') == $d['type']; @endphp
+        <label class="selectable-label">
+          <input type="radio" name="coach_membership_type" value="{{ $d['type'] }}" data-price="{{ $d['price'] }}"
+                 class="coach-radio" style="display:none;" {{ $isCSelected ? 'checked' : '' }}/>
+          <div class="card coach-card {{ $isCSelected ? 'selected' : '' }}">
+            <div class="card-subtitle">{{ $d['type'] }} Coach</div>
+            <div class="card-price">₱{{ number_format($d['price']) }}</div>
+            <div class="card-desc">{{ $d['label'] }}</div>
+            <div class="selected-indicator" style="{{ $isCSelected ? 'display:flex' : 'display:none' }}">✓ Selected</div>
           </div>
         </label>
       @endforeach
     </div>
-  @endif
+  </div>
 </div>
 
 {{-- ── 4. SUMMARY ── --}}
-<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:32px;margin-bottom:24px;">
-  <h2 style="font-size:22px;font-weight:700;margin-bottom:24px;">Summary</h2>
+<div class="summary-container">
+  <h2 class="section-title">Summary</h2>
 
-  <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
-    <span style="color:var(--muted);font-size:15px;">Plan:</span>
-    <span id="summary-plan" style="font-size:15px;font-weight:600;">
-      {{ $member?->fitness_plan ?? 'Not selected' }}
-    </span>
+  <div class="summary-row">
+    <span>Fitness Plan:</span>
+    <span id="summary-plan" class="fw-600">--</span>
   </div>
-  <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
-    <span style="color:var(--muted);font-size:15px;">Duration:</span>
-    <span id="summary-duration" style="font-size:15px;font-weight:600;">
-      {{ $member?->membership_type ?? 'Not selected' }}
-    </span>
+  <div class="summary-row">
+    <span>Gym Membership:</span>
+    <span id="summary-duration" class="fw-600">--</span>
   </div>
-  <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
-    <span style="color:var(--muted);font-size:15px;">Instructor:</span>
-    <span id="summary-instructor" style="font-size:15px;font-weight:600;">Not selected</span>
+  <div class="summary-row">
+    <span>Instructor:</span>
+    <span id="summary-instructor" class="fw-600">None</span>
   </div>
-  <div style="display:flex;justify-content:space-between;padding:16px 0;margin-top:4px;">
-    <span style="font-size:16px;font-weight:700;">Total:</span>
-    <span id="summary-total" style="font-size:24px;font-weight:800;color:var(--accent);">
-      {{ $member ? '₱'.number_format($member->fee, 0) : '—' }}
-    </span>
+  <div class="summary-row">
+    <span>Coach Plan:</span>
+    <span id="summary-coach-duration" class="fw-600">None</span>
+  </div>
+  
+  <div class="summary-total">
+    <span>Total Fee:</span>
+    <span id="summary-total-value">₱0</span>
   </div>
 
-  <button type="submit" id="submit-btn"
-          style="width:100%;padding:16px;border-radius:10px;border:none;cursor:pointer;
-                 font-size:16px;font-weight:700;font-family:'DM Sans',sans-serif;
-                 background:#2a2a2a;color:var(--muted);transition:all 0.2s;margin-top:8px;"
-          disabled>
+  <button type="submit" id="submit-btn" class="btn-submit" disabled>
     Complete Subscription →
   </button>
 </div>
@@ -213,105 +176,153 @@
 </form>
 
 <style>
-.plan-card:hover, .duration-card:hover, .instructor-card:hover {
-  border-color: rgba(232,255,42,0.4) !important;
-  background: rgba(232,255,42,0.02) !important;
+:root {
+    --accent: #e8ff2a;
+    --surface: #1a1a1a;
+    --border: #333;
+    --muted: #888;
+    --danger: #ff4d4d;
 }
-.plan-selected {
-  border-color: var(--accent) !important;
-  background: rgba(232,255,42,0.04) !important;
+
+.page-header { text-align: center; margin-bottom: 48px; }
+.page-header h1 { font-size: 48px; font-weight: 800; margin-bottom: 12px; color: #fff; }
+.page-header p { color: var(--muted); font-size: 16px; }
+.text-accent { color: var(--accent); }
+
+.section-group { margin-bottom: 48px; }
+.section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: #fff; }
+
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+.card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    transition: all 0.2s;
+    height: 100%;
+    position: relative;
+    cursor: pointer;
 }
-.plan-selected .plan-icon svg,
-.plan-selected .plan-icon {
-  color: var(--accent) !important;
+
+.card:hover { border-color: rgba(232, 255, 42, 0.4); }
+.card.selected {
+    border-color: var(--accent) !important;
+    background: rgba(232, 255, 42, 0.04) !important;
 }
+
+.badge {
+    position: absolute; top: 14px; right: 14px; background: var(--accent);
+    color: #111; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px;
+}
+
+.icon-box { width: 44px; height: 44px; margin-bottom: 16px; color: rgba(255, 255, 255, 0.3); }
+.card.selected .icon-box { color: var(--accent); }
+
+.card-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #fff;}
+.card-subtitle { font-size: 16px; font-weight: 600; margin-bottom: 10px; color: #fff;}
+.card-price { font-size: 32px; font-weight: 800; margin-bottom: 6px; color: #fff;}
+.card-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+.selected-indicator { margin-top: 16px; font-size: 13px; font-weight: 600; color: var(--accent); display: none; align-items: center; gap: 6px; }
+
+.avatar-placeholder {
+    width: 52px; height: 52px; border-radius: 50%; background: #2a2a2a;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 14px;
+}
+.avatar-img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; margin-bottom: 14px; }
+
+.summary-container { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 32px; margin-bottom: 24px; }
+.summary-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); color: var(--muted); }
+.summary-total { display: flex; justify-content: space-between; padding: 16px 0; font-size: 24px; font-weight: 800; color: var(--accent); }
+.fw-600 { font-weight: 600; color: #fff; }
+
+.btn-submit {
+    width: 100%; padding: 16px; border-radius: 10px; border: none;
+    font-size: 16px; font-weight: 700; background: #2a2a2a; color: var(--muted);
+    transition: all 0.2s; cursor: not-allowed;
+}
+.btn-submit.active { background: var(--accent); color: #111; cursor: pointer; }
+
+@media (max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } }
 </style>
 
 <script>
-const fees = { Monthly: 800, Quarterly: 2100, Annually: 7500 };
-let selectedPlan = '{{ old("fitness_plan", $member?->fitness_plan) }}';
-let selectedDuration = '{{ old("membership_type", $member?->membership_type) }}';
-let selectedInstructor = 'Not selected';
+document.addEventListener('DOMContentLoaded', function() {
+    const coachContainer = document.getElementById('coach-duration-container');
 
-function updateSummary() {
-  document.getElementById('summary-plan').textContent = selectedPlan || 'Not selected';
-  document.getElementById('summary-duration').textContent = selectedDuration || 'Not selected';
-  document.getElementById('summary-instructor').textContent = selectedInstructor;
+    function updateSummary() {
+        const plan = document.querySelector('.plan-radio:checked');
+        const gym = document.querySelector('.gym-radio:checked');
+        const instructor = document.querySelector('.instructor-radio:checked');
+        const coach = document.querySelector('.coach-radio:checked');
 
-  const fee = fees[selectedDuration];
-  document.getElementById('summary-total').textContent = fee ? '₱' + fee.toLocaleString() : '—';
+        const hasInstructor = (instructor && instructor.value !== "");
+        
+        // Visual indication that Coach plan is locked/unlocked
+        coachContainer.style.opacity = hasInstructor ? "1" : "0.4";
+        coachContainer.style.pointerEvents = hasInstructor ? "auto" : "none";
 
-  const ready = selectedPlan && selectedDuration;
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = !ready;
-  btn.style.background = ready ? 'var(--accent)' : '#2a2a2a';
-  btn.style.color = ready ? '#111' : 'var(--muted)';
-  btn.style.cursor = ready ? 'pointer' : 'not-allowed';
-}
+        // Summary Text Updates
+        document.getElementById('summary-plan').textContent = plan ? plan.value : '--';
+        document.getElementById('summary-duration').textContent = gym ? gym.value : '--';
+        
+        if (hasInstructor) {
+            const name = instructor.closest('label').querySelector('.card-title').textContent;
+            document.getElementById('summary-instructor').textContent = name;
+            document.getElementById('summary-coach-duration').textContent = coach ? coach.value : 'Select Duration';
+        } else {
+            document.getElementById('summary-instructor').textContent = 'None';
+            document.getElementById('summary-coach-duration').textContent = 'None';
+        }
 
-// Plan radios
-document.querySelectorAll('.plan-radio').forEach(r => {
-  r.addEventListener('change', () => {
-    document.querySelectorAll('.plan-card').forEach(c => {
-      c.classList.remove('plan-selected');
-      c.style.borderColor = 'var(--border)';
-      c.style.background = 'var(--surface)';
-      c.querySelector('.selected-indicator').style.display = 'none';
-    });
-    if (r.checked) {
-      const card = r.closest('label').querySelector('.plan-card');
-      card.classList.add('plan-selected');
-      card.style.borderColor = 'var(--accent)';
-      card.style.background = 'rgba(232,255,42,0.04)';
-      card.querySelector('.selected-indicator').style.display = 'flex';
-      selectedPlan = r.value;
-      updateSummary();
+        // Calculation
+        let gymFee = gym ? parseInt(gym.dataset.price) : 0;
+        let coachFee = (hasInstructor && coach) ? parseInt(coach.dataset.price) : 0;
+        
+        const total = gymFee + coachFee;
+        document.getElementById('summary-total-value').textContent = '₱' + total.toLocaleString();
+
+        // Submit Button State
+        const gymReady = (plan && gym);
+        const coachReady = !hasInstructor || (hasInstructor && coach);
+
+        const btn = document.getElementById('submit-btn');
+        if (gymReady && coachReady) {
+            btn.disabled = false;
+            btn.classList.add('active');
+        } else {
+            btn.disabled = true;
+            btn.classList.remove('active');
+        }
     }
-  });
-});
 
-// Duration radios
-document.querySelectorAll('.duration-radio').forEach(r => {
-  r.addEventListener('change', () => {
-    document.querySelectorAll('.duration-card').forEach(c => {
-      c.classList.remove('plan-selected');
-      c.style.borderColor = 'var(--border)';
-      c.style.background = 'var(--surface)';
-      c.querySelector('.selected-indicator').style.display = 'none';
-    });
-    if (r.checked) {
-      const card = r.closest('label').querySelector('.duration-card');
-      card.classList.add('plan-selected');
-      card.style.borderColor = 'var(--accent)';
-      card.style.background = 'rgba(232,255,42,0.04)';
-      card.querySelector('.selected-indicator').style.display = 'flex';
-      selectedDuration = r.value;
-      updateSummary();
+    function handleRadioChange(selector, cardClass) {
+        document.querySelectorAll(selector).forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.querySelectorAll('.' + cardClass).forEach(card => {
+                    card.classList.remove('selected');
+                    const indicator = card.querySelector('.selected-indicator');
+                    if (indicator) indicator.style.display = 'none';
+                });
+                
+                if (radio.checked) {
+                    const card = radio.closest('label').querySelector('.card');
+                    card.classList.add('selected');
+                    const indicator = card.querySelector('.selected-indicator');
+                    if (indicator) indicator.style.display = 'flex';
+                }
+                updateSummary();
+            });
+        });
     }
-  });
-});
 
-// Instructor radios
-document.querySelectorAll('.instructor-radio').forEach(r => {
-  r.addEventListener('change', () => {
-    document.querySelectorAll('.instructor-card').forEach(c => {
-      c.classList.remove('plan-selected');
-      c.style.borderColor = 'var(--border)';
-      c.style.background = 'var(--surface)';
-    });
-    if (r.checked) {
-      const card = r.closest('label').querySelector('.instructor-card');
-      card.classList.add('plan-selected');
-      card.style.borderColor = 'var(--accent)';
-      card.style.background = 'rgba(232,255,42,0.04)';
-      const nameEl = card.querySelector('div[style*="font-weight:700"]');
-      selectedInstructor = r.value === '' ? 'Not selected' : (nameEl ? nameEl.textContent.trim() : 'Selected');
-      updateSummary();
-    }
-  });
-});
+    handleRadioChange('.plan-radio', 'plan-card');
+    handleRadioChange('.gym-radio', 'gym-card');
+    handleRadioChange('.instructor-radio', 'instructor-card');
+    handleRadioChange('.coach-radio', 'coach-card');
 
-// Init
-updateSummary();
+    updateSummary();
+});
 </script>
 @endsection

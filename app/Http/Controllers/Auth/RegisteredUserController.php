@@ -52,6 +52,9 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
+        // THE FIX: Generate the QR code for the newly registered member
+        \App\Models\User::generateQrCode($user);
+
         // Members always go to the member dashboard
         return redirect()->route('member.dashboard');
     }

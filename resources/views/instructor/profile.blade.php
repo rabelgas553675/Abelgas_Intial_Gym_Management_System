@@ -50,6 +50,15 @@
     <div style="font-size:20px;font-weight:700;margin-bottom:4px;">{{ $instructor->name }}</div>
     <div style="font-size:13px;color:#ff6b35;font-weight:600;margin-bottom:20px;">Instructor</div>
 
+    {{-- ADDED QR CODE SECTION --}}
+    @php $qr = \App\Models\UserQrToken::where('user_id', auth()->id())->first(); @endphp
+    @if($qr && $qr->qr_code_path)
+    <div style="margin-bottom: 24px; padding: 15px; background: #fff; border-radius: 12px; border: 1px solid var(--border); display: inline-block;">
+        <img src="{{ asset('storage/' . $qr->qr_code_path) }}" style="width: 100px; height: 100px; display: block; margin: 0 auto;">
+        <div style="font-family: monospace; font-size: 9px; color: #999; margin-top: 8px;">{{ $qr->qr_token }}</div>
+    </div>
+    @endif
+
     {{-- Specialization badge --}}
     @if($instructor->specialization)
       <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;

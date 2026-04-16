@@ -10,43 +10,56 @@ use Illuminate\Support\Facades\Storage;
 class StaffController extends Controller
 {
     public function dashboard()
-{
-    $stats = [
-        'total'   => Member::count(),
-        'active'  => Member::where('status', 'Active')->count(),
-        'monthly' => Member::where('membership_type', 'Monthly')->count(),
-        'yearly'  => Member::where('membership_type', 'Annually')->count(),
-    ];
+    {
+        $stats = [
+            'total'   => Member::count(),
+            'active'  => Member::where('status', 'Active')->count(),
+            'monthly' => Member::where('membership_type', 'Monthly')->count(),
+            'yearly'  => Member::where('membership_type', 'Annually')->count(),
+        ];
 
-    $recent = Member::latest()->take(6)->get();
+        $recent = Member::latest()->take(6)->get();
 
-    $recentPayments = Payment::with('member')
-                        ->latest()
-                        ->take(5)
-                        ->get();
+        $recentPayments = Payment::with('member')
+                            ->latest()
+                            ->take(5)
+                            ->get();
 
-    $thisMonth = Payment::whereMonth('payment_date', now()->month)
-                        ->whereYear('payment_date', now()->year)
-                        ->sum('amount');
+        $thisMonth = Payment::whereMonth('payment_date', now()->month)
+                            ->whereYear('payment_date', now()->year)
+                            ->sum('amount');
 
-    $totalCollected = Payment::sum('amount');
+        $totalCollected = Payment::sum('amount');
 
-    return view('staff.dashboard', compact(
-        'stats', 'recent', 'recentPayments', 'thisMonth', 'totalCollected'
-    ));
-}
+        return view('staff.dashboard', compact(
+            'stats', 'recent', 'recentPayments', 'thisMonth', 'totalCollected'
+        ));
+    }
 
     public function payments()
     {
+        // FIX: Fetch members for the "Select Member" dropdown in the form
+        $members = Member::orderBy('name', 'asc')->get();
+
+        // Fetch paginated payments with member relationship
         $payments = Payment::with('member')->latest()->paginate(20);
 
-        $thisMonth     = Payment::whereMonth('payment_date', now()->month)
-                                ->whereYear('payment_date', now()->year)
-                                ->sum('amount');
+        // Stats for the summary cards
+        $thisMonth = Payment::whereMonth('payment_date', now()->month)
+                            ->whereYear('payment_date', now()->year)
+                            ->sum('amount');
+        
         $totalCollected = Payment::sum('amount');
         $totalCount     = Payment::count();
 
-        return view('staff.payments', compact('payments', 'thisMonth', 'totalCollected', 'totalCount'));
+        // Pass all 5 variables to the view
+        return view('staff.payments', compact(
+            'members', 
+            'payments', 
+            'thisMonth', 
+            'totalCollected', 
+            'totalCount'
+        ));
     }
 
     public function profile()

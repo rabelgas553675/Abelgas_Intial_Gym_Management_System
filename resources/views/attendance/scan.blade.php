@@ -49,7 +49,7 @@
       {{-- Manual QR input --}}
       <div style="display:flex;gap:8px;margin-bottom:6px;">
         <input type="text" id="manualInput"
-               placeholder="Paste QR data or type member ID..."
+               placeholder="Paste QR data or type ID..."
                style="flex:1;padding:10px 14px;background:rgba(255,255,255,.08);
                       color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:9px 0 0 9px;
                       font-size:13px;outline:none;font-family:'DM Sans',sans-serif;"/>
@@ -60,7 +60,7 @@
         </button>
       </div>
       <small style="color:rgba(255,255,255,.3);font-size:11px;display:block;margin-bottom:14px;">
-        Type a numeric member ID for quick lookup
+        Type a numeric ID for quick lookup
       </small>
 
       {{-- Manual Entry Panel --}}
@@ -70,19 +70,32 @@
                     text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
           Manual Attendance Entry
         </div>
+        
         <select id="manualMemberId"
-                style="width:100%;padding:9px 12px;background:rgba(255,255,255,.08);
+                style="width:100%;padding:9px 12px;background:#1a1a2e;
                        color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:8px;
-                       font-size:13px;margin-bottom:10px;font-family:'DM Sans',sans-serif;">
-          <option value="">— Select Member —</option>
-          @foreach($allMembers as $m)
-            <option value="{{ $m->id }}"
-                    {{ $m->status === 'Expired' ? 'style="color:#fbbf24;"' : '' }}>
-              {{ $m->name }} ({{ $m->membership_type }})
-              {{ $m->status === 'Expired' ? '⚠️ Expired' : '' }}
-            </option>
-          @endforeach
+                       font-size:13px;margin-bottom:10px;font-family:'DM Sans',sans-serif; appearance: auto;">
+          <option value="" style="background:#1a1a2e; color:#fff;">— Select Person —</option>
+          
+          <optgroup label="Members" style="background:#0f0f1a; color:var(--accent);">
+            @foreach($allMembers as $m)
+                <option value="{{ $m->id }}" style="background:#1a1a2e; color:{{ $m->status === 'Expired' ? '#fbbf24' : '#fff' }};">
+                {{ $m->name }} (Member) {{ $m->status === 'Expired' ? '⚠️' : '' }}
+                </option>
+            @endforeach
+          </optgroup>
+
+          <optgroup label="Staff / Instructors / Admin" style="background:#0f0f1a; color:#60a5fa;">
+            @forelse($allStaff ?? [] as $s)
+                <option value="staff-{{ $s->id }}" style="background:#1a1a2e; color:#fff;">
+                {{ $s->name }} ({{ ucfirst($s->role) }})
+                </option>
+            @empty
+                <option disabled style="background:#1a1a2e; color:rgba(255,255,255,0.3);">No Staff Records Found</option>
+            @endforelse
+          </optgroup>
         </select>
+
         <div style="display:flex;gap:8px;">
           <button onclick="manualRecord('timein')"
                   style="flex:1;padding:9px;background:#4ade80;color:#111;border:none;
@@ -150,30 +163,30 @@
         </thead>
         <tbody id="todayLogBody">
           @forelse($todayLogs as $log)
-          <tr id="log-{{ $log->id }}" data-member="{{ $log->member_id }}"
+          <tr id="log-{{ $log->id }}" data-member="{{ $log->member_id ?? 'staff-'.$log->user_id }}"
               style="border-top:1px solid var(--border);">
             <td style="padding:12px 16px;">
-              @if($log->member?->photo)
-                <img src="{{ asset('storage/'.$log->member->photo) }}"
+              @php 
+                $personName = $log->member?->name ?? $log->user?->name ?? 'Staff';
+                $personRole = $log->member?->membership_type ?? ucfirst($log->user?->role ?? 'Staff');
+                $personPhoto = $log->member?->photo ?? $log->user?->photo;
+                $isStaffRow = !$log->member_id;
+              @endphp
+
+              @if($personPhoto)
+                <img src="{{ asset('storage/'.$personPhoto) }}"
                      style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);"/>
-              @elseif($log->member)
-                <div style="width:34px;height:34px;border-radius:50%;background:rgba(200,255,0,0.08);
-                            border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
-                            justify-content:center;font-size:12px;font-weight:700;color:var(--accent);">
-                  {{ strtoupper(substr($log->member->name,0,1)) }}
-                </div>
               @else
-                <div style="width:34px;height:34px;border-radius:50%;background:var(--surface2);
-                            border:1px solid var(--border);display:flex;align-items:center;justify-content:center;">
-                  <svg width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
+                <div style="width:34px;height:34px;border-radius:50%;background:{{ !$isStaffRow ? 'rgba(200,255,0,0.08)' : 'rgba(96,165,250,0.08)' }};
+                            border:1px solid {{ !$isStaffRow ? 'rgba(200,255,0,0.15)' : 'rgba(96,165,250,0.15)' }};display:flex;align-items:center;
+                            justify-content:center;font-size:12px;font-weight:700;color:{{ !$isStaffRow ? 'var(--accent)' : '#60a5fa' }};">
+                  {{ strtoupper(substr($personName,0,1)) }}
                 </div>
               @endif
             </td>
             <td style="padding:12px 16px;">
-              <div style="font-size:13px;font-weight:600;">{{ $log->member?->name ?? 'Staff / System' }}</div>
-              <div style="font-size:11px;color:var(--muted);">{{ $log->member?->membership_type ?? ($log->scanned_by ? 'Staff QR' : '—') }}</div>
+              <div style="font-size:13px;font-weight:600;">{{ $personName }}</div>
+              <div style="font-size:11px;color:var(--muted);">{{ $personRole }}</div>
             </td>
             <td style="padding:12px 16px;font-size:13px;">{{ $log->time_in?->format('h:i A') ?? '—' }}</td>
             <td style="padding:12px 16px;font-size:13px;">
@@ -282,33 +295,64 @@ function processQR(qrData) {
 
 function manualRecord(action) {
   const mid = document.getElementById('manualMemberId').value;
-  if (!mid) { document.getElementById('manualMsg').innerHTML = '<span style="color:#fbbf24;">Select a member first.</span>'; return; }
+  const msg = document.getElementById('manualMsg');
+  if (!mid) { 
+    msg.innerHTML = '<span style="color:#fbbf24;">Select a person first.</span>'; 
+    return; 
+  }
+
+  // Visual feedback: clear message and disable buttons
+  msg.innerHTML = '<span style="color:rgba(255,255,255,0.5);">Processing...</span>';
+  const buttons = document.querySelectorAll('button[onclick^="manualRecord"]');
+  buttons.forEach(b => b.disabled = true);
 
   fetch('{{ route("attendance.manual") }}', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
     body: 'manual_member_id=' + encodeURIComponent(mid) + '&manual_action=' + action
   })
-  .then(r => r.json())
+  .then(r => {
+    if(!r.ok) throw new Error('Server error');
+    return r.json();
+  })
   .then(data => {
-    const msg = document.getElementById('manualMsg');
+    buttons.forEach(b => b.disabled = false);
     msg.innerHTML = data.success
       ? `<span style="color:#4ade80;">✅ ${data.message}</span>`
       : `<span style="color:#f87171;">❌ ${data.message}</span>`;
-    if (data.success && action === 'timein') {
-      appendLogRow({ member_id: mid, member: data.member, membership: data.membership, time_in: data.time_in, photo: null, entry_method: 'manual' }, 'timein');
+    
+    if (data.success) {
+      if (action === 'timein') {
+        appendLogRow({ 
+            member_id: data.member_id, 
+            member: data.member, 
+            membership: data.membership, 
+            time_in: data.time_in, 
+            entry_method: 'manual'
+        }, 'timein');
+      } else {
+        updateLogRowTimeout({ member_id: data.member_id, time_out: data.time_out, duration: data.duration });
+      }
       playBeep(true);
       document.getElementById('manualMemberId').value = '';
-    } else { playBeep(data.success); }
+    } else {
+      playBeep(false);
+    }
+  })
+  .catch(err => {
+    buttons.forEach(b => b.disabled = false);
+    msg.innerHTML = '<span style="color:#f87171;">❌ Connection Error. Check console.</span>';
+    console.error(err);
   });
 }
 
 function showResult(data) {
   const card = document.getElementById('resultCard');
   card.className = '';
+  const isStaff = data.is_staff || false;
   const avatar = data.photo
     ? `<img src="${data.photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:4px solid #fff;margin:0 auto;display:block;">`
-    : data.member ? `<div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#c8ff00,#4ade80);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#111;margin:0 auto;">${data.member.charAt(0).toUpperCase()}</div>` : '';
+    : data.member ? `<div style="width:80px;height:80px;border-radius:50%;background:${isStaff ? 'linear-gradient(135deg,#60a5fa,#3b82f6)' : 'linear-gradient(135deg,#c8ff00,#4ade80)'};display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#111;margin:0 auto;">${data.member.charAt(0).toUpperCase()}</div>` : '';
 
   document.getElementById('resultAvatar').innerHTML       = avatar;
   document.getElementById('resultName').textContent       = data.member || 'Unknown';
@@ -325,7 +369,7 @@ function showResult(data) {
   if (data.success && data.action === 'timein') {
     document.getElementById('resultTimes').innerHTML =
       `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">Time In: <strong>${data.time_in}</strong></span>
-       <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">Valid Until: <strong>${data.end_date}</strong></span>`;
+       ${!isStaff ? `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">Valid Until: <strong>${data.end_date || 'N/A'}</strong></span>` : ''}`;
   } else if (data.success && data.action === 'timeout') {
     document.getElementById('resultTimes').innerHTML =
       `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">In: <strong>${data.time_in}</strong></span>
@@ -347,9 +391,10 @@ function appendLogRow(data, action) {
   const existing = tbody.querySelector(`[data-member="${data.member_id}"]`);
   if (existing) existing.remove();
 
+  const isStaff = data.is_staff || (typeof data.member_id === 'string' && data.member_id.startsWith('staff-'));
   const avatar = data.photo
     ? `<img src="${data.photo}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);">`
-    : `<div style="width:34px;height:34px;border-radius:50%;background:rgba(200,255,0,0.08);border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);">${(data.member||'?').charAt(0).toUpperCase()}</div>`;
+    : `<div style="width:34px;height:34px;border-radius:50%;background:${isStaff ? 'rgba(96,165,250,0.08)' : 'rgba(200,255,0,0.08)'};border:1px solid ${isStaff ? 'rgba(96,165,250,0.15)' : 'rgba(200,255,0,0.15)'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${isStaff ? '#60a5fa' : 'var(--accent)'};">${(data.member||'?').charAt(0).toUpperCase()}</div>`;
 
   const methodBadge = data.entry_method === 'manual'
     ? '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:rgba(251,191,36,0.15);color:#fbbf24;">Manual</span>'

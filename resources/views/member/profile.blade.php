@@ -1,79 +1,94 @@
 @extends('layouts.member')
-@section('title', 'Edit Profile – IRONFORGE')
-@section('active', 'profile')
+@section('title', 'My Profile – IRONFORGE')
+@section('page_title', 'My Profile')
+@section('active_nav', 'member.profile')
+
 @section('content')
 
+<style>
+  /* Fix for the minimalist dropdown icon */
+  select.staff-select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    /* This is a bright white SVG chevron icon */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0px center !important;
+    background-size: 14px !important;
+    padding-right: 24px !important;
+    cursor: pointer;
+  }
+
+  /* Style for option dropdown list background */
+  select.staff-select option {
+    background-color: #1a1a1a; 
+    color: white;
+  }
+</style>
+
 <div style="margin-bottom:28px;">
-  <h1 style="font-size:32px;font-weight:700;margin-bottom:6px;">My Profile</h1>
-  <p style="color:var(--muted);font-size:14px;">View and update your personal information</p>
+  <h1 style="font-size:30px;font-weight:700;margin-bottom:4px;">My Profile</h1>
+  <p style="color:var(--muted);font-size:14px;">View and update your personal information.</p>
 </div>
 
 @if(session('success'))
-  <div class="alert alert-success" style="margin-bottom:20px;">✓ {{ session('success') }}</div>
+  <div class="alert alert-success" style="margin-bottom: 20px;">✓ {{ session('success') }}</div>
 @endif
 
 <form action="{{ route('member.profile.update') }}" method="POST" enctype="multipart/form-data">
 @csrf
 
-<div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;">
+<div style="display:grid;grid-template-columns:320px 1fr;gap:24px;align-items:start;">
 
-  {{-- LEFT: Photo Card --}}
+  {{-- LEFT: Avatar card --}}
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;
-              padding:36px 24px;text-align:center;">
-
-    {{-- Avatar --}}
+              padding:36px 28px;text-align:center;">
     <div style="position:relative;display:inline-block;margin-bottom:20px;">
       <div id="avatar-preview"
-           style="width:160px;height:160px;border-radius:50%;overflow:hidden;
+           style="width:140px;height:140px;border-radius:50%;overflow:hidden;
                   background:var(--surface2);border:3px solid var(--border);margin:0 auto;">
         @if($user->photo)
-          <img src="{{ asset('storage/'.$user->photo) }}"
-               style="width:100%;height:100%;object-fit:cover;"/>
+          <img src="{{ asset('storage/'.$user->photo) }}" style="width:100%;height:100%;object-fit:cover;"/>
         @else
-          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
-            <svg width="56" height="56" fill="none" stroke="var(--muted)" stroke-width="1.2" viewBox="0 0 24 24">
-              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+                      font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--accent);">
+            {{ strtoupper(substr($user->name,0,2)) }}
           </div>
         @endif
       </div>
-      {{-- Camera button --}}
-      <label style="position:absolute;bottom:6px;right:6px;width:34px;height:34px;
-                     border-radius:50%;background:var(--accent);cursor:pointer;
-                     display:flex;align-items:center;justify-content:center;
-                     border:2px solid var(--bg);box-shadow:0 2px 8px rgba(0,0,0,0.5);">
+      <label style="position:absolute;bottom:6px;right:6px;width:34px;height:34px;border-radius:50%;
+                     background:var(--accent);display:flex;align-items:center;justify-content:center;
+                     cursor:pointer;border:3px solid var(--bg);">
         <svg width="15" height="15" fill="none" stroke="#111" stroke-width="2.5" viewBox="0 0 24 24">
           <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
-        <input type="file" name="photo" accept="image/*" style="display:none;"
-               onchange="previewAvatar(this)"/>
+        <input type="file" name="photo" accept="image/*" style="display:none;" onchange="previewAvatar(this)"/>
       </label>
     </div>
-
-    {{-- Name & Role --}}
     <div style="font-size:20px;font-weight:700;margin-bottom:4px;">{{ $user->name }}</div>
-    <div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:20px;">
-      {{ ucfirst(auth()->user()->role) }}
+    
+    <div style="display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;
+                background:rgba(234,179,8,0.12);color:#eab308;border:1px solid rgba(234,179,8,0.25);
+                margin-bottom:16px;">
+      Member
     </div>
 
-    {{-- Status badge --}}
-    @if($member)
-      <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;
-                  border-radius:100px;font-size:12px;font-weight:600;
-                  background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.25);
-                  color:#4ade80;margin-bottom:20px;">
-        <span style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
-        {{ $member->status }} Member
-      </div>
-    @else
-      <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;
-                  border-radius:100px;font-size:12px;font-weight:600;
-                  background:rgba(136,136,136,0.12);border:1px solid rgba(136,136,136,0.2);
-                  color:var(--muted);margin-bottom:20px;">
-        No Active Plan
-      </div>
+    <div style="display:inline-flex;align-items:center;gap:6px;padding:7px 18px;border-radius:20px;
+                background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.25);
+                font-size:13px;font-weight:600;color:var(--success);margin-bottom:24px;">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--success);display:inline-block;"></span>
+      Active Member
+    </div>
+
+    {{-- QR CODE SECTION --}}
+    @php $qr = \App\Models\UserQrToken::where('user_id', $user->id)->first(); @endphp
+    @if($qr && $qr->qr_code_path)
+    <div style="margin-bottom: 24px; padding: 15px; background: #fff; border-radius: 12px; border: 1px solid var(--border); display: inline-block;">
+        <img src="{{ asset('storage/' . $qr->qr_code_path) }}" style="width: 120px; height: 120px; display: block; margin: 0 auto;">
+        <div style="font-family: monospace; font-size: 10px; color: #999; margin-top: 8px;">{{ $qr->qr_token }}</div>
+    </div>
     @endif
 
     <div style="font-size:12px;color:var(--muted);padding-top:16px;border-top:1px solid var(--border);">
@@ -81,105 +96,87 @@
     </div>
   </div>
 
-  {{-- RIGHT: Details Card --}}
+  {{-- RIGHT: Bio form --}}
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;">
-
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
-      <div style="font-size:17px;font-weight:700;">Bio & other details</div>
-      <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);
-                  box-shadow:0 0 8px rgba(232,255,42,0.5);"></div>
+      <div style="font-size:17px;font-weight:700;">Bio &amp; other details</div>
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
     </div>
 
-    {{-- Details Grid --}}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:x 32px;gap-y:28px;gap:28px 40px;">
-
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
       <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px;">Full Name</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Full Name</div>
         <input type="text" name="name" class="form-control"
                value="{{ old('name', $user->name) }}" required
                style="background:transparent;border:none;border-bottom:1px solid var(--border);
-                      border-radius:0;padding:4px 0;font-size:15px;font-weight:600;"/>
-        @error('name')
-          <div style="color:var(--danger);font-size:11px;margin-top:3px;">{{ $message }}</div>
-        @enderror
+                      border-radius:0;padding:8px 0;font-size:15px;font-weight:600;"/>
       </div>
-
       <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px;">Email Address</div>
-        <div style="font-size:15px;font-weight:600;color:var(--muted);padding:4px 0;">
-          {{ $user->email }}
-        </div>
-      </div>
-
-      <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px;">Phone Number</div>
-        <input type="text" name="phone" class="form-control"
-               value="{{ old('phone', $user->phone) }}" placeholder="Not set"
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Email Address</div>
+        <input type="email" class="form-control" value="{{ $user->email }}" disabled
                style="background:transparent;border:none;border-bottom:1px solid var(--border);
-                      border-radius:0;padding:4px 0;font-size:15px;font-weight:600;"/>
+                      border-radius:0;padding:8px 0;font-size:15px;font-weight:600;opacity:0.5;cursor:not-allowed;"/>
       </div>
+    </div>
 
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
       <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px;">Date of Birth</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Phone Number</div>
+        <input type="text" name="phone" class="form-control"
+               value="{{ old('phone', $user->phone) }}" placeholder="09..."
+               style="background:transparent;border:none;border-bottom:1px solid var(--border);
+                      border-radius:0;padding:8px 0;font-size:15px;font-weight:600;"/>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Date of Birth</div>
         <input type="date" name="birthdate" class="form-control"
                value="{{ old('birthdate', $user->birthdate?->format('Y-m-d')) }}"
                style="background:transparent;border:none;border-bottom:1px solid var(--border);
-                      border-radius:0;padding:4px 0;font-size:15px;font-weight:600;"/>
+                      border-radius:0;padding:8px 0;font-size:15px;font-weight:600;color-scheme:dark;"/>
       </div>
+    </div>
 
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
       <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px;">Gender</div>
-        <select name="gender" class="form-control"
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Gender</div>
+        <select name="gender" class="form-control staff-select"
                 style="background:transparent;border:none;border-bottom:1px solid var(--border);
-                       border-radius:0;padding:4px 0;font-size:15px;font-weight:600;">
+                       border-radius:0;padding:8px 0;font-size:15px;font-weight:600;">
           <option value="">— Select —</option>
           @foreach(['Male','Female','Other'] as $g)
-            <option value="{{ $g }}" {{ old('gender', $user->gender) === $g ? 'selected' : '' }}>
-              {{ $g }}
-            </option>
+            <option value="{{ $g }}" {{ old('gender', $user->gender) === $g ? 'selected' : '' }}>{{ $g }}</option>
           @endforeach
         </select>
       </div>
-
       <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px;">City / Address</div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">City / Address</div>
         <input type="text" name="address" class="form-control"
-               value="{{ old('address', $user->address) }}" placeholder="Not set"
+               value="{{ old('address', $user->address) }}" placeholder="Your city or address..."
                style="background:transparent;border:none;border-bottom:1px solid var(--border);
-                      border-radius:0;padding:4px 0;font-size:15px;font-weight:600;"/>
+                      border-radius:0;padding:8px 0;font-size:15px;font-weight:600;"/>
       </div>
-
-      @if($member)
-      <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px;">Fitness Plan</div>
-        <div style="font-size:15px;font-weight:600;color:var(--accent);">
-          {{ $member->fitness_plan ?? '—' }}
-        </div>
-      </div>
-
-      <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:0.5px;">Instructor</div>
-        <div style="font-size:15px;font-weight:600;">
-          {{ $member->instructor->name ?? 'Not assigned' }}
-        </div>
-      </div>
-      @endif
-
     </div>
 
-    {{-- Save Button --}}
-    <div style="margin-top:36px;padding-top:24px;border-top:1px solid var(--border);
-                display:flex;justify-content:flex-end;gap:12px;">
-      <a href="{{ route('member.dashboard') }}" class="btn btn-secondary" style="padding:11px 24px;">
-        Cancel
-      </a>
-      <button type="submit" class="btn btn-primary" style="padding:11px 28px;font-size:14px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:36px;">
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Role</div>
+        <div style="font-size:15px;font-weight:600;color:#eab308;padding:8px 0;border-bottom:1px solid var(--border);">Member</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Account Created</div>
+        <div style="font-size:15px;font-weight:600;color:var(--muted);padding:8px 0;border-bottom:1px solid var(--border);">
+          {{ $user->created_at->format('M d, Y') }}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:12px;">
+      <a href="{{ route('dashboard') }}" class="btn btn-secondary" style="padding:11px 28px; background:transparent; border:1px solid var(--border); color:white; text-decoration:none; border-radius:8px; font-size:14px;">Cancel</a>
+      <button type="submit" class="btn btn-primary" style="padding:11px 32px; font-size:14px; font-weight:700;">
         Save Changes
       </button>
     </div>
-
   </div>
-
 </div>
 </form>
 
@@ -194,4 +191,5 @@ function previewAvatar(input) {
   reader.readAsDataURL(input.files[0]);
 }
 </script>
+
 @endsection

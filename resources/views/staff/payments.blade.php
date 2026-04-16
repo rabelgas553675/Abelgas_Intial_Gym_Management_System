@@ -5,9 +5,31 @@
 
 @section('content')
 
+<style>
+  /* Fix for custom dropdown icons */
+  .custom-select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    /* Bright white/muted SVG chevron icon */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 14px center !important;
+    background-size: 14px !important;
+    padding-right: 40px !important;
+    cursor: pointer;
+  }
+
+  /* Style for option dropdown list background to keep theme consistency */
+  .custom-select option {
+    background-color: #1a1a1a;
+    color: white;
+  }
+</style>
+
 <div style="margin-bottom:28px;">
   <h1 style="font-size:30px;font-weight:700;margin-bottom:4px;">Payment Transactions</h1>
-  <p style="color:var(--muted);font-size:14px;">View all member payment records.</p>
+  <p style="color:var(--muted);font-size:14px;">Record and view all member payment records.</p>
 </div>
 
 {{-- Summary Cards --}}
@@ -29,64 +51,162 @@
   </div>
 </div>
 
-{{-- Transactions Table --}}
-<div class="section-header">
-  <div class="section-title">All Transactions</div>
-</div>
+<div style="display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start;">
 
-<div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>Transaction ID</th>
-        <th>Member</th>
-        <th>Plan</th>
-        <th>Duration</th>
-        <th>Amount</th>
-        <th>Date</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      @forelse($payments as $p)
-      <tr>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">
-          {{ $p->receipt_number }}
-        </td>
-        <td>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:30px;height:30px;border-radius:50%;background:rgba(200,255,0,0.08);
-                        border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
-                        justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0;">
-              {{ strtoupper(substr($p->member->name ?? '?', 0, 2)) }}
-            </div>
-            <span style="font-weight:600;">{{ $p->member->name ?? '—' }}</span>
-          </div>
-        </td>
-        <td>{{ $p->fitness_plan }}</td>
-        <td>
-          <span class="badge badge-{{ strtolower($p->membership_type) }}">{{ $p->membership_type }}</span>
-        </td>
-        <td style="font-weight:700;color:var(--accent);">₱{{ number_format($p->amount, 0) }}</td>
-        <td style="color:var(--muted);">{{ $p->payment_date->format('M d, Y') }}</td>
-        <td>
-          <span class="badge badge-{{ $p->status === 'Paid' ? 'paid' : 'expired' }}">{{ $p->status }}</span>
-        </td>
-      </tr>
-      @empty
-      <tr>
-        <td colspan="7" style="text-align:center;color:var(--muted);padding:48px;">No transactions yet.</td>
-      </tr>
-      @endforelse
-    </tbody>
-  </table>
+  {{-- LEFT: Record Payment Form --}}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
+    <div style="font-size:15px;font-weight:700;margin-bottom:20px;padding-bottom:14px;
+                border-bottom:1px solid var(--border);">
+      + Record Payment
+    </div>
 
-  {{-- Pagination --}}
-  @if($payments->hasPages())
-  <div style="padding:16px 18px;border-top:1px solid var(--border);">
-    {{ $payments->links() }}
+    @if(session('success'))
+      <div class="alert alert-success" style="margin-bottom:16px;padding:10px;font-size:13px;">✓ {{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+      <div class="alert alert-danger" style="margin-bottom:16px;padding:10px;font-size:13px;">✕ {{ session('error') }}</div>
+    @endif
+
+    <form method="POST" action="{{ route('payments.store') }}">
+      @csrf
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Member</label>
+        <select name="member_id" class="form-control custom-select" required>
+          <option value="" disabled selected>— Select Member —</option>
+          @foreach($members as $member)
+            <option value="{{ $member->id }}" {{ old('member_id') == $member->id ? 'selected' : '' }}>
+              {{ $member->name }}
+            </option>
+          @endforeach
+        </select>
+        @error('member_id')
+          <div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>
+        @enderror
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Amount (₱)</label>
+        <input type="number" name="amount" class="form-control"
+               step="0.01" min="0" placeholder="0.00"
+               value="{{ old('amount') }}" required/>
+        @error('amount')
+          <div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>
+        @enderror
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Payment Date</label>
+        <input type="date" name="payment_date" class="form-control"
+               value="{{ old('payment_date', date('Y-m-d')) }}" required/>
+        @error('payment_date')
+          <div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>
+        @enderror
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label">Method</label>
+        <select name="method" class="form-control custom-select" required>
+          <option value="" disabled selected>— Select Method —</option>
+          @foreach(['Cash','GCash','Bank Transfer','Card'] as $m)
+            <option value="{{ $m }}" {{ old('method') == $m ? 'selected' : '' }}>{{ $m }}</option>
+          @endforeach
+        </select>
+        @error('method')
+          <div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>
+        @enderror
+      </div>
+
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">Notes (optional)</label>
+        <textarea name="notes" class="form-control" rows="3"
+                  placeholder="Any additional notes...">{{ old('notes') }}</textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary"
+              style="width:100%;justify-content:center;padding:12px;font-weight:700;">
+        ✓ Record Payment
+      </button>
+    </form>
   </div>
-  @endif
+
+  {{-- RIGHT: Transactions Table --}}
+  <div>
+    <div class="section-header">
+      <div class="section-title">All Transactions</div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Transaction ID</th>
+            <th>Member</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Method</th>
+            <th>Status</th>
+            @if(auth()->user()->role === 'admin')
+            <th>Action</th>
+            @endif
+          </tr>
+        </thead>
+        <tbody>
+          @forelse($payments as $p)
+          <tr>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">
+              {{ $p->receipt_number ?? 'TXN-'.str_pad($p->id, 5, '0', STR_PAD_LEFT) }}
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:30px;height:30px;border-radius:50%;background:rgba(200,255,0,0.08);
+                            border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
+                            justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0;">
+                  {{ strtoupper(substr($p->member->name ?? '?', 0, 2)) }}
+                </div>
+                <span style="font-weight:600;">{{ $p->member->name ?? '—' }}</span>
+              </div>
+            </td>
+            <td style="font-weight:700;color:var(--accent);">₱{{ number_format($p->amount, 0) }}</td>
+            <td style="color:var(--muted);">
+                {{ $p->payment_date instanceof \Carbon\Carbon ? $p->payment_date->format('M d, Y') : \Carbon\Carbon::parse($p->payment_date)->format('M d, Y') }}
+            </td>
+            <td>
+                <span style="background:var(--surface2);border:1px solid var(--border);
+                             padding:3px 10px;border-radius:6px;font-size:12px;">
+                  {{ $p->method ?? 'Cash' }}
+                </span>
+            </td>
+            <td>
+              <span class="badge badge-{{ strtolower($p->status ?? 'paid') }}">{{ $p->status ?? 'Paid' }}</span>
+            </td>
+            @if(auth()->user()->role === 'admin')
+            <td>
+                <form method="POST" action="{{ route('payments.destroy', $p) }}"
+                      onsubmit="return confirm('Delete this transaction?')">
+                  @csrf @method('DELETE')
+                  <button type="submit" class="btn btn-danger-soft btn-sm">🗑</button>
+                </form>
+            </td>
+            @endif
+          </tr>
+          @empty
+          <tr>
+            <td colspan="{{ auth()->user()->role === 'admin' ? '7' : '6' }}" style="text-align:center;color:var(--muted);padding:48px;">
+                No transactions yet.
+            </td>
+          </tr>
+          @endforelse
+        </tbody>
+      </table>
+
+      @if($payments->hasPages())
+      <div style="padding:16px 18px;border-top:1px solid var(--border);">
+        {{ $payments->links() }}
+      </div>
+      @endif
+    </div>
+  </div>
 </div>
 
 @endsection

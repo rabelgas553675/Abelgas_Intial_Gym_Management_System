@@ -5,13 +5,35 @@
 
 @section('content')
 
+<style>
+  /* Fix for the minimalist dropdown icon */
+  select.profile-select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    /* This is a bright white SVG chevron icon */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0px center !important;
+    background-size: 14px !important;
+    padding-right: 24px !important;
+    cursor: pointer;
+  }
+
+  /* Style for option dropdown list background */
+  select.profile-select option {
+    background-color: #1a1a1a; /* Matches your surface color */
+    color: white;
+  }
+</style>
+
 <div style="margin-bottom:28px;">
   <h1 style="font-size:30px;font-weight:700;margin-bottom:4px;">My Profile</h1>
   <p style="color:var(--muted);font-size:14px;">View and update your personal information</p>
 </div>
 
 @if(session('success'))
-  <div class="alert alert-success">✓ {{ session('success') }}</div>
+  <div class="alert alert-success" style="margin-bottom: 20px;">✓ {{ session('success') }}</div>
 @endif
 
 <form action="{{ route('staff.profile.update') }}" method="POST" enctype="multipart/form-data">
@@ -66,6 +88,15 @@
       <span style="width:7px;height:7px;border-radius:50%;background:var(--success);display:inline-block;"></span>
       Active Staff
     </div>
+
+    {{-- QR CODE SECTION --}}
+    @php $qr = \App\Models\UserQrToken::where('user_id', $user->id)->first(); @endphp
+    @if($qr && $qr->qr_code_path)
+    <div style="margin-bottom: 24px; padding: 15px; background: #fff; border-radius: 12px; border: 1px solid var(--border); display: inline-block;">
+        <img src="{{ asset('storage/' . $qr->qr_code_path) }}" style="width: 120px; height: 120px; display: block; margin: 0 auto;">
+        <div style="font-family: monospace; font-size: 10px; color: #999; margin-top: 8px;">{{ $qr->qr_token }}</div>
+    </div>
+    @endif
 
     <div style="font-size:12px;color:var(--muted);padding-top:16px;border-top:1px solid var(--border);">
       Member since {{ $user->created_at->format('M d, Y') }}
@@ -132,15 +163,12 @@
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
           Gender
         </div>
-        <select name="gender" class="form-control"
+        <select name="gender" class="form-control profile-select"
                 style="background:transparent;border:none;border-bottom:1px solid var(--border);
-                       border-radius:0;padding:8px 0;font-size:15px;font-weight:600;
-                       -webkit-appearance:none;">
+                       border-radius:0;padding:8px 0;font-size:15px;font-weight:600;">
           <option value="">— Select —</option>
           @foreach(['Male','Female','Other'] as $g)
-            <option value="{{ $g }}"
-                    style="background:var(--surface2);"
-                    {{ old('gender', $user->gender) === $g ? 'selected' : '' }}>
+            <option value="{{ $g }}" {{ old('gender', $user->gender) === $g ? 'selected' : '' }}>
               {{ $g }}
             </option>
           @endforeach
@@ -181,10 +209,10 @@
 
     {{-- Actions --}}
     <div style="display:flex;justify-content:flex-end;gap:12px;">
-      <a href="{{ route('staff.dashboard') }}" class="btn btn-secondary" style="padding:11px 28px;">
+      <a href="{{ route('staff.dashboard') }}" class="btn btn-secondary" style="padding:11px 28px; background:transparent; border:1px solid var(--border); color:white; text-decoration:none; border-radius:8px; font-size:14px;">
         Cancel
       </a>
-      <button type="submit" class="btn btn-primary" style="padding:11px 32px;font-size:14px;">
+      <button type="submit" class="btn btn-primary" style="padding:11px 32px; font-size:14px; font-weight:700;">
         Save Changes
       </button>
     </div>

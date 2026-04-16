@@ -5,6 +5,35 @@
 
 @section('content')
 
+<style>
+  /* Fix for the custom dropdown icon */
+  select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    /* Custom Chevron Icon */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px !important; /* Ensure text doesn't overlap the icon */
+    cursor: pointer;
+  }
+
+  /* Style for dropdown options to ensure they are readable */
+  select.form-control option {
+    background-color: var(--surface);
+    color: white;
+  }
+
+  /* Focus state to match your blue highlight */
+  select.form-control:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+</style>
+
 <div style="margin-bottom:28px;">
   <h1 style="font-size:30px;font-weight:700;margin-bottom:4px;">Payment Transactions</h1>
   <p style="color:var(--muted);font-size:14px;">Record and manage all member payment transactions.</p>
@@ -49,10 +78,10 @@
     </div>
 
     @if(session('success'))
-      <div class="alert alert-success">✓ {{ session('success') }}</div>
+      <div class="alert alert-success" style="margin-bottom:15px; font-size:13px;">✓ {{ session('success') }}</div>
     @endif
     @if(session('error'))
-      <div class="alert alert-danger">✕ {{ session('error') }}</div>
+      <div class="alert alert-danger" style="margin-bottom:15px; font-size:13px;">✕ {{ session('error') }}</div>
     @endif
 
     <form method="POST" action="{{ route('payments.store') }}">
@@ -61,7 +90,7 @@
       <div class="form-group" style="margin-bottom:16px;">
         <label class="form-label">Member</label>
         <select name="member_id" class="form-control" required>
-          <option value="">— Select Member —</option>
+          <option value="" disabled selected>— Select Member —</option>
           @foreach($members as $member)
             <option value="{{ $member->id }}" {{ old('member_id') == $member->id ? 'selected' : '' }}>
               {{ $member->name }}
@@ -95,7 +124,7 @@
       <div class="form-group" style="margin-bottom:16px;">
         <label class="form-label">Method</label>
         <select name="method" class="form-control" required>
-          <option value="">— Select Method —</option>
+          <option value="" disabled selected>— Select Method —</option>
           @foreach(['Cash','GCash','Bank Transfer','Card'] as $m)
             <option value="{{ $m }}" {{ old('method') == $m ? 'selected' : '' }}>{{ $m }}</option>
           @endforeach
@@ -112,7 +141,7 @@
       </div>
 
       <button type="submit" class="btn btn-primary"
-              style="width:100%;justify-content:center;padding:12px;">
+              style="width:100%;justify-content:center;padding:12px;font-weight:600;">
         ✓ Record Payment
       </button>
     </form>
@@ -188,7 +217,6 @@
       </table>
     </div>
   </div>
-
 </div>
 
 @endsection

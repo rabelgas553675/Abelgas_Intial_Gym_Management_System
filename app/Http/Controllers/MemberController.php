@@ -3,14 +3,65 @@
 namespace App\Http\Controllers;
 
 use App\Models\Member;
+use App\Models\User;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class MemberController extends Controller
 {
+    /**
+     * 1. ADMIN/STAFF FUNCTIONS
+     */
+
     public function index(Request $request)
     {
+        $roleFilter = $request->filled('role') ? strtolower($request->role) : null;
+
+        // Staff and Instructors don't have rows in the members table.
+        // When filtering by those roles, query the users table instead
+        // and wrap results in a consistent shape for the view.
+        if ($roleFilter && in_array($roleFilter, ['staff', 'instructor'])) {
+
+            $userQuery = User::where('role', $roleFilter);
+
+            if ($request->filled('search')) {
+                $userQuery->where(function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->search . '%')
+                      ->orWhere('email', 'like', '%' . $request->search . '%');
+                });
+            }
+
+            // Map User results to a Member-like structure so the view works unchanged.
+            $usersPaginated = $userQuery->latest()->paginate(15);
+
+            $members = $usersPaginated->through(function (User $user) {
+                // Return a plain object shaped like a Member row.
+                return (object) [
+                    'id'              => $user->id,
+                    'name'            => $user->name,
+                    'first_name'      => $user->name,
+                    'last_name'       => '',
+                    'email'           => $user->email,
+                    'phone'           => $user->phone           ?? null,
+                    'photo'           => $user->photo           ?? null,
+                    'membership_type' => $user->membership_type ?? null,
+                    'role'            => ucfirst($user->role),   // 'staff' → 'Staff'
+                    'status'          => $user->status          ?? null,
+                    'start_date'      => $user->start_date      ?? null,
+                    'end_date'        => $user->end_date        ?? null,
+                    'qr_code_path'    => $user->qr_code_path    ?? null,
+                ];
+            });
+
+            return view('members.index', compact('members'));
+        }
+
+        // ── Default: query the members table (role = member) ──────────────
         $query = Member::query();
 
         if ($request->filled('search')) {
@@ -19,119 +70,67 @@ class MemberController extends Controller
                   ->orWhere('email', 'like', '%' . $request->search . '%');
             });
         }
+
         if ($request->filled('plan')) {
             $query->where('membership_type', $request->plan);
         }
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $members = $query->latest()->paginate(15);
+        // Add a virtual 'role' field so the view's Role badge renders correctly.
+        $members = $query->latest()->paginate(15)->through(function (Member $m) {
+            $m->role = 'Member';
+            return $m;
+        });
+
         return view('members.index', compact('members'));
     }
 
     public function create()
     {
-        return view('members.create');
+        if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
+            abort(403);
+        }
+
+        $instructors = User::where('role', 'instructor')->get();
+        return view('members.create', compact('instructors'));
     }
 
-   public function store(Request $request)
-{
-    $request->validate([
-        'first_name'      => 'required|string|max:255',
-        'last_name'       => 'required|string|max:255',
-        'email'           => 'required|email|unique:members,email',
-        'phone'           => 'nullable|string|max:20',
-        'gender'          => 'required|in:Male,Female,Other',
-        'birthdate'       => 'required|date',
-        'address'         => 'required|string',
-        'membership_type' => 'required|in:Monthly,Quarterly,Semi-Annual,Annual',
-        'start_date'      => 'required|date',
-        'end_date'        => 'required|date',
-        'fee'             => 'required|numeric|min:0',
-        'photo'           => 'nullable|image|max:3072',
-    ]);
-
-    $photoPath = null;
-    if ($request->hasFile('photo')) {
-        $photoPath = $request->file('photo')->store('members', 'public');
-    }
-
-    $start    = \Carbon\Carbon::parse($request->start_date);
-    $end_date = $request->end_date ?? match($request->membership_type) {
-        'Monthly'     => $start->copy()->addMonth()->toDateString(),
-        'Quarterly'   => $start->copy()->addMonths(3)->toDateString(),
-        'Semi-Annual' => $start->copy()->addMonths(6)->toDateString(),
-        'Annual'      => $start->copy()->addYear()->toDateString(),
-    };
-
-    $member = Member::create([
-        'name'            => $request->first_name . ' ' . $request->last_name,
-        'first_name'      => $request->first_name,
-        'last_name'       => $request->last_name,
-        'email'           => $request->email,
-        'phone'           => $request->phone,
-        'gender'          => $request->gender,
-        'birthdate'       => $request->birthdate,
-        'address'         => $request->address,
-        'membership_type' => $request->membership_type,
-        'start_date'      => $start->toDateString(),
-        'end_date'        => $end_date,
-        'fee'             => $request->fee,
-        'status'          => 'Active',
-        'photo'           => $photoPath,
-    ]);
-
-    // ← Redirect to receipt page instead of members list
-    return redirect()->route('members.receipt', $member)
-                     ->with('success', 'Member registered successfully!');
-}
-
-    public function show(Member $member)
+    public function store(Request $request)
     {
-        return view('members.show', compact('member'));
-    }
+        if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
+            abort(403);
+        }
 
-    public function edit(Member $member)
-    {
-        return view('members.edit', compact('member'));
-    }
-
-    public function update(Request $request, Member $member)
-    {
         $request->validate([
             'first_name'      => 'required|string|max:255',
             'last_name'       => 'required|string|max:255',
-            'email'           => 'required|email|unique:members,email,' . $member->id,
+            'email'           => 'required|email|unique:members,email',
             'phone'           => 'nullable|string|max:20',
-            'gender'          => 'nullable|in:Male,Female,Other',
-            'birthdate'       => 'nullable|date',
-            'address'         => 'nullable|string',
-            'membership_type' => 'required|in:Trial,Monthly,Yearly',
-            'status'          => 'required|in:Active,Expired',
+            'gender'          => 'required|in:Male,Female,Other',
+            'birthdate'       => 'required|date',
+            'address'         => 'required|string',
+            'membership_type' => 'required|in:Monthly,Quarterly,Semi-Annual,Annual',
             'start_date'      => 'required|date',
-            'fee'             => 'nullable|numeric|min:0',
+            'fee'             => 'required|numeric|min:0',
             'photo'           => 'nullable|image|max:3072',
         ]);
 
-        // Handle photo upload
-        $photoPath = $member->photo;
-        if ($request->hasFile('photo')) {
-            if ($member->photo) {
-                Storage::disk('public')->delete($member->photo);
-            }
-            $photoPath = $request->file('photo')->store('members', 'public');
-        }
+        $photoPath = $request->hasFile('photo')
+            ? $request->file('photo')->store('members', 'public')
+            : null;
 
-        // Auto-calculate end_date
         $start    = Carbon::parse($request->start_date);
         $end_date = match($request->membership_type) {
-            'Trial'   => $start->copy()->addDays(7)->toDateString(),
-            'Monthly' => $start->copy()->addMonth()->toDateString(),
-            'Yearly'  => $start->copy()->addYear()->toDateString(),
+            'Monthly'     => $start->copy()->addMonth()->toDateString(),
+            'Quarterly'   => $start->copy()->addMonths(3)->toDateString(),
+            'Semi-Annual' => $start->copy()->addMonths(6)->toDateString(),
+            'Annual'      => $start->copy()->addYear()->toDateString(),
         };
 
-        $member->update([
+        $member = Member::create([
             'name'            => $request->first_name . ' ' . $request->last_name,
             'first_name'      => $request->first_name,
             'last_name'       => $request->last_name,
@@ -141,30 +140,155 @@ class MemberController extends Controller
             'birthdate'       => $request->birthdate,
             'address'         => $request->address,
             'membership_type' => $request->membership_type,
-            'status'          => $request->status,
             'start_date'      => $start->toDateString(),
             'end_date'        => $end_date,
-            'fee'             => $request->fee ?? $member->fee,
+            'fee'             => $request->fee,
+            'status'          => 'Active',
             'photo'           => $photoPath,
         ]);
 
-        return redirect()->route('members.index')
-            ->with('success', 'Member updated successfully!');
+        Member::generateQrCode($member);
+
+        return redirect()->route('members.index')->with('success', 'Member created successfully!');
+    }
+
+    public function show(Member $member)
+    {
+        return view('members.show', compact('member'));
+    }
+
+    public function edit(Member $member)
+    {
+        if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
+            abort(403);
+        }
+        return view('members.edit', compact('member'));
+    }
+
+    public function update(Request $request, Member $member)
+    {
+        if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'first_name'      => 'required|string|max:255',
+            'last_name'       => 'required|string|max:255',
+            'email'           => 'required|email|unique:members,email,' . $member->id,
+            'membership_type' => 'required',
+            'status'          => 'required',
+            'fee'             => 'required|numeric',
+        ]);
+
+        $member->update($request->all());
+        return redirect()->route('members.index')->with('success', 'Member updated successfully.');
     }
 
     public function destroy(Member $member)
     {
-        if ($member->photo) {
-            Storage::disk('public')->delete($member->photo);
-        }
+        if ($member->photo)       Storage::disk('public')->delete($member->photo);
+        if ($member->qr_code_path) Storage::disk('public')->delete($member->qr_code_path);
         $member->delete();
-        return redirect()->route('members.index')
-            ->with('success', 'Member deleted.');
+        return redirect()->route('members.index')->with('success', 'Member deleted.');
     }
 
-    public function receipt(Member $member)
-{
-    return view('members.receipt', compact('member'));
-}
 
+    /**
+     * 2. MEMBER-FACING FUNCTIONS (Select Plan & Payment)
+     */
+
+    public function selectPlan()
+    {
+        $member      = Auth::user()->member;
+        $instructors = User::where('role', 'instructor')->get();
+        return view('member.select-plan', compact('member', 'instructors'));
+    }
+
+    /**
+     * Process the subscription and record the total amount.
+     */
+    public function subscribe(Request $request)
+    {
+        $request->validate([
+            'fitness_plan'          => 'required|string',
+            'membership_type'       => 'required|in:Monthly,Quarterly,Annually',
+            'instructor_id'         => 'nullable|string',
+            'coach_membership_type' => 'nullable|required_if:instructor_id,!=,null|in:Monthly,Quarterly,Annually',
+        ]);
+
+        $member = Auth::user()->member;
+
+        $gymPriceMap   = ['Monthly' => 800,  'Quarterly' => 3200, 'Annually' => 9600];
+        $coachPriceMap = ['Monthly' => 300,  'Quarterly' => 1200, 'Annually' => 3600];
+
+        $gymAmount   = $gymPriceMap[$request->membership_type] ?? 0;
+        $coachAmount = 0;
+
+        if ($request->filled('instructor_id')) {
+            $coachAmount = $coachPriceMap[$request->coach_membership_type] ?? 0;
+        }
+
+        $totalAmount = $gymAmount + $coachAmount;
+
+        $start = Carbon::now();
+        $end   = match($request->membership_type) {
+            'Monthly'   => $start->copy()->addMonth(),
+            'Quarterly' => $start->copy()->addMonths(3),
+            'Annually'  => $start->copy()->addYear(),
+        };
+
+        DB::beginTransaction();
+        try {
+            $member->update([
+                'fitness_plan'          => $request->fitness_plan,
+                'membership_type'       => $request->membership_type,
+                'instructor_id'         => $request->filled('instructor_id') ? $request->instructor_id : null,
+                'coach_membership_type' => $request->filled('instructor_id') ? $request->coach_membership_type : null,
+                'start_date'            => $start,
+                'end_date'              => $end,
+                'fee'                   => $totalAmount,
+                'status'                => 'Active',
+            ]);
+
+            $payment = Payment::create([
+                'member_id'       => $member->id,
+                'receipt_number'  => 'RCP-' . strtoupper(Str::random(12)),
+                'amount'          => $totalAmount,
+                'fitness_plan'    => $request->fitness_plan,
+                'membership_type' => $request->membership_type,
+                'payment_date'    => Carbon::now(),
+                'status'          => 'Paid',
+                'method'          => 'Cash',
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('member.receipt', $payment->id)
+                             ->with('success', 'Subscription processed for ₱' . number_format($totalAmount));
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error processing payment: ' . $e->getMessage());
+        }
+    }
+
+    public function paymentHistory()
+    {
+        $member   = Auth::user()->member;
+        $payments = Payment::where('member_id', $member->id)
+                           ->latest('payment_date')
+                           ->get();
+
+        return view('member.payments', compact('payments', 'member'));
+    }
+
+    public function receipt(Payment $payment)
+    {
+        if ($payment->member_id !== Auth::user()->member->id) {
+            abort(403);
+        }
+
+        $member = $payment->member;
+        return view('member.receipt', compact('payment', 'member'));
+    }
 }

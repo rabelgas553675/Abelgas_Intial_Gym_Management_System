@@ -10,7 +10,6 @@
     appearance: none !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
-    /* This creates a white chevron arrow icon */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.5)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
     background-position: right 12px center !important;
@@ -18,10 +17,7 @@
     padding-right: 36px !important;
     cursor: pointer;
   }
-
-  .form-select-custom:hover {
-    border-color: var(--accent) !important;
-  }
+  .form-select-custom:hover { border-color: var(--accent) !important; }
 </style>
 
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
@@ -57,20 +53,14 @@
 {{-- Filters --}}
 <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px; padding:20px;margin-bottom:20px;">
   <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-
     <div>
       <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Date</label>
-      <input type="date" name="date" value="{{ $filterDate }}"
-            class="form-control" style="width:160px;"/>
+      <input type="date" name="date" value="{{ $filterDate }}" class="form-control" style="width:160px;"/>
     </div>
-
     <div>
       <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Member</label>
-      <input type="text" name="member" value="{{ $filterMember }}"
-            class="form-control" style="width:160px;" placeholder="Search name..."/>
+      <input type="text" name="member" value="{{ $filterMember }}" class="form-control" style="width:160px;" placeholder="Search name..."/>
     </div>
-
-    {{-- Role Filter --}}
     <div>
       <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Role</label>
       <select name="role" class="form-control form-select-custom" style="width:140px;">
@@ -81,8 +71,6 @@
         <option value="admin"      {{ ($filterRole??'')==='admin'      ?'selected':'' }}>🛡️ Admins</option>
       </select>
     </div>
-
-    {{-- Status Filter --}}
     <div>
       <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Status</label>
       <select name="status" class="form-control form-select-custom" style="width:140px;">
@@ -91,8 +79,6 @@
         <option value="done"   {{ $filterStatus==='done'  ?'selected':'' }}>Completed</option>
       </select>
     </div>
-
-    {{-- Method Filter --}}
     <div>
       <label style="display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Method</label>
       <select name="method" class="form-control form-select-custom" style="width:140px;">
@@ -101,7 +87,6 @@
         <option value="manual"  {{ $filterMethod==='manual' ?'selected':'' }}>Manual</option>
       </select>
     </div>
-
     <button type="submit" class="btn btn-primary">Filter</button>
     <a href="{{ route('attendance.index') }}" class="btn btn-secondary">Reset</a>
   </form>
@@ -114,14 +99,12 @@
     $memberCount     = $logs->getCollection()->whereNotNull('member_id')->count();
     $staffCount      = $logs->getCollection()->whereNull('member_id')->count();
   @endphp
-  <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;
-              background:var(--surface);border:1px solid var(--border);border-radius:100px;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 16px; background:var(--surface);border:1px solid var(--border);border-radius:100px;">
     <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
     <span style="font-size:13px;font-weight:600;">Members:</span>
     <span style="font-size:13px;color:var(--accent);font-weight:700;">{{ $memberCount }}</span>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;
-              background:var(--surface);border:1px solid var(--border);border-radius:100px;">
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 16px; background:var(--surface);border:1px solid var(--border);border-radius:100px;">
     <span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;display:inline-block;"></span>
     <span style="font-size:13px;font-weight:600;">Staff / Instructors:</span>
     <span style="font-size:13px;color:var(--accent);font-weight:700;">{{ $staffCount }}</span>
@@ -147,31 +130,39 @@
     <tbody>
       @forelse($logs as $log)
       @php
-        $rowRole = 'member';
+        // LOGIC FIX: Check direct relationships loaded from controller
+        $isStaff = !$log->member_id && $log->staff_user_id;
+        
+        // Defaults (Member)
+        $rowRole = 'Member';
         $rowRoleColor = '#4ade80';
         $rowRoleBg    = 'rgba(74,222,128,0.15)';
-        if (!$log->member_id && $log->scanned_by) {
-          $uqt = \App\Models\UserQrToken::where('qr_token', $log->scanned_by)->first();
-          $rowRole = $uqt ? $uqt->role : 'staff';
+        $displayName  = $log->member?->name;
+        $displayPhoto = $log->member?->photo;
+        $subText      = $log->member?->email ?? $log->member?->membership_type ?? '—';
+
+        // Override for Staff
+        if ($isStaff && $log->user) {
+          $rowRole     = ucfirst($log->user->role);
+          $displayName = $log->user->name;
+          $displayPhoto = $log->user->photo;
+          $subText     = $log->user->email ?? 'Staff User';
+
           $roleColorMap = [
             'admin'      => ['#c8ff00', 'rgba(200,255,0,0.12)'],
             'staff'      => ['#fbbf24', 'rgba(251,191,36,0.12)'],
             'instructor' => ['#ff6b35', 'rgba(255,107,53,0.12)'],
           ];
-          [$rowRoleColor, $rowRoleBg] = $roleColorMap[$rowRole] ?? ['#60a5fa','rgba(96,165,250,0.12)'];
+          [$rowRoleColor, $rowRoleBg] = $roleColorMap[strtolower($log->user->role)] ?? ['#60a5fa','rgba(96,165,250,0.12)'];
         }
-        $displayName = $log->member?->name;
-        if (!$displayName && $log->scanned_by) {
-          $uqt = \App\Models\UserQrToken::where('qr_token', $log->scanned_by)->first();
-          $displayName = $uqt?->name ?? 'Staff / System';
-        }
+        
         $displayName = $displayName ?? 'Unknown';
       @endphp
       <tr style="border-top:1px solid var(--border);">
         <td style="padding:13px 18px;">
           <div style="display:flex;align-items:center;gap:10px;">
-            @if($log->member?->photo)
-              <img src="{{ asset('storage/'.$log->member->photo) }}"
+            @if($displayPhoto)
+              <img src="{{ asset('storage/'.$displayPhoto) }}"
                   style="width:34px;height:34px;border-radius:50%;object-fit:cover;"/>
             @else
               <div style="width:34px;height:34px;border-radius:50%;
@@ -182,10 +173,8 @@
               </div>
             @endif
             <div>
-              <div style="font-size:13px;font-weight:600;">{{ $displayName }}</div>
-              <div style="font-size:11px;color:var(--muted);">
-                {{ $log->member?->email ?? ($log->member?->membership_type ?? '—') }}
-              </div>
+              <div style="font-size:13px;font-weight:600;color:#fff;">{{ $displayName }}</div>
+              <div style="font-size:11px;color:var(--muted);">{{ $subText }}</div>
             </div>
           </div>
         </td>
@@ -196,7 +185,7 @@
                       background:{{ $rowRoleBg }};color:{{ $rowRoleColor }};">
             <span style="width:5px;height:5px;border-radius:50%;
                         background:{{ $rowRoleColor }};display:inline-block;"></span>
-            {{ ucfirst($rowRole) }}
+            {{ $rowRole }}
           </span>
         </td>
 
@@ -312,4 +301,4 @@ document.getElementById('addManualModal').addEventListener('click', function(e) 
 });
 </script>
 
-@endsection
+@endsection 

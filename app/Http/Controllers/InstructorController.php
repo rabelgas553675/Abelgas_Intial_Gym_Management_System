@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use App\Models\User;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class InstructorController extends Controller
 {
-    // Instructor dashboard
+    /**
+     * Instructor dashboard
+     */
     public function dashboard()
     {
         $instructor = auth()->user();
@@ -27,7 +30,9 @@ class InstructorController extends Controller
         ));
     }
 
-    // View single member detail
+    /**
+     * View single member detail
+     */
     public function showMember(Member $member)
     {
         // Make sure this member belongs to this instructor
@@ -40,14 +45,18 @@ class InstructorController extends Controller
         return view('instructor.member-detail', compact('member', 'payments'));
     }
 
-    // Instructor profile
+    /**
+     * Instructor profile view
+     */
     public function profile()
     {
         $instructor = auth()->user();
         return view('instructor.profile', compact('instructor'));
     }
 
-    // Update instructor profile
+    /**
+     * Update instructor profile
+     */
     public function updateProfile(Request $request)
     {
         $instructor = auth()->user();
@@ -74,14 +83,29 @@ class InstructorController extends Controller
 
         return back()->with('success', 'Profile updated!');
     }
-    public function payments()
-{
-    $instructor = auth()->user();
 
-    $payments = \App\Models\Payment::whereHas('member', function($q) use ($instructor) {
-        $q->where('instructor_id', $instructor->id);
-    })->with('member')->latest()->get();
+    /**
+     * Instructor's own earnings page.
+     * Route: GET /instructor/payments → name: instructor.payments
+     */
+    public function paymentHistory()
+    {
+        $instructor = auth()->user();
 
-    return view('instructor.payments', compact('payments'));
-}
+        // This uses the scopes defined in the Payment model
+        $payments = Payment::forInstructor($instructor->id)
+                           ->with('member:id,name')
+                           ->latest('payment_date')
+                           ->paginate(15);
+
+        $totalEarned    = Payment::forInstructor($instructor->id)->sum('amount');
+        $thisMonthTotal = Payment::forInstructor($instructor->id)->thisMonth()->sum('amount');
+
+        return view('instructor.payments', compact(
+            'payments',
+            'totalEarned',
+            'thisMonthTotal',
+            'instructor'
+        ));
+    }
 }

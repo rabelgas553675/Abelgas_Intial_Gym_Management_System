@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class Member extends Model
 {
@@ -25,7 +26,10 @@ class Member extends Model
         'fee', 
         'status', 
         'photo', 
-        'qr_code',
+        'qr_id',           // From QR logic
+        'qr_code_path',    // From QR logic
+        'qr_token',        // From QR logic
+        'qr_code',         // From your original fillable
     ];
 
     protected $casts = [
@@ -33,6 +37,39 @@ class Member extends Model
         'end_date'   => 'date',
         'birthdate'  => 'date',
     ];
+
+    /**
+     * Generate a unique QR code for the member
+     */
+    public static function generateQrCode(self $member): void
+    {
+        // Unique ID format: IFG-MEM-000001
+        $qrId = 'IFG-MEM-' . str_pad($member->id, 6, '0', STR_PAD_LEFT);
+        
+        // Ensure folder exists in storage/app/public/qrcodes
+        $folder = storage_path('app/public/qrcodes');
+        if (!file_exists($folder)) {
+            mkdir($folder, 0755, true);
+        }
+
+        $path = 'qrcodes/' . $qrId . '.svg';
+
+        // Generate the SVG file
+        QrCode::format('svg')
+            ->size(300)
+            ->errorCorrection('H')
+            ->generate($qrId, storage_path('app/public/' . $path));
+
+        // Generate a random token for the attendance scanner logic
+        $token = 'MBR-' . strtoupper(bin2hex(random_bytes(16)));
+
+        // Update the member record
+        $member->update([
+            'qr_id'        => $qrId,
+            'qr_code_path' => $path,
+            'qr_token'     => $token
+        ]);
+    }
 
     /**
      * Accessors
