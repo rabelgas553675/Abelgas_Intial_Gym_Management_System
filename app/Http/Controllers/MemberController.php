@@ -23,8 +23,6 @@ class MemberController extends Controller
         $roleFilter = $request->filled('role') ? strtolower($request->role) : null;
 
         // Staff and Instructors don't have rows in the members table.
-        // When filtering by those roles, query the users table instead
-        // and wrap results in a consistent shape for the view.
         if ($roleFilter && in_array($roleFilter, ['staff', 'instructor'])) {
 
             $userQuery = User::where('role', $roleFilter);
@@ -36,11 +34,7 @@ class MemberController extends Controller
                 });
             }
 
-            // Map User results to a Member-like structure so the view works unchanged.
-            $usersPaginated = $userQuery->latest()->paginate(15);
-
-            $members = $usersPaginated->through(function (User $user) {
-                // Return a plain object shaped like a Member row.
+            $members = $userQuery->latest()->paginate(15)->through(function (User $user) {
                 return (object) [
                     'id'              => $user->id,
                     'name'            => $user->name,
@@ -50,7 +44,7 @@ class MemberController extends Controller
                     'phone'           => $user->phone           ?? null,
                     'photo'           => $user->photo           ?? null,
                     'membership_type' => $user->membership_type ?? null,
-                    'role'            => ucfirst($user->role),   // 'staff' → 'Staff'
+                    'role'            => ucfirst($user->role),
                     'status'          => $user->status          ?? null,
                     'start_date'      => $user->start_date      ?? null,
                     'end_date'        => $user->end_date        ?? null,
@@ -61,8 +55,9 @@ class MemberController extends Controller
             return view('members.index', compact('members'));
         }
 
-        // ── Default: query the members table (role = member) ──────────────
-        $query = Member::query();
+        // ── Default: query the members table ──────────────────────────────
+        // eager-load 'user' so we can fall back to the user's photo
+        $query = Member::with('user');
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
@@ -79,8 +74,11 @@ class MemberController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Add a virtual 'role' field so the view's Role badge renders correctly.
         $members = $query->latest()->paginate(15)->through(function (Member $m) {
+            // ✅ FIX: fall back to the linked user's photo if member has none
+            if (!$m->photo && $m->user && $m->user->photo) {
+                $m->photo = $m->user->photo;
+            }
             $m->role = 'Member';
             return $m;
         });
@@ -186,7 +184,7 @@ class MemberController extends Controller
 
     public function destroy(Member $member)
     {
-        if ($member->photo)       Storage::disk('public')->delete($member->photo);
+        if ($member->photo)        Storage::disk('public')->delete($member->photo);
         if ($member->qr_code_path) Storage::disk('public')->delete($member->qr_code_path);
         $member->delete();
         return redirect()->route('members.index')->with('success', 'Member deleted.');
@@ -194,7 +192,7 @@ class MemberController extends Controller
 
 
     /**
-     * 2. MEMBER-FACING FUNCTIONS (Select Plan & Payment)
+     * 2. MEMBER-FACING FUNCTIONS
      */
 
     public function selectPlan()
@@ -204,9 +202,6 @@ class MemberController extends Controller
         return view('member.select-plan', compact('member', 'instructors'));
     }
 
-    /**
-     * Process the subscription and record the total amount.
-     */
     public function subscribe(Request $request)
     {
         $request->validate([
