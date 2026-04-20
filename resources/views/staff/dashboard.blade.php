@@ -52,7 +52,9 @@
     <div class="stat-icon icon-yellow">
       <svg viewBox="0 0 24 24" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round"
-              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0
+                 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1
+                 M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
     </div>
   </div>
@@ -68,7 +70,12 @@
     <div class="stat-icon" style="background:rgba(74,222,128,0.1);color:var(--success);">
       <svg viewBox="0 0 24 24" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round"
-              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0
+                 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946
+                 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138
+                 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806
+                 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438
+                 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
       </svg>
     </div>
   </div>
@@ -93,15 +100,19 @@
     </div>
 
     <div class="members-list" id="membersList">
-      @forelse($recent as $member)
+      @forelse($members as $member)
         @php
-          $end        = $member->end_date ? \Carbon\Carbon::parse($member->end_date) : null;
+          $end        = $member->end_date;
           $isExpired  = $end && $end->isPast();
-          $isExpiring = $end && !$isExpired && $end->diffInDays(now()) <= 7;
-          $pillClass  = $isExpired  ? 'pill-expired'  :
-                       ($isExpiring ? 'pill-expiring' : 'pill-active');
-          $pillLabel  = $isExpired  ? 'Expired'       :
-                       ($isExpiring ? 'Expiring'      : 'Active');
+          $isExpiring = $end && !$isExpired && now()->diffInDays($end) <= 7;
+          $pillClass  = $isExpired  ? 'pill-expired'
+                      : ($isExpiring ? 'pill-expiring'
+                      : 'pill-active');
+          $pillLabel  = $isExpired  ? 'Expired'
+                      : ($isExpiring ? 'Expiring'
+                      : 'Active');
+          // FIX: photo lives on users table
+          $memberPhoto = $member->user?->photo ?? $member->photo ?? null;
         @endphp
         <div class="member-item"
              data-name="{{ strtolower($member->name) }}"
@@ -109,8 +120,8 @@
              onclick="showMemberDetail({{ $member->id }}, this)"
              id="item-{{ $member->id }}">
           <div style="display:flex;align-items:center;gap:10px;">
-            @if($member->photo)
-              <img src="{{ asset('storage/'.$member->photo) }}"
+            @if($memberPhoto)
+              <img src="{{ asset('storage/'.$memberPhoto) }}"
                    style="width:36px;height:36px;border-radius:50%;object-fit:cover;
                           flex-shrink:0;border:1px solid var(--border);"/>
             @else
@@ -118,7 +129,7 @@
                           background:rgba(200,255,0,0.08);border:1px solid rgba(200,255,0,0.15);
                           display:flex;align-items:center;justify-content:center;
                           font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;">
-                {{ strtoupper(substr($member->name,0,2)) }}
+                {{ strtoupper(substr($member->name, 0, 2)) }}
               </div>
             @endif
             <div class="member-item-info">
@@ -173,36 +184,38 @@
                     letter-spacing:2px;margin-bottom:12px;">Contact Information</div>
 
         <div style="display:grid;gap:10px;margin-bottom:20px;">
-          {{-- Email --}}
           <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;
                       background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
             <div style="width:32px;height:32px;border-radius:8px;background:rgba(96,165,250,0.1);
                         display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                    stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8
+                         M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
               </svg>
             </div>
             <div>
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Email</div>
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                          letter-spacing:1px;margin-bottom:2px;">Email</div>
               <div id="detailsEmail" style="font-size:13px;font-weight:600;"></div>
             </div>
           </div>
 
-          {{-- Phone --}}
           <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;
                       background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
             <div style="width:32px;height:32px;border-radius:8px;background:rgba(74,222,128,0.1);
                         display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                    stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21
-                         l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502
-                         l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493
+                         a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516
+                         l1.13-2.257a1 1 0 011.21-.502l4.493 1.498
+                         a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
               </svg>
             </div>
             <div>
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Phone</div>
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                          letter-spacing:1px;margin-bottom:2px;">Phone</div>
               <div id="detailsPhone" style="font-size:13px;font-weight:600;"></div>
             </div>
           </div>
@@ -212,18 +225,39 @@
                     letter-spacing:2px;margin-bottom:12px;">Subscription</div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
-          <div style="padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Plan</div>
+          <div style="padding:14px;background:var(--surface2);
+                      border-radius:10px;border:1px solid var(--border);">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                        letter-spacing:1px;margin-bottom:5px;">Plan</div>
             <div id="detailsPlan" style="font-size:14px;font-weight:700;color:var(--accent);"></div>
           </div>
-          <div style="padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Duration</div>
+          <div style="padding:14px;background:var(--surface2);
+                      border-radius:10px;border:1px solid var(--border);">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                        letter-spacing:1px;margin-bottom:5px;">Duration</div>
             <div id="detailsDuration" style="font-size:14px;font-weight:700;"></div>
           </div>
           <div style="padding:14px;background:var(--surface2);border-radius:10px;
                       border:1px solid var(--border);grid-column:span 2;">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Active Period</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                        letter-spacing:1px;margin-bottom:5px;">Active Period</div>
             <div id="detailsPeriod" style="font-size:14px;font-weight:700;"></div>
+          </div>
+        </div>
+
+        {{-- Days Remaining Bar --}}
+        <div style="padding:14px;background:var(--surface2);border-radius:10px;
+                    border:1px solid var(--border);margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                        letter-spacing:1px;">Days Remaining</div>
+            <div id="daysRemainingLabel"
+                 style="font-size:13px;font-weight:700;color:var(--accent);"></div>
+          </div>
+          <div style="background:var(--border);border-radius:999px;height:6px;overflow:hidden;">
+            <div id="daysRemainingBar"
+                 style="height:100%;border-radius:999px;transition:width 0.4s ease;
+                        width:0%;background:var(--accent);"></div>
           </div>
         </div>
 
@@ -231,7 +265,8 @@
            style="display:flex;align-items:center;justify-content:center;gap:8px;
                   width:100%;padding:13px;background:var(--accent);color:#111;
                   font-size:14px;font-weight:800;border-radius:10px;text-decoration:none;
-                  transition:all 0.15s;" onmouseover="this.style.background='#b8ef00'"
+                  transition:all 0.15s;"
+           onmouseover="this.style.background='#b8ef00'"
            onmouseout="this.style.background='var(--accent)'">
           View Full Profile
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -242,20 +277,40 @@
 
       </div>
     </div>
-
   </div>
 </div>
 
 {{-- Hidden member data for JS --}}
 <div id="memberData" style="display:none;">
-  @foreach($recent as $member)
+  @foreach($members as $member)
     @php
-      $end         = $member->end_date ? \Carbon\Carbon::parse($member->end_date) : null;
+      $end         = $member->end_date;
       $isExpired   = $end && $end->isPast();
-      $isExpiring  = $end && !$isExpired && $end->diffInDays(now()) <= 7;
-      $statusLabel = $isExpired ? 'Expired' : ($isExpiring ? 'Expiring Soon' : 'Active');
-      $statusColor = $isExpired ? '#f87171' : ($isExpiring ? '#fbbf24' : '#4ade80');
-      $statusBg    = $isExpired ? 'rgba(248,113,113,0.15)' : ($isExpiring ? 'rgba(251,191,36,0.15)' : 'rgba(74,222,128,0.15)');
+      $isExpiring  = $end && !$isExpired && now()->diffInDays($end) <= 7;
+
+      $statusLabel = $isExpired  ? 'Expired'
+                   : ($isExpiring ? 'Expiring Soon'
+                   : 'Active');
+      $statusColor = $isExpired  ? '#f87171'
+                   : ($isExpiring ? '#fbbf24'
+                   : '#4ade80');
+      $statusBg    = $isExpired  ? 'rgba(248,113,113,0.15)'
+                   : ($isExpiring ? 'rgba(251,191,36,0.15)'
+                   : 'rgba(74,222,128,0.15)');
+      $barColor    = $statusColor;
+
+      $daysRemaining = $isExpired ? 0 : (int) now()->diffInDays($end);
+      $totalDays     = ($member->start_date && $end)
+                         ? (int) $member->start_date->diffInDays($end)
+                         : 30;
+      $progressPct   = $totalDays > 0
+                         ? min(100, round(($daysRemaining / $totalDays) * 100))
+                         : 0;
+
+      // FIX: photo lives on users table — resolve via member->user->photo
+      $memberPhotoUrl = ($member->user?->photo ?? $member->photo ?? null)
+                          ? asset('storage/' . ($member->user?->photo ?? $member->photo))
+                          : '';
     @endphp
     <div class="md"
          data-id="{{ $member->id }}"
@@ -264,12 +319,15 @@
          data-phone="{{ $member->phone ?? '—' }}"
          data-plan="{{ $member->fitness_plan ?? '—' }}"
          data-duration="{{ $member->membership_type ?? '—' }}"
-         data-start="{{ $member->start_date ? \Carbon\Carbon::parse($member->start_date)->format('M d, Y') : '—' }}"
-         data-end="{{ $end ? $end->format('M d, Y') : '—' }}"
+         data-start="{{ $member->start_date?->format('M d, Y') ?? '—' }}"
+         data-end="{{ $end?->format('M d, Y') ?? '—' }}"
          data-status="{{ $statusLabel }}"
          data-status-color="{{ $statusColor }}"
          data-status-bg="{{ $statusBg }}"
-         data-photo="{{ $member->photo ? asset('storage/'.$member->photo) : '' }}"
+         data-days-remaining="{{ $daysRemaining }}"
+         data-progress-pct="{{ $progressPct }}"
+         data-bar-color="{{ $barColor }}"
+         data-photo="{{ $memberPhotoUrl }}"
          data-url="{{ route('members.show', $member) }}">
     </div>
   @endforeach
@@ -304,15 +362,20 @@
           {{ $p->receipt_number }}
         </td>
         <td>
+          @php
+            // FIX: photo lives on users table — resolve via member->user->photo
+            $pPhoto = $p->member?->user?->photo ?? $p->member?->photo ?? null;
+          @endphp
           <div style="display:flex;align-items:center;gap:10px;">
-            @if($p->member?->photo)
-              <img src="{{ asset('storage/'.$p->member->photo) }}"
-                   style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;"/>
+            @if($pPhoto)
+              <img src="{{ asset('storage/'.$pPhoto) }}"
+                   style="width:32px;height:32px;border-radius:50%;object-fit:cover;
+                          flex-shrink:0;border:1px solid rgba(200,255,0,0.2);"/>
             @else
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(200,255,0,0.08);
-                          border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
-                          justify-content:center;font-size:11px;font-weight:700;
-                          color:var(--accent);flex-shrink:0;">
+              <div style="width:32px;height:32px;border-radius:50%;
+                          background:rgba(200,255,0,0.08);border:1px solid rgba(200,255,0,0.15);
+                          display:flex;align-items:center;justify-content:center;
+                          font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0;">
                 {{ strtoupper(substr($p->member?->name ?? '?', 0, 2)) }}
               </div>
             @endif
@@ -335,7 +398,8 @@
           <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;
                        border-radius:6px;font-size:11px;font-weight:700;
                        background:rgba(74,222,128,0.15);color:#4ade80;">
-            <span style="width:5px;height:5px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
+            <span style="width:5px;height:5px;border-radius:50%;
+                         background:#4ade80;display:inline-block;"></span>
             {{ $p->status }}
           </span>
         </td>
@@ -366,22 +430,34 @@ function showMemberDetail(id, el) {
     : initials;
 
   document.getElementById('detailsName').textContent = md.dataset.name;
-  document.getElementById('detailsBadge').innerHTML  =
+
+  document.getElementById('detailsBadge').innerHTML =
     `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;
-      border-radius:100px;font-size:12px;font-weight:700;
-      background:${md.dataset.statusBg};color:${md.dataset.statusColor};
-      border:1px solid ${md.dataset.statusColor}33;">
-      <span style="width:6px;height:6px;border-radius:50%;
-                   background:${md.dataset.statusColor};display:inline-block;"></span>
-      ${md.dataset.status}
-    </span>`;
+                  border-radius:100px;font-size:12px;font-weight:700;
+                  background:${md.dataset.statusBg};color:${md.dataset.statusColor};
+                  border:1px solid ${md.dataset.statusColor}33;">
+       <span style="width:6px;height:6px;border-radius:50%;
+                    background:${md.dataset.statusColor};display:inline-block;"></span>
+       ${md.dataset.status}
+     </span>`;
 
   document.getElementById('detailsEmail').textContent    = md.dataset.email;
   document.getElementById('detailsPhone').textContent    = md.dataset.phone;
   document.getElementById('detailsPlan').textContent     = md.dataset.plan;
   document.getElementById('detailsDuration').textContent = md.dataset.duration;
   document.getElementById('detailsPeriod').textContent   = `${md.dataset.start} – ${md.dataset.end}`;
-  document.getElementById('detailsViewBtn').href         = md.dataset.url;
+
+  const days     = parseInt(md.dataset.daysRemaining) || 0;
+  const pct      = parseInt(md.dataset.progressPct)   || 0;
+  const barColor = md.dataset.barColor;
+
+  document.getElementById('daysRemainingLabel').textContent =
+    days === 0 ? 'Expired' : `${days} day${days !== 1 ? 's' : ''} left`;
+  document.getElementById('daysRemainingLabel').style.color     = barColor;
+  document.getElementById('daysRemainingBar').style.width       = pct + '%';
+  document.getElementById('daysRemainingBar').style.background  = barColor;
+
+  document.getElementById('detailsViewBtn').href = md.dataset.url;
 
   document.getElementById('detailsEmpty').style.display = 'none';
   document.getElementById('detailsContent').classList.add('visible');

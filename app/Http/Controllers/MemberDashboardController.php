@@ -243,24 +243,65 @@ class MemberDashboardController extends Controller
             abort(403, 'You are not allowed to view this receipt.');
         }
 
+        // Attach the related coach_fee payment for this same subscription session
+        // Match by member_id and payment_date (both created in the same subscribePlan call)
+        $coachPayment = Payment::where('member_id', $member->id)
+            ->where('payment_type', 'coach_fee')
+            ->whereDate('payment_date', $payment->payment_date)
+            ->where('fitness_plan', $payment->fitness_plan)
+            ->where('membership_type', $payment->membership_type)
+            ->latest()
+            ->first();
+
+        $payment->coach_fee_amount  = $coachPayment ? $coachPayment->amount : 0;
+        $payment->coach_fee_payment = $coachPayment;
+
         return view('member.receipt', compact('payment', 'member'));
     }
 
     /**
-     * Show payment history — only gym_fee payments for this member
-     * (coach_fee payments are handled by the instructor portal)
+     * Show payment history — gym_fee payments for this member,
+     * with the related coach_fee amounts attached for accurate totals.
      */
     public function paymentHistory()
     {
         $user   = auth()->user();
         $member = $this->getMember();
 
-        $payments = $member
-            ? Payment::where('member_id', $member->id)
-                     ->where('payment_type', 'gym_fee')
-                     ->latest()
-                     ->get()
-            : collect();
+        if (!$member) {
+            return view('member.payment-history', [
+                'payments' => collect(),
+                'member'   => null,
+            ]);
+        }
+
+        // Load all gym_fee payments
+        $gymPayments = Payment::where('member_id', $member->id)
+            ->where('payment_type', 'gym_fee')
+            ->latest()
+            ->get();
+
+        // Load all coach_fee payments for this member once (avoid N+1)
+        $coachPayments = Payment::where('member_id', $member->id)
+            ->where('payment_type', 'coach_fee')
+            ->get();
+
+        // Attach the coach fee amount to each gym payment so the view
+        // can show the true total the member actually paid that session.
+        $gymPayments->each(function ($gymPayment) use ($coachPayments) {
+            $match = $coachPayments
+                ->where('fitness_plan',    $gymPayment->fitness_plan)
+                ->where('membership_type', $gymPayment->membership_type)
+                ->filter(fn($cp) =>
+                    \Carbon\Carbon::parse($cp->payment_date)->isSameDay($gymPayment->payment_date)
+                )
+                ->first();
+
+            $gymPayment->coach_fee_amount  = $match ? $match->amount : 0;
+            $gymPayment->coach_fee_payment = $match;
+        });
+
+        $payments = $gymPayments;
 
         return view('member.payment-history', compact('payments', 'member'));
     }

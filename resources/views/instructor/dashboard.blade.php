@@ -12,6 +12,8 @@
 
 {{-- Stat Cards --}}
 <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px;">
+
+  {{-- Total Members --}}
   <div class="stat-card">
     <div class="stat-card-left">
       <div class="stat-label">Total Members</div>
@@ -23,6 +25,8 @@
       </svg>
     </div>
   </div>
+
+  {{-- Active (includes Expiring Soon) --}}
   <div class="stat-card">
     <div class="stat-card-left">
       <div class="stat-label">Active</div>
@@ -35,6 +39,8 @@
       </svg>
     </div>
   </div>
+
+  {{-- Expiring Soon --}}
   <div class="stat-card">
     <div class="stat-card-left">
       <div class="stat-label">Expiring Soon</div>
@@ -47,6 +53,7 @@
       </svg>
     </div>
   </div>
+
 </div>
 
 {{-- Split Panel --}}
@@ -64,28 +71,37 @@
                oninput="filterMembers(this.value)"/>
       </div>
     </div>
+
     <div class="members-list" id="membersList">
       @forelse($members as $member)
         @php
           $isExpiring = $member->isDueWithinDays(7) && !$member->isExpired();
           $isExpired  = $member->isExpired();
-          $pillClass  = $isExpired ? 'pill-expired' : ($isExpiring ? 'pill-expiring' : 'pill-active');
-          $pillLabel  = $isExpired ? 'Expired' : ($isExpiring ? 'Expiring' : 'Active');
+          $pillClass  = $isExpired  ? 'pill-expired'
+                      : ($isExpiring ? 'pill-expiring'
+                      : 'pill-active');
+          $pillLabel  = $isExpired  ? 'Expired'
+                      : ($isExpiring ? 'Expiring'
+                      : 'Active');
         @endphp
         <div class="member-item"
              data-name="{{ strtolower($member->name) }}"
              data-email="{{ strtolower($member->email) }}"
              onclick="showMemberDetail({{ $member->id }}, this)"
              id="item-{{ $member->id }}">
+
           <div style="display:flex;align-items:center;gap:10px;">
             @if($member->photo)
               <img src="{{ asset('storage/'.$member->photo) }}"
-                   style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);"/>
+                   style="width:36px;height:36px;border-radius:50%;object-fit:cover;
+                          flex-shrink:0;border:1px solid var(--border);"/>
             @else
-              <div style="width:36px;height:36px;border-radius:50%;background:rgba(200,255,0,0.08);
-                          border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
-                          justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;">
-                {{ strtoupper(substr($member->name,0,2)) }}
+              <div style="width:36px;height:36px;border-radius:50%;
+                          background:rgba(200,255,0,0.08);
+                          border:1px solid rgba(200,255,0,0.15);
+                          display:flex;align-items:center;justify-content:center;
+                          font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;">
+                {{ strtoupper(substr($member->name, 0, 2)) }}
               </div>
             @endif
             <div class="member-item-info">
@@ -93,6 +109,7 @@
               <span class="member-item-email">{{ $member->email }}</span>
             </div>
           </div>
+
           <span class="status-pill {{ $pillClass }}">{{ $pillLabel }}</span>
         </div>
       @empty
@@ -103,14 +120,16 @@
     </div>
   </div>
 
-  {{-- RIGHT: Member Details Panel — redesigned --}}
+  {{-- RIGHT: Member Details Panel --}}
   <div class="details-panel" id="detailsPanel">
 
     {{-- Empty state --}}
     <div class="details-empty" id="detailsEmpty">
       <svg viewBox="0 0 24 24" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round"
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857
+                 M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857
+                 m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
       </svg>
       <div style="font-size:14px;margin-top:4px;">Select a member to view details</div>
     </div>
@@ -118,7 +137,7 @@
     {{-- Filled state --}}
     <div class="details-content" id="detailsContent" style="padding:0;">
 
-      {{-- Hero header: avatar + name + badge --}}
+      {{-- Hero: avatar + name + status badge --}}
       <div id="detailsHero"
            style="padding:28px 28px 24px;border-bottom:1px solid var(--border);
                   display:flex;align-items:center;gap:20px;">
@@ -131,7 +150,8 @@
         </div>
         <div>
           <div id="detailsName"
-               style="font-size:22px;font-weight:800;letter-spacing:-0.3px;margin-bottom:8px;"></div>
+               style="font-size:22px;font-weight:800;letter-spacing:-0.3px;margin-bottom:8px;">
+          </div>
           <div id="detailsBadge"></div>
         </div>
       </div>
@@ -140,57 +160,97 @@
       <div style="padding:24px 28px;">
 
         {{-- Contact Information --}}
-        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;
-                    letter-spacing:2px;margin-bottom:14px;">Contact Information</div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);
+                    text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;">
+          Contact Information
+        </div>
 
         <div style="display:grid;gap:12px;margin-bottom:24px;">
+
+          {{-- Email --}}
           <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;
                       background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
-            <div style="width:32px;height:32px;border-radius:8px;background:rgba(96,165,250,0.1);
+            <div style="width:32px;height:32px;border-radius:8px;
+                        background:rgba(96,165,250,0.1);
                         display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                    stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8
+                         M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
               </svg>
             </div>
             <div>
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Email</div>
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                          letter-spacing:1px;margin-bottom:2px;">Email</div>
               <div id="detailsEmail" style="font-size:13px;font-weight:600;"></div>
             </div>
           </div>
 
+          {{-- Phone --}}
           <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;
                       background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
-            <div style="width:32px;height:32px;border-radius:8px;background:rgba(74,222,128,0.1);
+            <div style="width:32px;height:32px;border-radius:8px;
+                        background:rgba(74,222,128,0.1);
                         display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                    stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493
+                         a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516
+                         l1.13-2.257a1 1 0 011.21-.502l4.493 1.498
+                         a1 1 0 01.684.949V19a2 2 0 01-2 2h-1
+                         C9.716 21 3 14.284 3 6V5z"/>
               </svg>
             </div>
             <div>
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Phone</div>
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                          letter-spacing:1px;margin-bottom:2px;">Phone</div>
               <div id="detailsPhone" style="font-size:13px;font-weight:600;"></div>
             </div>
           </div>
+
         </div>
 
         {{-- Subscription --}}
-        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;
-                    letter-spacing:2px;margin-bottom:14px;">Subscription</div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);
+                    text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;">
+          Subscription
+        </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
-          <div style="padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Plan</div>
+          <div style="padding:14px;background:var(--surface2);
+                      border-radius:10px;border:1px solid var(--border);">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                        letter-spacing:1px;margin-bottom:6px;">Plan</div>
             <div id="detailsPlan" style="font-size:14px;font-weight:700;color:var(--accent);"></div>
           </div>
-          <div style="padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Duration</div>
+          <div style="padding:14px;background:var(--surface2);
+                      border-radius:10px;border:1px solid var(--border);">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                        letter-spacing:1px;margin-bottom:6px;">Duration</div>
             <div id="detailsDuration" style="font-size:14px;font-weight:700;"></div>
           </div>
-          <div style="padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);grid-column:span 2;">
-            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Active Period</div>
+          <div style="padding:14px;background:var(--surface2);
+                      border-radius:10px;border:1px solid var(--border);grid-column:span 2;">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                        letter-spacing:1px;margin-bottom:6px;">Active Period</div>
             <div id="detailsPeriod" style="font-size:14px;font-weight:700;"></div>
+          </div>
+        </div>
+
+        {{-- Days Remaining Bar --}}
+        <div id="daysRemainingWrap"
+             style="padding:14px;background:var(--surface2);
+                    border-radius:10px;border:1px solid var(--border);margin-bottom:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;
+                        letter-spacing:1px;">Days Remaining</div>
+            <div id="daysRemainingLabel"
+                 style="font-size:13px;font-weight:700;color:var(--accent);"></div>
+          </div>
+          <div style="background:var(--border);border-radius:999px;height:6px;overflow:hidden;">
+            <div id="daysRemainingBar"
+                 style="height:100%;border-radius:999px;transition:width 0.4s ease;width:0%;
+                        background:var(--accent);"></div>
           </div>
         </div>
 
@@ -219,9 +279,27 @@
     @php
       $isExpiring  = $member->isDueWithinDays(7) && !$member->isExpired();
       $isExpired   = $member->isExpired();
-      $statusLabel = $isExpired ? 'Expired' : ($isExpiring ? 'Expiring Soon' : 'Active');
-      $statusColor = $isExpired ? '#f87171' : ($isExpiring ? '#fbbf24' : '#4ade80');
-      $statusBg    = $isExpired ? 'rgba(248,113,113,0.15)' : ($isExpiring ? 'rgba(251,191,36,0.15)' : 'rgba(74,222,128,0.15)');
+      $statusLabel = $isExpired  ? 'Expired'
+                   : ($isExpiring ? 'Expiring Soon'
+                   : 'Active');
+      $statusColor = $isExpired  ? '#f87171'
+                   : ($isExpiring ? '#fbbf24'
+                   : '#4ade80');
+      $statusBg    = $isExpired  ? 'rgba(248,113,113,0.15)'
+                   : ($isExpiring ? 'rgba(251,191,36,0.15)'
+                   : 'rgba(74,222,128,0.15)');
+
+      // Days remaining for progress bar
+      $daysRemaining  = $isExpired ? 0 : (int) now()->diffInDays($member->end_date);
+      $totalDays      = ($member->start_date && $member->end_date)
+                          ? (int) $member->start_date->diffInDays($member->end_date)
+                          : 30;
+      $progressPct    = $totalDays > 0
+                          ? min(100, round(($daysRemaining / $totalDays) * 100))
+                          : 0;
+      $barColor       = $isExpired  ? '#f87171'
+                      : ($isExpiring ? '#fbbf24'
+                      : '#4ade80');
     @endphp
     <div class="md"
          data-id="{{ $member->id }}"
@@ -235,6 +313,9 @@
          data-status="{{ $statusLabel }}"
          data-status-color="{{ $statusColor }}"
          data-status-bg="{{ $statusBg }}"
+         data-days-remaining="{{ $daysRemaining }}"
+         data-progress-pct="{{ $progressPct }}"
+         data-bar-color="{{ $barColor }}"
          data-photo="{{ $member->photo ? asset('storage/'.$member->photo) : '' }}"
          data-url="{{ route('instructor.member.show', $member) }}">
     </div>
@@ -257,49 +338,63 @@ function showMemberDetail(id, el) {
   const md = document.querySelector(`.md[data-id="${id}"]`);
   if (!md) return;
 
-  // Avatar
-  const avatar = document.getElementById('detailsAvatar');
-  const initials = md.dataset.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  // ── Avatar ──────────────────────────────────
+  const avatar   = document.getElementById('detailsAvatar');
+  const initials = md.dataset.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
   if (md.dataset.photo) {
     avatar.innerHTML = `<img src="${md.dataset.photo}" style="width:100%;height:100%;object-fit:cover;"/>`;
   } else {
-    avatar.innerHTML = initials;
-    avatar.style.background = 'rgba(200,255,0,0.08)';
+    avatar.innerHTML         = initials;
+    avatar.style.background  = 'rgba(200,255,0,0.08)';
   }
 
-  // Name
+  // ── Name ────────────────────────────────────
   document.getElementById('detailsName').textContent = md.dataset.name;
 
-  // Badge
+  // ── Status Badge ────────────────────────────
   document.getElementById('detailsBadge').innerHTML =
-    `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:100px;
-      font-size:12px;font-weight:700;background:${md.dataset.statusBg};color:${md.dataset.statusColor};
-      border:1px solid ${md.dataset.statusColor}22;">
-      <span style="width:6px;height:6px;border-radius:50%;background:${md.dataset.statusColor};display:inline-block;"></span>
-      ${md.dataset.status}
-    </span>`;
+    `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;
+                  border-radius:100px;font-size:12px;font-weight:700;
+                  background:${md.dataset.statusBg};color:${md.dataset.statusColor};
+                  border:1px solid ${md.dataset.statusColor}22;">
+       <span style="width:6px;height:6px;border-radius:50%;
+                    background:${md.dataset.statusColor};display:inline-block;"></span>
+       ${md.dataset.status}
+     </span>`;
 
-  // Contact
-  document.getElementById('detailsEmail').textContent   = md.dataset.email;
-  document.getElementById('detailsPhone').textContent   = md.dataset.phone;
+  // ── Contact ─────────────────────────────────
+  document.getElementById('detailsEmail').textContent = md.dataset.email;
+  document.getElementById('detailsPhone').textContent = md.dataset.phone;
 
-  // Subscription
-  document.getElementById('detailsPlan').textContent    = md.dataset.plan;
+  // ── Subscription ────────────────────────────
+  document.getElementById('detailsPlan').textContent     = md.dataset.plan;
   document.getElementById('detailsDuration').textContent = md.dataset.duration;
-  document.getElementById('detailsPeriod').textContent  = `${md.dataset.start} – ${md.dataset.end}`;
+  document.getElementById('detailsPeriod').textContent   = `${md.dataset.start} – ${md.dataset.end}`;
 
-  // Button
+  // ── Days Remaining Bar ───────────────────────
+  const days    = parseInt(md.dataset.daysRemaining) || 0;
+  const pct     = parseInt(md.dataset.progressPct)   || 0;
+  const barColor = md.dataset.barColor;
+
+  document.getElementById('daysRemainingLabel').textContent  =
+    days === 0 ? 'Expired' : `${days} day${days !== 1 ? 's' : ''} left`;
+  document.getElementById('daysRemainingLabel').style.color  = barColor;
+  document.getElementById('daysRemainingBar').style.width    = pct + '%';
+  document.getElementById('daysRemainingBar').style.background = barColor;
+
+  // ── View Button ─────────────────────────────
   document.getElementById('detailsViewBtn').href = md.dataset.url;
 
-  // Show panel
-  document.getElementById('detailsEmpty').style.display   = 'none';
+  // ── Show Panel ──────────────────────────────
+  document.getElementById('detailsEmpty').style.display = 'none';
   document.getElementById('detailsContent').classList.add('visible');
 }
 
 function filterMembers(query) {
   const q = query.toLowerCase();
   document.querySelectorAll('.member-item').forEach(item => {
-    const match = (item.dataset.name||'').includes(q) || (item.dataset.email||'').includes(q);
+    const match = (item.dataset.name  || '').includes(q)
+               || (item.dataset.email || '').includes(q);
     item.style.display = match ? '' : 'none';
   });
 }

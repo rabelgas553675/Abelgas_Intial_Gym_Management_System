@@ -11,7 +11,6 @@
     appearance: none !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
-    /* Custom Chevron SVG Icon */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
     background-position: right 14px center !important;
@@ -20,10 +19,24 @@
     cursor: pointer;
   }
 
-  /* Styling for the options menu background */
   .custom-dropdown option {
     background-color: #1a1a1a;
     color: white;
+  }
+
+  /* Hide native calendar picker icon but keep it clickable */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    width: 40px;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  /* Dark color-scheme so browser-native date text stays light */
+  input[type="date"] {
+    color-scheme: dark;
   }
 </style>
 
@@ -179,17 +192,31 @@
                 <option value="Other"  {{ old('gender')=='Other'  ?'selected':'' }}>Other</option>
               </select>
             </div>
+
+            {{-- Birthdate with custom visible calendar icon --}}
             <div>
               <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
                             text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
                 Birthdate <span style="color:#f87171;">*</span>
               </label>
-              <input type="date" name="birthdate" value="{{ old('birthdate') }}"
-                     style="width:100%; padding:11px 14px; background:var(--surface2);
-                            border:1px solid var(--border); border-radius:8px;
-                            color:var(--text); font-size:13px; outline:none; transition:.15s; box-sizing:border-box;"
-                     onfocus="this.style.borderColor='var(--accent)'"
-                     onblur="this.style.borderColor='var(--border)'" required/>
+              <div style="position:relative;">
+                <input type="date" name="birthdate" value="{{ old('birthdate') }}"
+                       style="width:100%; padding:11px 40px 11px 14px; background:var(--surface2);
+                              border:1px solid var(--border); border-radius:8px;
+                              color:var(--text); font-size:13px; outline:none; transition:.15s;
+                              box-sizing:border-box; color-scheme:dark;"
+                       onfocus="this.style.borderColor='var(--accent)'"
+                       onblur="this.style.borderColor='var(--border)'" required/>
+                <svg style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
+                            pointer-events:none; color:#c8ff00;"
+                     width="16" height="16" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8"  y1="2" x2="8"  y2="6"/>
+                  <line x1="3"  y1="10" x2="21" y2="10"/>
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -256,19 +283,32 @@
           </select>
         </div>
 
+        {{-- Start Date with custom visible calendar icon --}}
         <div>
           <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
                         text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
             Start Date <span style="color:#f87171;">*</span>
           </label>
-          <input type="date" name="start_date" id="start_date"
-                 value="{{ old('start_date', date('Y-m-d')) }}"
-                 style="width:100%; padding:11px 14px; background:var(--surface2);
-                        border:1px solid var(--border); border-radius:8px;
-                        color:var(--text); font-size:13px; outline:none; transition:.15s; box-sizing:border-box;"
-                 onfocus="this.style.borderColor='var(--accent)'"
-                 onblur="this.style.borderColor='var(--border)'"
-                 onchange="computeEndDate()" required/>
+          <div style="position:relative;">
+            <input type="date" name="start_date" id="start_date"
+                   value="{{ old('start_date', date('Y-m-d')) }}"
+                   style="width:100%; padding:11px 40px 11px 14px; background:var(--surface2);
+                          border:1px solid var(--border); border-radius:8px;
+                          color:var(--text); font-size:13px; outline:none; transition:.15s;
+                          box-sizing:border-box; color-scheme:dark;"
+                   onfocus="this.style.borderColor='var(--accent)'"
+                   onblur="this.style.borderColor='var(--border)'"
+                   onchange="computeEndDate()" required/>
+            <svg style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
+                        pointer-events:none; color:#c8ff00;"
+                 width="16" height="16" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8"  y1="2" x2="8"  y2="6"/>
+              <line x1="3"  y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
         </div>
 
         <div>

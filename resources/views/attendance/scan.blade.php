@@ -70,13 +70,13 @@
                     text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
           Manual Attendance Entry
         </div>
-        
+
         <select id="manualMemberId"
                 style="width:100%;padding:9px 12px;background:#1a1a2e;
                        color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:8px;
                        font-size:13px;margin-bottom:10px;font-family:'DM Sans',sans-serif; appearance: auto;">
           <option value="" style="background:#1a1a2e; color:#fff;">— Select Person —</option>
-          
+
           <optgroup label="Members" style="background:#0f0f1a; color:var(--accent);">
             @foreach($allMembers as $m)
                 <option value="{{ $m->id }}" style="background:#1a1a2e; color:{{ $m->status === 'Expired' ? '#fbbf24' : '#fff' }};">
@@ -166,20 +166,25 @@
           <tr id="log-{{ $log->id }}" data-member="{{ $log->member_id ?? 'staff-'.$log->user_id }}"
               style="border-top:1px solid var(--border);">
             <td style="padding:12px 16px;">
-              @php 
-                $personName = $log->member?->name ?? $log->user?->name ?? 'Staff';
-                $personRole = $log->member?->membership_type ?? ucfirst($log->user?->role ?? 'Staff');
-                $personPhoto = $log->member?->photo ?? $log->user?->photo;
-                $isStaffRow = !$log->member_id;
+              @php
+                $personName  = $log->member?->name ?? $log->user?->name ?? 'Staff';
+                $personRole  = $log->member?->membership_type ?? ucfirst($log->user?->role ?? 'Staff');
+                $personPhoto = $log->member?->user?->photo
+                            ?? $log->member?->photo
+                            ?? $log->user?->photo;
+                $isStaffRow  = !$log->member_id;
               @endphp
 
               @if($personPhoto)
                 <img src="{{ asset('storage/'.$personPhoto) }}"
                      style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);"/>
               @else
-                <div style="width:34px;height:34px;border-radius:50%;background:{{ !$isStaffRow ? 'rgba(200,255,0,0.08)' : 'rgba(96,165,250,0.08)' }};
-                            border:1px solid {{ !$isStaffRow ? 'rgba(200,255,0,0.15)' : 'rgba(96,165,250,0.15)' }};display:flex;align-items:center;
-                            justify-content:center;font-size:12px;font-weight:700;color:{{ !$isStaffRow ? 'var(--accent)' : '#60a5fa' }};">
+                <div style="width:34px;height:34px;border-radius:50%;
+                            background:{{ !$isStaffRow ? 'rgba(200,255,0,0.08)' : 'rgba(96,165,250,0.08)' }};
+                            border:1px solid {{ !$isStaffRow ? 'rgba(200,255,0,0.15)' : 'rgba(96,165,250,0.15)' }};
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:12px;font-weight:700;
+                            color:{{ !$isStaffRow ? 'var(--accent)' : '#60a5fa' }};">
                   {{ strtoupper(substr($personName,0,1)) }}
                 </div>
               @endif
@@ -296,12 +301,11 @@ function processQR(qrData) {
 function manualRecord(action) {
   const mid = document.getElementById('manualMemberId').value;
   const msg = document.getElementById('manualMsg');
-  if (!mid) { 
-    msg.innerHTML = '<span style="color:#fbbf24;">Select a person first.</span>'; 
-    return; 
+  if (!mid) {
+    msg.innerHTML = '<span style="color:#fbbf24;">Select a person first.</span>';
+    return;
   }
 
-  // Visual feedback: clear message and disable buttons
   msg.innerHTML = '<span style="color:rgba(255,255,255,0.5);">Processing...</span>';
   const buttons = document.querySelectorAll('button[onclick^="manualRecord"]');
   buttons.forEach(b => b.disabled = true);
@@ -320,15 +324,17 @@ function manualRecord(action) {
     msg.innerHTML = data.success
       ? `<span style="color:#4ade80;">✅ ${data.message}</span>`
       : `<span style="color:#f87171;">❌ ${data.message}</span>`;
-    
+
     if (data.success) {
       if (action === 'timein') {
-        appendLogRow({ 
-            member_id: data.member_id, 
-            member: data.member, 
-            membership: data.membership, 
-            time_in: data.time_in, 
-            entry_method: 'manual'
+        appendLogRow({
+          member_id: data.member_id,
+          member: data.member,
+          membership: data.membership,
+          time_in: data.time_in,
+          entry_method: 'manual',
+          // FIX: controller should return photo url; use it directly if provided
+          photo: data.photo ?? null,
         }, 'timein');
       } else {
         updateLogRowTimeout({ member_id: data.member_id, time_out: data.time_out, duration: data.duration });
@@ -359,10 +365,10 @@ function showResult(data) {
   document.getElementById('resultMembership').textContent = data.membership || '';
 
   let cls = 'result-error';
-  if (data.success && data.action === 'timein')   { cls = 'result-timein'; appendLogRow(data, 'timein'); }
-  if (data.success && data.action === 'timeout')  { cls = 'result-timeout'; updateLogRowTimeout(data); }
-  if (data.status === 'expired')    cls = 'result-expired';
-  if (data.status === 'suspended')  cls = 'result-suspended';
+  if (data.success && data.action === 'timein')  { cls = 'result-timein';  appendLogRow(data, 'timein'); }
+  if (data.success && data.action === 'timeout') { cls = 'result-timeout'; updateLogRowTimeout(data); }
+  if (data.status === 'expired')   cls = 'result-expired';
+  if (data.status === 'suspended') cls = 'result-suspended';
 
   card.className = cls;
 
@@ -392,6 +398,8 @@ function appendLogRow(data, action) {
   if (existing) existing.remove();
 
   const isStaff = data.is_staff || (typeof data.member_id === 'string' && data.member_id.startsWith('staff-'));
+
+  // FIX: use photo URL returned directly from the server response (already a full storage URL)
   const avatar = data.photo
     ? `<img src="${data.photo}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);">`
     : `<div style="width:34px;height:34px;border-radius:50%;background:${isStaff ? 'rgba(96,165,250,0.08)' : 'rgba(200,255,0,0.08)'};border:1px solid ${isStaff ? 'rgba(96,165,250,0.15)' : 'rgba(200,255,0,0.15)'};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${isStaff ? '#60a5fa' : 'var(--accent)'};">${(data.member||'?').charAt(0).toUpperCase()}</div>`;

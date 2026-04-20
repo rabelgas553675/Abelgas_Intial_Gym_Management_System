@@ -9,18 +9,38 @@ use Illuminate\Support\Facades\Storage;
 
 class StaffController extends Controller
 {
+    // ─────────────────────────────────────────
+    //  Dashboard
+    // ─────────────────────────────────────────
+
     public function dashboard()
     {
+        $allMembers = Member::all();
+
         $stats = [
-            'total'   => Member::count(),
-            'active'  => Member::where('status', 'Active')->count(),
-            'monthly' => Member::where('membership_type', 'Monthly')->count(),
-            'yearly'  => Member::where('membership_type', 'Annually')->count(),
+            'total'   => $allMembers->count(),
+            'active'  => $allMembers->filter(
+                            fn($m) => in_array($m->status, ['Active', 'Expiring Soon'])
+                         )->count(),
+            'monthly' => $allMembers->where('membership_type', 'Monthly')->count(),
+            'yearly'  => $allMembers->where('membership_type', 'Annually')->count(),
         ];
 
-        $recent = Member::latest()->take(6)->get();
+        // Load member.user so photos resolve correctly in the members list panel
+        $members = Member::with('user')->latest()->get();
 
-        $recentPayments = Payment::with('member')
+        $activeCount = $allMembers->filter(
+            fn($m) => in_array($m->status, ['Active', 'Expiring Soon'])
+        )->count();
+
+        $nearDue = $allMembers->filter(
+            fn($m) => $m->status === 'Expiring Soon'
+        )->count();
+
+        $recent = Member::with('user')->latest()->take(6)->get();
+
+        // Load member.user so photo resolves via member->user->photo
+        $recentPayments = Payment::with('member:id,name,email,user_id', 'member.user:id,photo')
                             ->latest()
                             ->take(5)
                             ->get();
@@ -32,35 +52,49 @@ class StaffController extends Controller
         $totalCollected = Payment::sum('amount');
 
         return view('staff.dashboard', compact(
-            'stats', 'recent', 'recentPayments', 'thisMonth', 'totalCollected'
+            'stats',
+            'members',
+            'activeCount',
+            'nearDue',
+            'recent',
+            'recentPayments',
+            'thisMonth',
+            'totalCollected'
         ));
     }
+
+    // ─────────────────────────────────────────
+    //  Payments
+    // ─────────────────────────────────────────
 
     public function payments()
     {
-        // FIX: Fetch members for the "Select Member" dropdown in the form
         $members = Member::orderBy('name', 'asc')->get();
 
-        // Fetch paginated payments with member relationship
-        $payments = Payment::with('member')->latest()->paginate(20);
+        // Load member.user so photo resolves via member->user->photo
+        $payments = Payment::with('member:id,name,user_id', 'member.user:id,photo')
+                        ->latest()
+                        ->paginate(20);
 
-        // Stats for the summary cards
         $thisMonth = Payment::whereMonth('payment_date', now()->month)
                             ->whereYear('payment_date', now()->year)
                             ->sum('amount');
-        
+
         $totalCollected = Payment::sum('amount');
         $totalCount     = Payment::count();
 
-        // Pass all 5 variables to the view
         return view('staff.payments', compact(
-            'members', 
-            'payments', 
-            'thisMonth', 
-            'totalCollected', 
+            'members',
+            'payments',
+            'thisMonth',
+            'totalCollected',
             'totalCount'
         ));
     }
+
+    // ─────────────────────────────────────────
+    //  Profile
+    // ─────────────────────────────────────────
 
     public function profile()
     {

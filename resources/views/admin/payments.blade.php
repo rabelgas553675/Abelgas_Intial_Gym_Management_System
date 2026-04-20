@@ -17,6 +17,10 @@ select.form-control:focus  { border-color:#3b82f6;outline:none;box-shadow:0 0 0 
 .earn-tab { padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;
             border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s; }
 .earn-tab.active { background:var(--accent);color:#111;border-color:var(--accent); }
+
+/* Hide the native browser calendar icon on the date input */
+input[type="date"]::-webkit-calendar-picker-indicator { opacity:0;width:0;padding:0;margin:0; }
+input[type="date"] { color-scheme:dark; }
 </style>
 
 {{-- Page header --}}
@@ -103,10 +107,34 @@ select.form-control:focus  { border-color:#3b82f6;outline:none;box-shadow:0 0 0 
           @error('amount')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
         </div>
 
+        {{-- Payment Date with custom calendar icon button --}}
         <div class="form-group" style="margin-bottom:16px;">
           <label class="form-label">Payment Date</label>
-          <input type="date" name="payment_date" class="form-control"
-                 value="{{ old('payment_date', date('Y-m-d')) }}" required/>
+          <div style="position:relative;display:flex;">
+            <input type="date" name="payment_date" id="payment_date" class="form-control"
+                   value="{{ old('payment_date', date('Y-m-d')) }}" required
+                   style="padding-right:48px;flex:1;border-radius:8px;"/>
+            <button type="button"
+                    onclick="document.getElementById('payment_date').showPicker()"
+                    title="Open calendar"
+                    style="position:absolute;right:0;top:0;bottom:0;width:44px;
+                           background:rgba(200,255,0,0.10);
+                           border:none;border-left:1px solid var(--border);
+                           border-radius:0 8px 8px 0;
+                           cursor:pointer;display:flex;align-items:center;justify-content:center;
+                           transition:background .15s;"
+                    onmouseover="this.style.background='rgba(200,255,0,0.22)'"
+                    onmouseout="this.style.background='rgba(200,255,0,0.10)'">
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24"
+                   stroke="var(--accent)" stroke-width="2"
+                   stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8"  y1="2" x2="8"  y2="6"/>
+                <line x1="3"  y1="10" x2="21" y2="10"/>
+              </svg>
+            </button>
+          </div>
           @error('payment_date')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
         </div>
 
@@ -165,12 +193,22 @@ select.form-control:focus  { border-color:#3b82f6;outline:none;box-shadow:0 0 0 
               </td>
               <td>
                 <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:30px;height:30px;border-radius:50%;background:rgba(200,255,0,0.08);
-                              border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
-                              justify-content:center;font-size:10px;font-weight:700;
-                              color:var(--accent);flex-shrink:0;">
-                    {{ strtoupper(substr($payment->member->name ?? '?', 0, 2)) }}
-                  </div>
+                  @php
+                    $memberPhoto = $payment->member?->user?->photo ?? $payment->member?->photo ?? null;
+                    $memberName  = $payment->member->name ?? '?';
+                  @endphp
+                  @if($memberPhoto)
+                    <img src="{{ asset('storage/'.$memberPhoto) }}"
+                         style="width:32px;height:32px;border-radius:50%;object-fit:cover;
+                                border:1px solid rgba(200,255,0,0.25);flex-shrink:0;">
+                  @else
+                    <div style="width:32px;height:32px;border-radius:50%;background:rgba(200,255,0,0.08);
+                                border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
+                                justify-content:center;font-size:10px;font-weight:700;
+                                color:var(--accent);flex-shrink:0;">
+                      {{ strtoupper(substr($memberName, 0, 2)) }}
+                    </div>
+                  @endif
                   <span style="font-weight:600;">{{ $payment->member->name ?? '—' }}</span>
                 </div>
               </td>

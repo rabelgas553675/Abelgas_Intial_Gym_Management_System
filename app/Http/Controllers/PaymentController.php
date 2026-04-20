@@ -21,9 +21,9 @@ class PaymentController extends Controller
         $totalCollected = Payment::gymFees()->sum('amount');
 
         // ── Coach fee stats (instructor earnings) ─────────────────────────────
-        $totalCoachFees      = Payment::coachFees()->sum('amount');
-        $thisMonthCoachFees  = Payment::coachFees()->thisMonth()->sum('amount');
-        $instructorsPaidCount= Payment::coachFees()
+        $totalCoachFees       = Payment::coachFees()->sum('amount');
+        $thisMonthCoachFees   = Payment::coachFees()->thisMonth()->sum('amount');
+        $instructorsPaidCount = Payment::coachFees()
                                     ->distinct('instructor_id')
                                     ->count('instructor_id');
 
@@ -32,21 +32,27 @@ class PaymentController extends Controller
             ->select('instructor_id',
                      DB::raw('SUM(amount) as total'),
                      DB::raw('COUNT(*) as txn_count'))
-            ->with('instructor:id,name,photo')
+            ->with('instructor:id,name,photo')   // instructors ARE users, photo is on users table
             ->groupBy('instructor_id')
             ->orderByDesc('total')
             ->get();
 
         // ── Table data ────────────────────────────────────────────────────────
-        // Admin sees ONLY gym_fee rows
+        // Admin sees ONLY gym_fee rows.
+        // Load member.user so the blade can resolve member photo via member->user->photo
         $payments = Payment::gymFees()
-            ->with('member:id,name')
+            ->with('member:id,name,user_id', 'member.user:id,name,photo')
             ->latest('payment_date')
             ->get();
 
         // Coach fee transaction log (shown in Instructor tab)
+        // Same fix: load member.user for photo resolution
         $coachFeePayments = Payment::coachFees()
-            ->with('member:id,name', 'instructor:id,name')
+            ->with(
+                'member:id,name,user_id',
+                'member.user:id,name,photo',
+                'instructor:id,name,photo'
+            )
             ->latest('payment_date')
             ->get();
 

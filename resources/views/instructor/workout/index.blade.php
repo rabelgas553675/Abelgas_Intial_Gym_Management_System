@@ -10,7 +10,6 @@
         appearance: none !important;
         -webkit-appearance: none !important;
         -moz-appearance: none !important;
-        /* Custom Chevron SVG Icon */
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: right 14px center !important;
@@ -19,10 +18,24 @@
         cursor: pointer;
     }
 
-    /* Style for option dropdown list background */
     .custom-select option {
         background-color: #1a1a1a;
         color: white;
+    }
+
+    /* Hide native calendar picker icon but keep it clickable */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        opacity: 0;
+        position: absolute;
+        right: 0;
+        width: 40px;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    /* Dark color-scheme so browser-native date text stays light */
+    input[type="date"] {
+        color-scheme: dark;
     }
 
     /* Existing quick-add button styles */
@@ -30,13 +43,13 @@
         display: flex !important;
         align-items: center;
         justify-content: center;
-        width: 24px;      
-        height: 24px;     
-        font-size: 18px;  
+        width: 24px;
+        height: 24px;
+        font-size: 18px;
         font-weight: bold;
         padding: 0;
         cursor: pointer;
-        border-radius: 50%; 
+        border-radius: 50%;
         transition: all 0.2s ease;
     }
 
@@ -246,9 +259,22 @@
           <input type="text" name="title" class="form-control" required placeholder="e.g. Upper Body Strength"/>
         </div>
 
+        {{-- Create Date with custom visible calendar icon --}}
         <div>
           <label class="form-label">Date *</label>
-          <input type="date" name="scheduled_date" id="createDate" class="form-control" required/>
+          <div style="position:relative;">
+            <input type="date" name="scheduled_date" id="createDate" class="form-control"
+                   style="padding-right:40px; color-scheme:dark;" required/>
+            <svg style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
+                        pointer-events:none; color:#c8ff00;"
+                 width="16" height="16" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8"  y1="2" x2="8"  y2="6"/>
+              <line x1="3"  y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
         </div>
 
         <div>
@@ -317,9 +343,22 @@
           <input type="text" name="title" id="editTitle" class="form-control" required/>
         </div>
 
+        {{-- Edit Date with custom visible calendar icon --}}
         <div>
           <label class="form-label">Date *</label>
-          <input type="date" name="scheduled_date" id="editDate" class="form-control" required/>
+          <div style="position:relative;">
+            <input type="date" name="scheduled_date" id="editDate" class="form-control"
+                   style="padding-right:40px; color-scheme:dark;" required/>
+            <svg style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
+                        pointer-events:none; color:#c8ff00;"
+                 width="16" height="16" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8"  y1="2" x2="8"  y2="6"/>
+              <line x1="3"  y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
         </div>
 
         <div>

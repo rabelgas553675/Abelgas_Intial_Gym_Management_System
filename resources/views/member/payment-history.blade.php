@@ -19,9 +19,11 @@
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;">
     <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Total Paid</div>
     <div style="font-size:36px;font-weight:700;color:var(--accent);">
-      ₱{{ number_format($payments->sum(function($p){
-        return $p->amount + ($p->coach_fee ?? 0);
-      }), 0) }}
+      {{--
+        Sum gym fee + coach fee (attached by controller as coach_fee_amount).
+        This matches what the receipt shows as TOTAL FEE PAID.
+      --}}
+      ₱{{ number_format($payments->sum(fn($p) => $p->amount + ($p->coach_fee_amount ?? 0)), 0) }}
     </div>
   </div>
 
@@ -29,8 +31,8 @@
     <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">Last Payment</div>
     @if($payments->first())
       @php
-        $last = $payments->first();
-        $lastTotal = $last->amount + ($last->coach_fee ?? 0);
+        $last      = $payments->first();
+        $lastTotal = $last->amount + ($last->coach_fee_amount ?? 0);
       @endphp
       <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">
         {{ $last->payment_date->format('M d, Y') }}
@@ -53,7 +55,9 @@
         <th style="padding:14px 20px;text-align:left;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;">Date</th>
         <th style="padding:14px 20px;text-align:left;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;">Plan</th>
         <th style="padding:14px 20px;text-align:left;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;">Duration</th>
-        <th style="padding:14px 20px;text-align:left;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;">Amount</th>
+        <th style="padding:14px 20px;text-align:left;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;">Gym Fee</th>
+        <th style="padding:14px 20px;text-align:left;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;">Coach Fee</th>
+        <th style="padding:14px 20px;text-align:left;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;">Total</th>
         <th style="padding:14px 20px;text-align:left;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;">Status</th>
         <th style="padding:14px 20px;text-align:left;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;">Actions</th>
       </tr>
@@ -61,7 +65,8 @@
     <tbody>
       @forelse($payments as $p)
       @php
-        $total = $p->amount + ($p->coach_fee ?? 0);
+        $coachFee = $p->coach_fee_amount ?? 0;
+        $total    = $p->amount + $coachFee;
       @endphp
       <tr style="border-top:1px solid var(--border);">
         <td style="padding:16px 20px;">
@@ -88,6 +93,17 @@
           {{ $p->membership_type }}
         </td>
 
+        {{-- Gym fee only --}}
+        <td style="padding:16px 20px;font-size:14px;">
+          ₱{{ number_format($p->amount, 0) }}
+        </td>
+
+        {{-- Coach fee (0 if no instructor) --}}
+        <td style="padding:16px 20px;font-size:14px;color:{{ $coachFee > 0 ? 'var(--accent)' : 'var(--muted)' }};">
+          {{ $coachFee > 0 ? '₱' . number_format($coachFee, 0) : '—' }}
+        </td>
+
+        {{-- True total matching the receipt --}}
         <td style="padding:16px 20px;font-size:14px;font-weight:700;color:var(--accent);">
           ₱{{ number_format($total, 0) }}
         </td>
@@ -112,7 +128,7 @@
       </tr>
       @empty
       <tr>
-        <td colspan="7" style="padding:48px;text-align:center;color:var(--muted);">
+        <td colspan="9" style="padding:48px;text-align:center;color:var(--muted);">
           No payments recorded yet.
         </td>
       </tr>
@@ -126,10 +142,10 @@
   <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Receipt Information</div>
   <ul style="list-style:none;display:grid;gap:8px;">
     <li style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;">
-      <span style="color:var(--accent);">•</span> Click the download icon to save a copy of your receipt.
+      <span style="color:var(--accent);">•</span> Click the download icon to view and save a copy of your receipt.
     </li>
     <li style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;">
-      <span style="color:var(--accent);">•</span> Amounts shown include both Gym and Coaching fees where applicable.
+      <span style="color:var(--accent);">•</span> <strong>Total</strong> includes both Gym and Coaching fees where applicable — matching your receipt exactly.
     </li>
     <li style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;">
       <span style="color:var(--accent);">•</span> Keep your Receipt IDs for any support inquiries.
