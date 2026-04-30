@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\User;
 use App\Models\Payment;
+use App\Models\CoachRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -14,17 +15,11 @@ use Carbon\Carbon;
 
 class MemberController extends Controller
 {
-    /**
-     * 1. ADMIN/STAFF FUNCTIONS
-     */
-
     public function index(Request $request)
     {
         $roleFilter = $request->filled('role') ? strtolower($request->role) : null;
 
-        // Staff and Instructors don't have rows in the members table.
         if ($roleFilter && in_array($roleFilter, ['staff', 'instructor'])) {
-
             $userQuery = User::where('role', $roleFilter);
 
             if ($request->filled('search')) {
@@ -55,8 +50,6 @@ class MemberController extends Controller
             return view('members.index', compact('members'));
         }
 
-        // ── Default: query the members table ──────────────────────────────
-        // eager-load 'user' so we can fall back to the user's photo
         $query = Member::with('user');
 
         if ($request->filled('search')) {
@@ -75,7 +68,6 @@ class MemberController extends Controller
         }
 
         $members = $query->latest()->paginate(15)->through(function (Member $m) {
-            // ✅ FIX: fall back to the linked user's photo if member has none
             if (!$m->photo && $m->user && $m->user->photo) {
                 $m->photo = $m->user->photo;
             }
@@ -114,6 +106,7 @@ class MemberController extends Controller
             'start_date'      => 'required|date',
             'fee'             => 'required|numeric|min:0',
             'photo'           => 'nullable|image|max:3072',
+            'instructor_id'   => 'nullable|exists:users,id',
         ]);
 
         $photoPath = $request->hasFile('photo')
@@ -128,6 +121,7 @@ class MemberController extends Controller
             'Annual'      => $start->copy()->addYear()->toDateString(),
         };
 
+        // ✅ instructor_id is always null — never assigned directly
         $member = Member::create([
             'name'            => $request->first_name . ' ' . $request->last_name,
             'first_name'      => $request->first_name,
@@ -143,11 +137,23 @@ class MemberController extends Controller
             'fee'             => $request->fee,
             'status'          => 'Active',
             'photo'           => $photoPath,
+            'instructor_id'   => null,
         ]);
+
+        // ✅ If instructor selected, create pending coach request instead
+        if ($request->filled('instructor_id')) {
+            CoachRequest::create([
+                'member_id'     => $member->id,
+                'instructor_id' => $request->instructor_id,
+                'status'        => 'pending',
+                'message'       => null,
+            ]);
+        }
 
         Member::generateQrCode($member);
 
-        return redirect()->route('members.index')->with('success', 'Member created successfully!');
+        return redirect()->route('members.index')
+                         ->with('success', 'Member created! Coach request sent for approval.');
     }
 
     public function show(Member $member)
@@ -178,7 +184,10 @@ class MemberController extends Controller
             'fee'             => 'required|numeric',
         ]);
 
-        $member->update($request->all());
+        // ✅ Never allow direct instructor_id update — must go through approval
+        $data = $request->except('instructor_id');
+        $member->update($data);
+
         return redirect()->route('members.index')->with('success', 'Member updated successfully.');
     }
 
@@ -189,11 +198,6 @@ class MemberController extends Controller
         $member->delete();
         return redirect()->route('members.index')->with('success', 'Member deleted.');
     }
-
-
-    /**
-     * 2. MEMBER-FACING FUNCTIONS
-     */
 
     public function selectPlan()
     {
@@ -234,16 +238,33 @@ class MemberController extends Controller
 
         DB::beginTransaction();
         try {
+            // ✅ instructor_id always null until coach approves
             $member->update([
                 'fitness_plan'          => $request->fitness_plan,
                 'membership_type'       => $request->membership_type,
-                'instructor_id'         => $request->filled('instructor_id') ? $request->instructor_id : null,
-                'coach_membership_type' => $request->filled('instructor_id') ? $request->coach_membership_type : null,
+                'instructor_id'         => null,
+                'coach_membership_type' => $request->filled('instructor_id')
+                                            ? $request->coach_membership_type
+                                            : null,
                 'start_date'            => $start,
                 'end_date'              => $end,
                 'fee'                   => $totalAmount,
                 'status'                => 'Active',
             ]);
+
+            // ✅ Create pending coach request — instructor must approve first
+            if ($request->filled('instructor_id')) {
+                CoachRequest::where('member_id', $member->id)
+                            ->where('status', 'pending')
+                            ->update(['status' => 'rejected']);
+
+                CoachRequest::create([
+                    'member_id'     => $member->id,
+                    'instructor_id' => $request->instructor_id,
+                    'status'        => 'pending',
+                    'message'       => null,
+                ]);
+            }
 
             $payment = Payment::create([
                 'member_id'       => $member->id,
@@ -259,7 +280,7 @@ class MemberController extends Controller
             DB::commit();
 
             return redirect()->route('member.receipt', $payment->id)
-                             ->with('success', 'Subscription processed for ₱' . number_format($totalAmount));
+                             ->with('success', 'Subscription processed! Waiting for coach approval.');
 
         } catch (\Exception $e) {
             DB::rollBack();

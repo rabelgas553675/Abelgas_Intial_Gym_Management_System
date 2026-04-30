@@ -70,18 +70,28 @@
       </thead>
       <tbody>
         @forelse($payments as $payment)
+        @php
+          // FIX: photo lives on users table — resolve via member->user->photo
+          $pPhoto     = $payment->member?->user?->photo ?? $payment->member?->photo ?? null;
+          $memberName = $payment->member?->name ?? '—';
+        @endphp
         <tr style="border-top:1px solid var(--border);">
           <td style="padding:16px 20px;font-family:monospace;font-size:12px;color:var(--muted);">
             {{ $payment->receipt_number }}
           </td>
           <td style="padding:16px 20px;">
-            @php $memberName = $payment->member?->name ?? '—'; @endphp
             <div style="display:flex;align-items:center;gap:10px;">
-              <div style="width:32px;height:32px;border-radius:50%;background:rgba(232,255,42,0.08);
-                          border:1px solid rgba(232,255,42,0.2);display:flex;align-items:center;
-                          justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;">
-                {{ strtoupper(substr($memberName,0,1)) }}
-              </div>
+              @if($pPhoto)
+                <img src="{{ asset('storage/'.$pPhoto) }}"
+                     style="width:32px;height:32px;border-radius:50%;object-fit:cover;
+                            border:1px solid rgba(200,255,0,0.2);flex-shrink:0;"/>
+              @else
+                <div style="width:32px;height:32px;border-radius:50%;background:rgba(232,255,42,0.08);
+                            border:1px solid rgba(232,255,42,0.2);display:flex;align-items:center;
+                            justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;">
+                  {{ strtoupper(substr($memberName, 0, 1)) }}
+                </div>
+              @endif
               <span style="font-weight:600;font-size:14px;">{{ $memberName }}</span>
             </div>
           </td>

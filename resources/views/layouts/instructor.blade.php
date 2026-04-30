@@ -23,56 +23,29 @@
       padding:0 36px;height:60px;display:flex;align-items:center;
       justify-content:space-between;position:sticky;top:0;z-index:100;
     }
-
-    /* Brand — icon + name side by side */
-    .navbar-brand{
-      display:flex;align-items:center;gap:10px;text-decoration:none;
-    }
-    .brand-icon{
-      width:32px;height:32px;background:var(--accent);border-radius:8px;
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;
-    }
+    .navbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
+    .brand-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .brand-icon svg{width:18px;height:18px;fill:none;stroke:#111;stroke-width:2.5;}
-    .brand-name{
-      font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);
-      letter-spacing:3px;line-height:1;
-    }
-
-    /* Nav links */
+    .brand-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);letter-spacing:3px;line-height:1;}
     .navbar-nav{display:flex;align-items:center;gap:2px;}
-    .nav-item{
-      display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;
-      color:var(--muted);font-size:13px;font-weight:500;text-decoration:none;transition:all 0.15s;
-    }
+    .nav-item{display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;color:var(--muted);font-size:13px;font-weight:500;text-decoration:none;transition:all 0.15s;}
     .nav-item:hover{color:var(--text);background:var(--surface2);}
-    .nav-item.active{
-      color:var(--accent);
-      background:transparent;
-      border-bottom:2px solid var(--accent);
-      border-radius:0;
-      padding-bottom:6px;
-    }
+    .nav-item.active{color:var(--accent);background:transparent;border-bottom:2px solid var(--accent);border-radius:0;padding-bottom:6px;}
     .nav-item svg{width:15px;height:15px;stroke:var(--muted);fill:none;transition:stroke 0.15s;flex-shrink:0;}
     .nav-item:hover svg{stroke:var(--text);}
     .nav-item.active svg{stroke:var(--accent);}
 
-    /* Right side */
+    /* ★ NEW — pending badge */
+    .nav-badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:17px;height:17px;padding:0 4px;
+      border-radius:20px;background:var(--accent);color:#111;
+      font-size:10px;font-weight:800;line-height:1;
+    }
+
     .navbar-right{display:flex;align-items:center;gap:16px;}
-    .user-chip{
-      display:flex;align-items:center;gap:8px;
-      font-size:13px;font-weight:500;color:var(--muted);
-    }
-    .user-avatar-sm{
-      width:28px;height:28px;border-radius:50%;
-      background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.25);
-      display:flex;align-items:center;justify-content:center;
-      font-size:11px;font-weight:700;color:#ff6b35;flex-shrink:0;
-    }
-    .btn-logout-top{
-      display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
-      background:transparent;border:1px solid var(--border);color:var(--muted);
-      font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;
-    }
+    .user-chip{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--muted);}
+    .btn-logout-top{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
     .btn-logout-top:hover{border-color:var(--danger);color:var(--danger);}
     .btn-logout-top svg{width:13px;height:13px;stroke:currentColor;fill:none;}
 
@@ -101,28 +74,20 @@
 
     /* ── STAT CARDS ── */
     .stat-grid{display:grid;gap:14px;margin-bottom:28px;}
-    .stat-card{
-      background:var(--surface);border:1px solid var(--border);border-radius:14px;
-      padding:22px 24px;position:relative;overflow:hidden;
-      display:flex;align-items:center;justify-content:space-between;
-    }
-    .stat-card-left{}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;}
     .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;}
     .stat-value{font-size:38px;font-weight:800;line-height:1;margin-bottom:4px;}
     .stat-sub{font-size:12px;color:var(--muted);}
-    .stat-icon{
-      width:44px;height:44px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;
-    }
+    .stat-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
     .stat-icon svg{width:22px;height:22px;fill:none;}
-    .icon-green {background:rgba(200,255,0,0.08);}
+    .icon-green{background:rgba(200,255,0,0.08);}
     .icon-green svg{stroke:var(--accent);}
     .icon-orange{background:rgba(74,222,128,0.1);}
     .icon-orange svg{stroke:var(--success);}
     .icon-yellow{background:rgba(251,191,36,0.1);}
     .icon-yellow svg{stroke:var(--warning);}
 
-    /* ── SPLIT PANEL (dashboard) ── */
+    /* ── SPLIT PANEL ── */
     .split-panel{display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start;}
     .members-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
     .members-panel-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);}
@@ -139,9 +104,9 @@
     .member-item-name{font-size:14px;font-weight:600;}
     .member-item-email{font-size:12px;color:var(--muted);margin-top:1px;}
     .status-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;}
-    .pill-active  {background:rgba(74,222,128,0.15);color:var(--success);}
+    .pill-active{background:rgba(74,222,128,0.15);color:var(--success);}
     .pill-expiring{background:rgba(251,191,36,0.15);color:var(--warning);}
-    .pill-expired {background:rgba(248,113,113,0.15);color:var(--danger);}
+    .pill-expired{background:rgba(248,113,113,0.15);color:var(--danger);}
 
     /* Details panel */
     .details-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;min-height:480px;display:flex;flex-direction:column;}
@@ -181,12 +146,18 @@
 </head>
 <body>
 
-@php $active = View::getSection('active') ?? ''; @endphp
+@php
+  $active = View::getSection('active') ?? '';
+
+  // Live pending badge count for this instructor
+  $pendingRequestsCount = \App\Models\CoachRequest::where('instructor_id', auth()->id())
+                            ->where('status', 'pending')
+                            ->count();
+@endphp
 
 {{-- NAVBAR --}}
 <nav class="navbar">
 
-  {{-- Brand: icon + name --}}
   <a href="{{ route('instructor.dashboard') }}" class="navbar-brand">
     <div class="brand-icon">
       <svg viewBox="0 0 24 24">
@@ -196,8 +167,8 @@
     <span class="brand-name">IRONFORGE</span>
   </a>
 
-  {{-- Nav links --}}
   <div class="navbar-nav">
+
     <a href="{{ route('instructor.dashboard') }}"
        class="nav-item {{ $active === 'dashboard' ? 'active' : '' }}">
       <svg viewBox="0 0 24 24" stroke-width="2">
@@ -209,7 +180,6 @@
       Dashboard
     </a>
 
-    {{-- Added: Workout Scheduler Link --}}
     <a href="{{ route('workout.index') }}"
        class="nav-item {{ $active === 'workout' ? 'active' : '' }}">
       <svg viewBox="0 0 24 24" stroke-width="2">
@@ -221,6 +191,20 @@
       Workout Scheduler
     </a>
 
+    {{-- ★ Requests with live badge --}}
+    <a href="{{ route('instructor.requests') }}"
+       class="nav-item {{ $active === 'requests' ? 'active' : '' }}">
+      <svg viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13.73 21a2 2 0 01-3.46 0"/>
+      </svg>
+      Requests
+      @if($pendingRequestsCount > 0)
+        <span class="nav-badge">{{ $pendingRequestsCount }}</span>
+      @endif
+    </a>
+
     <a href="{{ route('instructor.profile') }}"
        class="nav-item {{ $active === 'profile' ? 'active' : '' }}">
       <svg viewBox="0 0 24 24" stroke-width="2">
@@ -229,6 +213,7 @@
       </svg>
       Profile
     </a>
+
     <a href="{{ route('instructor.payments') }}"
        class="nav-item {{ $active === 'payments' ? 'active' : '' }}">
       <svg viewBox="0 0 24 24" stroke-width="2">
@@ -237,9 +222,9 @@
       </svg>
       Payments
     </a>
+
   </div>
 
-  {{-- Right: user + logout --}}
   <div class="navbar-right">
     <div class="user-chip">
       <svg width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24">

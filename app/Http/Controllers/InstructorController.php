@@ -14,20 +14,15 @@ class InstructorController extends Controller
     //  Dashboard
     // ─────────────────────────────────────────
 
-    /**
-     * Instructor dashboard.
-     * Uses dynamic status (via Member accessor) — never reads raw DB status column.
-     * "Active" count includes members who are expiring soon (still have valid subscriptions).
-     */
     public function dashboard()
     {
         $instructor = auth()->user();
 
+        // FIX: load member.user so photo resolves via member->user->photo
         $members = Member::where('instructor_id', $instructor->id)
-                         ->with('payments')
+                         ->with('user', 'payments')
                          ->get();
 
-        // Active = anyone still subscribed (includes "Expiring Soon")
         $active  = $members->filter(fn($m) => in_array($m->status, ['Active', 'Expiring Soon']))->count();
         $expired = $members->filter(fn($m) => $m->status === 'Expired')->count();
         $nearDue = $members->filter(fn($m) => $m->status === 'Expiring Soon')->count();
@@ -41,15 +36,14 @@ class InstructorController extends Controller
     //  Member Detail
     // ─────────────────────────────────────────
 
-    /**
-     * View a single member's detail page.
-     * Restricted to the member's assigned instructor only.
-     */
     public function showMember(Member $member)
     {
         if ($member->instructor_id !== auth()->id()) {
             abort(403, 'This member is not assigned to you.');
         }
+
+        // FIX: eager-load user so photo resolves via member->user->photo
+        $member->loadMissing('user');
 
         $payments = $member->payments()->latest()->get();
 
@@ -60,18 +54,12 @@ class InstructorController extends Controller
     //  Profile
     // ─────────────────────────────────────────
 
-    /**
-     * Show instructor profile page.
-     */
     public function profile()
     {
         $instructor = auth()->user();
         return view('instructor.profile', compact('instructor'));
     }
 
-    /**
-     * Update instructor profile.
-     */
     public function updateProfile(Request $request)
     {
         $instructor = auth()->user();
@@ -105,16 +93,13 @@ class InstructorController extends Controller
     //  Payment History
     // ─────────────────────────────────────────
 
-    /**
-     * Instructor's own earnings page.
-     * Route: GET /instructor/payments  →  name: instructor.payments
-     */
     public function paymentHistory()
     {
         $instructor = auth()->user();
 
+        // FIX: load member.user so photo resolves via payment->member->user->photo
         $payments = Payment::forInstructor($instructor->id)
-                           ->with('member:id,name')
+                           ->with('member:id,name,user_id', 'member.user:id,photo')
                            ->latest('payment_date')
                            ->paginate(15);
 

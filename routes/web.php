@@ -10,6 +10,7 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\WorkoutPlanController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\QrCodeController;
+use App\Http\Controllers\CoachRequestController;
 use Illuminate\Support\Facades\Route;
 
 // Landing page (public)
@@ -59,10 +60,15 @@ Route::middleware(['auth'])->group(function () {
     // ── INSTRUCTOR PORTAL ───────────────────────────────────────
     Route::prefix('instructor')->name('instructor.')->middleware('instructor')->group(function () {
         Route::get('/dashboard',        [InstructorController::class, 'dashboard'])       ->name('dashboard');
-        Route::get('/members/{member}', [InstructorController::class, 'showMember'])     ->name('member.show');
-        Route::get('/profile',          [InstructorController::class, 'profile'])         ->name('profile');
-        Route::post('/profile',         [InstructorController::class, 'updateProfile'])   ->name('profile.update');
-        Route::get('/payments',         [InstructorController::class, 'paymentHistory'])  ->name('payments');
+        Route::get('/members/{member}', [InstructorController::class, 'showMember'])      ->name('member.show');
+        Route::get('/profile',          [InstructorController::class, 'profile'])          ->name('profile');
+        Route::post('/profile',         [InstructorController::class, 'updateProfile'])    ->name('profile.update');
+        Route::get('/payments',         [InstructorController::class, 'paymentHistory'])   ->name('payments');
+
+        // ── Coach Requests ──────────────────────────────────────
+        Route::get('/requests',                         [CoachRequestController::class, 'index'])  ->name('requests');
+        Route::post('/requests/{coachRequest}/approve', [CoachRequestController::class, 'approve'])->name('requests.approve');
+        Route::post('/requests/{coachRequest}/reject',  [CoachRequestController::class, 'reject']) ->name('requests.reject');
     });
 
     // ── STAFF PORTAL ─────────────────────────────────────────────

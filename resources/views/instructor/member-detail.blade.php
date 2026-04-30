@@ -23,6 +23,16 @@
   </a>
 </div>
 
+@php
+  // FIX: photo lives on users table — resolve via member->user->photo
+  $memberPhoto = $member->user?->photo ?? $member->photo ?? null;
+  $isExpired   = $member->isExpired();
+  $isExpiring  = $member->isDueWithinDays(7) && !$isExpired;
+  $statusLabel = $isExpired ? 'Expired' : ($isExpiring ? 'Expiring Soon' : 'Active');
+  $statusColor = $isExpired ? '#f87171' : ($isExpiring ? '#fbbf24' : '#4ade80');
+  $statusBg    = $isExpired ? 'rgba(248,113,113,0.15)' : ($isExpiring ? 'rgba(251,191,36,0.15)' : 'rgba(74,222,128,0.15)');
+@endphp
+
 {{-- Main Grid --}}
 <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start;">
 
@@ -33,16 +43,15 @@
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;
                 padding:28px;text-align:center;">
 
-      {{-- Avatar --}}
       <div style="margin:0 auto 16px;width:88px;height:88px;border-radius:50%;overflow:hidden;
                   border:3px solid rgba(200,255,0,0.3);background:rgba(200,255,0,0.08);
                   display:flex;align-items:center;justify-content:center;">
-        @if($member->photo)
-          <img src="{{ asset('storage/'.$member->photo) }}"
+        @if($memberPhoto)
+          <img src="{{ asset('storage/'.$memberPhoto) }}"
                style="width:100%;height:100%;object-fit:cover;"/>
         @else
           <span style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--accent);">
-            {{ strtoupper(substr($member->name,0,2)) }}
+            {{ strtoupper(substr($member->name, 0, 2)) }}
           </span>
         @endif
       </div>
@@ -50,14 +59,6 @@
       <div style="font-size:20px;font-weight:800;margin-bottom:4px;">{{ $member->name }}</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">{{ $member->email }}</div>
 
-      {{-- Status badge --}}
-      @php
-        $isExpired  = $member->isExpired();
-        $isExpiring = $member->isDueWithinDays(7) && !$isExpired;
-        $statusLabel = $isExpired ? 'Expired' : ($isExpiring ? 'Expiring Soon' : 'Active');
-        $statusColor = $isExpired ? '#f87171' : ($isExpiring ? '#fbbf24' : '#4ade80');
-        $statusBg    = $isExpired ? 'rgba(248,113,113,0.15)' : ($isExpiring ? 'rgba(251,191,36,0.15)' : 'rgba(74,222,128,0.15)');
-      @endphp
       <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 16px;
                    border-radius:100px;font-size:12px;font-weight:700;
                    background:{{ $statusBg }};color:{{ $statusColor }};
@@ -181,7 +182,6 @@
         </div>
       </div>
 
-      {{-- Expiry warning --}}
       @if($isExpired)
         <div style="padding:12px 16px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);
                     border-radius:10px;font-size:13px;color:var(--danger);display:flex;align-items:center;gap:8px;">
@@ -223,18 +223,10 @@
         <tbody>
           @forelse($payments as $p)
           <tr style="border-top:1px solid var(--border);">
-            <td style="padding:14px 20px;font-family:monospace;font-size:11px;color:var(--muted);">
-              {{ $p->receipt_number }}
-            </td>
-            <td style="padding:14px 20px;font-size:13px;font-weight:500;">
-              {{ $p->fitness_plan }} / {{ $p->membership_type }}
-            </td>
-            <td style="padding:14px 20px;font-size:14px;font-weight:700;color:var(--accent);">
-              ₱{{ number_format($p->amount, 2) }}
-            </td>
-            <td style="padding:14px 20px;font-size:13px;color:var(--muted);">
-              {{ $p->payment_date->format('M d, Y') }}
-            </td>
+            <td style="padding:14px 20px;font-family:monospace;font-size:11px;color:var(--muted);">{{ $p->receipt_number }}</td>
+            <td style="padding:14px 20px;font-size:13px;font-weight:500;">{{ $p->fitness_plan }} / {{ $p->membership_type }}</td>
+            <td style="padding:14px 20px;font-size:14px;font-weight:700;color:var(--accent);">₱{{ number_format($p->amount, 2) }}</td>
+            <td style="padding:14px 20px;font-size:13px;color:var(--muted);">{{ $p->payment_date->format('M d, Y') }}</td>
             <td style="padding:14px 20px;">
               <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;
                            border-radius:6px;font-size:11px;font-weight:700;
@@ -246,9 +238,7 @@
           </tr>
           @empty
           <tr>
-            <td colspan="5" style="padding:40px;text-align:center;color:var(--muted);font-size:14px;">
-              No payments on record.
-            </td>
+            <td colspan="5" style="padding:40px;text-align:center;color:var(--muted);font-size:14px;">No payments on record.</td>
           </tr>
           @endforelse
         </tbody>
