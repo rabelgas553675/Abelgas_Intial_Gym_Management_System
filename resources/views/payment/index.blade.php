@@ -6,27 +6,21 @@
 @section('content')
 
 <style>
-  /* Fix for the custom dropdown icon */
   select.form-control {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    /* Custom Chevron Icon */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
     background-size: 16px;
-    padding-right: 40px !important; /* Ensure text doesn't overlap the icon */
+    padding-right: 40px !important;
     cursor: pointer;
   }
-
-  /* Style for dropdown options to ensure they are readable */
   select.form-control option {
     background-color: var(--surface);
     color: white;
   }
-
-  /* Focus state to match your blue highlight */
   select.form-control:focus {
     border-color: #3b82f6;
     outline: none;
@@ -78,10 +72,10 @@
     </div>
 
     @if(session('success'))
-      <div class="alert alert-success" style="margin-bottom:15px; font-size:13px;">✓ {{ session('success') }}</div>
+      <div class="alert alert-success" style="margin-bottom:15px;font-size:13px;">✓ {{ session('success') }}</div>
     @endif
     @if(session('error'))
-      <div class="alert alert-danger" style="margin-bottom:15px; font-size:13px;">✕ {{ session('error') }}</div>
+      <div class="alert alert-danger" style="margin-bottom:15px;font-size:13px;">✕ {{ session('error') }}</div>
     @endif
 
     <form method="POST" action="{{ route('payments.store') }}">
@@ -121,7 +115,7 @@
         @enderror
       </div>
 
-      <div class="form-group" style="margin-bottom:16px;">
+      <div class="form-group" style="margin-bottom:20px;">
         <label class="form-label">Method</label>
         <select name="method" class="form-control" required>
           <option value="" disabled selected>— Select Method —</option>
@@ -132,12 +126,6 @@
         @error('method')
           <div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>
         @enderror
-      </div>
-
-      <div class="form-group" style="margin-bottom:20px;">
-        <label class="form-label">Notes (optional)</label>
-        <textarea name="notes" class="form-control" rows="3"
-                  placeholder="Any additional notes...">{{ old('notes') }}</textarea>
       </div>
 
       <button type="submit" class="btn btn-primary"
@@ -151,6 +139,7 @@
   <div>
     <div class="section-header">
       <div class="section-title">All Transactions</div>
+      <div style="font-size:12px;color:var(--muted);">Sorted by most recent</div>
     </div>
 
     <div class="card">
@@ -174,19 +163,27 @@
             </td>
             <td>
               <div style="display:flex;align-items:center;gap:10px;">
-                <div style="width:30px;height:30px;border-radius:50%;background:rgba(200,255,0,0.08);
-                            border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
-                            justify-content:center;font-size:10px;font-weight:700;
-                            color:var(--accent);flex-shrink:0;">
-                  {{ strtoupper(substr($payment->member->name ?? '?', 0, 2)) }}
+                @if($payment->member?->user?->photo)
+                  <img src="{{ asset('storage/'.$payment->member->user->photo) }}"
+                       style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border);"/>
+                @else
+                  <div style="width:30px;height:30px;border-radius:50%;background:rgba(200,255,0,0.08);
+                              border:1px solid rgba(200,255,0,0.15);display:flex;align-items:center;
+                              justify-content:center;font-size:10px;font-weight:700;
+                              color:var(--accent);flex-shrink:0;">
+                    {{ strtoupper(substr($payment->member->name ?? '?', 0, 2)) }}
+                  </div>
+                @endif
+                <div>
+                  <div style="font-weight:600;">{{ $payment->member->name ?? '—' }}</div>
+                  <div style="font-size:11px;color:var(--muted);">{{ $payment->member->email ?? '' }}</div>
                 </div>
-                <span style="font-weight:600;">{{ $payment->member->name ?? '—' }}</span>
               </div>
             </td>
             <td style="font-weight:700;color:var(--accent);">
               ₱{{ number_format($payment->amount, 0) }}
             </td>
-            <td style="color:var(--muted);">
+            <td style="color:var(--muted);font-size:13px;">
               {{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}
             </td>
             <td>
@@ -202,7 +199,7 @@
               <form method="POST" action="{{ route('payments.destroy', $payment) }}"
                     onsubmit="return confirm('Delete this transaction?')">
                 @csrf @method('DELETE')
-                <button type="submit" class="btn btn-danger-soft btn-sm">🗑</button>
+                <button type="submit" class="btn btn-danger btn-sm">🗑</button>
               </form>
             </td>
           </tr>
@@ -215,6 +212,20 @@
           @endforelse
         </tbody>
       </table>
+
+      {{-- Table Footer Summary --}}
+      @if($payments->count() > 0)
+      <div style="padding:14px 18px;border-top:1px solid var(--border);
+                  display:flex;justify-content:space-between;align-items:center;
+                  background:var(--surface2);">
+        <span style="font-size:12px;color:var(--muted);">
+          Total Transactions: <strong style="color:var(--text);">{{ $totalCount }}</strong>
+        </span>
+        <span style="font-size:13px;color:var(--muted);">
+          Total Collected: <strong style="color:var(--accent);">₱{{ number_format($totalCollected, 0) }}</strong>
+        </span>
+      </div>
+      @endif
     </div>
   </div>
 </div>

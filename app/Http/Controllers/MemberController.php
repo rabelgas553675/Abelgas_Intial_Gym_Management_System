@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -58,14 +59,8 @@ class MemberController extends Controller
                   ->orWhere('email', 'like', '%' . $request->search . '%');
             });
         }
-
-        if ($request->filled('plan')) {
-            $query->where('membership_type', $request->plan);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        if ($request->filled('plan'))   { $query->where('membership_type', $request->plan); }
+        if ($request->filled('status')) { $query->where('status', $request->status); }
 
         $members = $query->latest()->paginate(15)->through(function (Member $m) {
             if (!$m->photo && $m->user && $m->user->photo) {
@@ -83,11 +78,16 @@ class MemberController extends Controller
         if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
             abort(403);
         }
-
         $instructors = User::where('role', 'instructor')->get();
         return view('members.create', compact('instructors'));
     }
 
+    /**
+     * Store a new member AND automatically create their portal User account.
+     *
+     * Membership details (plan, start date, fee) are NOT collected here.
+     * The member will select their plan after logging into the portal.
+     */
     public function store(Request $request)
     {
         if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
@@ -95,65 +95,75 @@ class MemberController extends Controller
         }
 
         $request->validate([
-            'first_name'      => 'required|string|max:255',
-            'last_name'       => 'required|string|max:255',
-            'email'           => 'required|email|unique:members,email',
-            'phone'           => 'nullable|string|max:20',
-            'gender'          => 'required|in:Male,Female,Other',
-            'birthdate'       => 'required|date',
-            'address'         => 'required|string',
-            'membership_type' => 'required|in:Monthly,Quarterly,Semi-Annual,Annual',
-            'start_date'      => 'required|date',
-            'fee'             => 'required|numeric|min:0',
-            'photo'           => 'nullable|image|max:3072',
-            'instructor_id'   => 'nullable|exists:users,id',
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'email'      => 'required|email:rfc|unique:users,email|unique:members,email',
+            'phone'      => 'nullable|string|max:20',
+            'gender'     => 'required|in:Male,Female,Other',
+            'birthdate'  => 'required|date',
+            'address'    => 'nullable|string',
+            'photo'      => 'nullable|image|max:3072',
+            'password'   => 'required|string|min:8|confirmed',
         ]);
 
-        $photoPath = $request->hasFile('photo')
-            ? $request->file('photo')->store('members', 'public')
-            : null;
+        DB::beginTransaction();
+        try {
+            // ── 1. Upload photo if provided ───────────────────────────────────
+            $photoPath = $request->hasFile('photo')
+                ? $request->file('photo')->store('members', 'public')
+                : null;
 
-        $start    = Carbon::parse($request->start_date);
-        $end_date = match($request->membership_type) {
-            'Monthly'     => $start->copy()->addMonth()->toDateString(),
-            'Quarterly'   => $start->copy()->addMonths(3)->toDateString(),
-            'Semi-Annual' => $start->copy()->addMonths(6)->toDateString(),
-            'Annual'      => $start->copy()->addYear()->toDateString(),
-        };
-
-        // ✅ instructor_id is always null — never assigned directly
-        $member = Member::create([
-            'name'            => $request->first_name . ' ' . $request->last_name,
-            'first_name'      => $request->first_name,
-            'last_name'       => $request->last_name,
-            'email'           => $request->email,
-            'phone'           => $request->phone,
-            'gender'          => $request->gender,
-            'birthdate'       => $request->birthdate,
-            'address'         => $request->address,
-            'membership_type' => $request->membership_type,
-            'start_date'      => $start->toDateString(),
-            'end_date'        => $end_date,
-            'fee'             => $request->fee,
-            'status'          => 'Active',
-            'photo'           => $photoPath,
-            'instructor_id'   => null,
-        ]);
-
-        // ✅ If instructor selected, create pending coach request instead
-        if ($request->filled('instructor_id')) {
-            CoachRequest::create([
-                'member_id'     => $member->id,
-                'instructor_id' => $request->instructor_id,
-                'status'        => 'pending',
-                'message'       => null,
+            // ── 2. Create the User account (portal login) ─────────────────────
+            $user = User::create([
+                'name'      => $request->first_name . ' ' . $request->last_name,
+                'email'     => $request->email,
+                'phone'     => $request->phone,
+                'password'  => Hash::make($request->password),
+                'role'      => 'member',
+                'photo'     => $photoPath,
+                'gender'    => $request->gender,
+                'birthdate' => $request->birthdate,
+                'address'   => $request->address,
             ]);
+
+            // ── 3. Create the Member record linked to the new User ────────────
+            $member = Member::create([
+                'user_id'         => $user->id,
+                'name'            => $user->name,
+                'first_name'      => $request->first_name,
+                'last_name'       => $request->last_name,
+                'email'           => $request->email,
+                'phone'           => $request->phone,
+                'gender'          => $request->gender,
+                'birthdate'       => $request->birthdate,
+                'address'         => $request->address,
+                'membership_type' => null,
+                'start_date'      => null,
+                'end_date'        => null,
+                'fee'             => 0,
+                'status'          => 'Pending',
+                'photo'           => $photoPath,
+                'instructor_id'   => null,
+                'coach_status'    => 'none',
+            ]);
+
+            // ── 4. Generate QR code ───────────────────────────────────────────
+            Member::generateQrCode($member);
+
+            DB::commit();
+
+            return redirect()->route('members.index')
+                ->with('success', "{$user->name}'s account created successfully. They can log in to select a membership plan.");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if (isset($photoPath) && $photoPath) {
+                Storage::disk('public')->delete($photoPath);
+            }
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create member account: ' . $e->getMessage());
         }
-
-        Member::generateQrCode($member);
-
-        return redirect()->route('members.index')
-                         ->with('success', 'Member created! Coach request sent for approval.');
     }
 
     public function show(Member $member)
@@ -184,9 +194,18 @@ class MemberController extends Controller
             'fee'             => 'required|numeric',
         ]);
 
-        // ✅ Never allow direct instructor_id update — must go through approval
+        // Never allow direct instructor_id update — must go through approval
         $data = $request->except('instructor_id');
         $member->update($data);
+
+        // Sync the name on the linked user account as well
+        if ($member->user) {
+            $member->user->update([
+                'name'  => $request->first_name . ' ' . $request->last_name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+            ]);
+        }
 
         return redirect()->route('members.index')->with('success', 'Member updated successfully.');
     }
@@ -220,13 +239,10 @@ class MemberController extends Controller
         $gymPriceMap   = ['Monthly' => 800,  'Quarterly' => 3200, 'Annually' => 9600];
         $coachPriceMap = ['Monthly' => 300,  'Quarterly' => 1200, 'Annually' => 3600];
 
-        $gymAmount   = $gymPriceMap[$request->membership_type] ?? 0;
-        $coachAmount = 0;
-
-        if ($request->filled('instructor_id')) {
-            $coachAmount = $coachPriceMap[$request->coach_membership_type] ?? 0;
-        }
-
+        $gymAmount   = $gymPriceMap[$request->membership_type]   ?? 0;
+        $coachAmount = $request->filled('instructor_id')
+                        ? ($coachPriceMap[$request->coach_membership_type] ?? 0)
+                        : 0;
         $totalAmount = $gymAmount + $coachAmount;
 
         $start = Carbon::now();
@@ -238,26 +254,20 @@ class MemberController extends Controller
 
         DB::beginTransaction();
         try {
-            // ✅ instructor_id always null until coach approves
             $member->update([
                 'fitness_plan'          => $request->fitness_plan,
                 'membership_type'       => $request->membership_type,
                 'instructor_id'         => null,
-                'coach_membership_type' => $request->filled('instructor_id')
-                                            ? $request->coach_membership_type
-                                            : null,
+                'coach_membership_type' => $request->filled('instructor_id') ? $request->coach_membership_type : null,
                 'start_date'            => $start,
                 'end_date'              => $end,
                 'fee'                   => $totalAmount,
                 'status'                => 'Active',
+                'coach_status'          => $request->filled('instructor_id') ? 'pending' : 'none',
             ]);
 
-            // ✅ Create pending coach request — instructor must approve first
             if ($request->filled('instructor_id')) {
-                CoachRequest::where('member_id', $member->id)
-                            ->where('status', 'pending')
-                            ->update(['status' => 'rejected']);
-
+                CoachRequest::where('member_id', $member->id)->where('status', 'pending')->update(['status' => 'rejected']);
                 CoachRequest::create([
                     'member_id'     => $member->id,
                     'instructor_id' => $request->instructor_id,
@@ -281,7 +291,6 @@ class MemberController extends Controller
 
             return redirect()->route('member.receipt', $payment->id)
                              ->with('success', 'Subscription processed! Waiting for coach approval.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error processing payment: ' . $e->getMessage());
@@ -291,10 +300,7 @@ class MemberController extends Controller
     public function paymentHistory()
     {
         $member   = Auth::user()->member;
-        $payments = Payment::where('member_id', $member->id)
-                           ->latest('payment_date')
-                           ->get();
-
+        $payments = Payment::where('member_id', $member->id)->latest('payment_date')->get();
         return view('member.payments', compact('payments', 'member'));
     }
 
@@ -303,7 +309,6 @@ class MemberController extends Controller
         if ($payment->member_id !== Auth::user()->member->id) {
             abort(403);
         }
-
         $member = $payment->member;
         return view('member.receipt', compact('payment', 'member'));
     }

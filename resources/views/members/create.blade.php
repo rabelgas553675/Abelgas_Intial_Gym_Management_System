@@ -6,7 +6,6 @@
 @section('content')
 
 <style>
-  /* Fix for custom dropdown icons */
   .custom-dropdown {
     appearance: none !important;
     -webkit-appearance: none !important;
@@ -18,26 +17,14 @@
     padding-right: 40px !important;
     cursor: pointer;
   }
-
-  .custom-dropdown option {
-    background-color: #1a1a1a;
-    color: white;
-  }
-
-  /* Hide native calendar picker icon but keep it clickable */
+  .custom-dropdown option { background-color: #1a1a1a; color: white; }
   input[type="date"]::-webkit-calendar-picker-indicator {
-    opacity: 0;
-    position: absolute;
-    right: 0;
-    width: 40px;
-    height: 100%;
-    cursor: pointer;
+    opacity: 0; position: absolute; right: 0; width: 40px; height: 100%; cursor: pointer;
   }
+  input[type="date"] { color-scheme: dark; }
 
-  /* Dark color-scheme so browser-native date text stays light */
-  input[type="date"] {
-    color-scheme: dark;
-  }
+  .strength-wrap { display: flex; gap: 4px; margin-top: 8px; }
+  .strength-seg  { flex: 1; height: 3px; border-radius: 2px; background: var(--border); transition: background .3s; }
 </style>
 
 <div style="max-width:900px; margin:0 auto;">
@@ -56,14 +43,13 @@
     </div>
   @endif
 
-  <form method="POST" action="{{ route('members.store') }}" enctype="multipart/form-data">
+  <form method="POST" action="{{ route('members.store') }}" enctype="multipart/form-data" autocomplete="off">
     @csrf
 
-    {{-- ── Card 1: Personal Info ──────────────────────────────────────────── --}}
+    {{-- ── Card 1: Personal Info ── --}}
     <div style="background:var(--surface1); border:1px solid var(--border); border-radius:14px;
                 padding:32px; margin-bottom:20px;">
 
-      {{-- Card header --}}
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:28px;
                   padding-bottom:18px; border-bottom:1px solid var(--border);">
         <div style="width:32px; height:32px; background:rgba(200,255,0,0.1); border:1px solid rgba(200,255,0,0.25);
@@ -105,116 +91,66 @@
           <input type="file" id="photo-input" name="photo"
                  accept="image/jpg,image/png,image/webp"
                  style="display:none;" onchange="previewPhoto(this)"/>
-          <div style="font-size:11px; color:var(--muted); line-height:1.8;">
-            JPG / PNG / WEBP<br>Max 3MB
-          </div>
+          <div style="font-size:11px; color:var(--muted); line-height:1.8;">JPG / PNG / WEBP<br>Max 3MB</div>
         </div>
 
         {{-- Personal Fields --}}
         <div>
-
-          {{-- Row 1: First + Last Name --}}
+          {{-- Row 1: First + Last --}}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
-              <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                            text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-                First Name <span style="color:#f87171;">*</span>
-              </label>
-              <input type="text" name="first_name" value="{{ old('first_name') }}"
-                     placeholder="e.g. Juan"
-                     style="width:100%; padding:11px 14px; background:var(--surface2);
-                            border:1px solid var(--border); border-radius:8px;
-                            color:var(--text); font-size:13px; outline:none; transition:.15s; box-sizing:border-box;"
-                     onfocus="this.style.borderColor='var(--accent)'"
-                     onblur="this.style.borderColor='var(--border)'" required/>
+              <label class="field-label">First Name <span style="color:#f87171;">*</span></label>
+              <input type="text" name="first_name" value="{{ old('first_name') }}" placeholder="e.g. Juan"
+                     class="field-input" required/>
             </div>
             <div>
-              <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                            text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-                Last Name <span style="color:#f87171;">*</span>
-              </label>
-              <input type="text" name="last_name" value="{{ old('last_name') }}"
-                     placeholder="e.g. Dela Cruz"
-                     style="width:100%; padding:11px 14px; background:var(--surface2);
-                            border:1px solid var(--border); border-radius:8px;
-                            color:var(--text); font-size:13px; outline:none; transition:.15s; box-sizing:border-box;"
-                     onfocus="this.style.borderColor='var(--accent)'"
-                     onblur="this.style.borderColor='var(--border)'" required/>
+              <label class="field-label">Last Name <span style="color:#f87171;">*</span></label>
+              <input type="text" name="last_name" value="{{ old('last_name') }}" placeholder="e.g. Dela Cruz"
+                     class="field-input" required/>
             </div>
           </div>
 
           {{-- Row 2: Email + Phone --}}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
-              <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                            text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-                Email Address <span style="color:#f87171;">*</span>
-              </label>
-              <input type="email" name="email" value="{{ old('email') }}"
-                     placeholder="member@email.com"
-                     style="width:100%; padding:11px 14px; background:var(--surface2);
-                            border:1px solid var(--border); border-radius:8px;
-                            color:var(--text); font-size:13px; outline:none; transition:.15s; box-sizing:border-box;"
-                     onfocus="this.style.borderColor='var(--accent)'"
-                     onblur="this.style.borderColor='var(--border)'" required/>
+              <label class="field-label">Email Address <span style="color:#f87171;">*</span></label>
+              <input type="email" name="email" value="{{ old('email') }}" placeholder="member@email.com"
+                     class="field-input" required
+                     autocomplete="off"
+                     readonly
+                     onfocus="this.removeAttribute('readonly')"
+                     onblur="if(!this.value) this.setAttribute('readonly', true)"/>
             </div>
             <div>
-              <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                            text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-                Phone Number
-              </label>
-              <input type="text" name="phone" value="{{ old('phone') }}"
-                     placeholder="09XXXXXXXXX"
-                     style="width:100%; padding:11px 14px; background:var(--surface2);
-                            border:1px solid var(--border); border-radius:8px;
-                            color:var(--text); font-size:13px; outline:none; transition:.15s; box-sizing:border-box;"
-                     onfocus="this.style.borderColor='var(--accent)'"
-                     onblur="this.style.borderColor='var(--border)'"/>
+              <label class="field-label">Phone Number</label>
+              <input type="text" name="phone" value="{{ old('phone') }}" placeholder="09XXXXXXXXX"
+                     class="field-input"/>
             </div>
           </div>
 
           {{-- Row 3: Gender + Birthdate --}}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
-              <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                            text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-                Gender <span style="color:#f87171;">*</span>
-              </label>
-              <select name="gender" class="custom-dropdown"
-                      style="width:100%; padding:11px 14px; background:var(--surface2);
-                             border:1px solid var(--border); border-radius:8px;
-                             color:var(--text); font-size:13px; outline:none; cursor:pointer; transition:.15s; box-sizing:border-box;"
-                      onfocus="this.style.borderColor='var(--accent)'"
-                      onblur="this.style.borderColor='var(--border)'" required>
+              <label class="field-label">Gender <span style="color:#f87171;">*</span></label>
+              <select name="gender" class="custom-dropdown field-input" required>
                 <option value="">Select Gender</option>
                 <option value="Male"   {{ old('gender')=='Male'   ?'selected':'' }}>Male</option>
                 <option value="Female" {{ old('gender')=='Female' ?'selected':'' }}>Female</option>
                 <option value="Other"  {{ old('gender')=='Other'  ?'selected':'' }}>Other</option>
               </select>
             </div>
-
-            {{-- Birthdate with custom visible calendar icon --}}
             <div>
-              <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                            text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-                Birthdate <span style="color:#f87171;">*</span>
-              </label>
+              <label class="field-label">Birthdate <span style="color:#f87171;">*</span></label>
               <div style="position:relative;">
                 <input type="date" name="birthdate" value="{{ old('birthdate') }}"
-                       style="width:100%; padding:11px 40px 11px 14px; background:var(--surface2);
-                              border:1px solid var(--border); border-radius:8px;
-                              color:var(--text); font-size:13px; outline:none; transition:.15s;
-                              box-sizing:border-box; color-scheme:dark;"
-                       onfocus="this.style.borderColor='var(--accent)'"
-                       onblur="this.style.borderColor='var(--border)'" required/>
+                       class="field-input" style="padding-right:40px; color-scheme:dark;" required/>
                 <svg style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
                             pointer-events:none; color:#c8ff00;"
                      width="16" height="16" fill="none" stroke="currentColor"
                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8"  y1="2" x2="8"  y2="6"/>
-                  <line x1="3"  y1="10" x2="21" y2="10"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
               </div>
             </div>
@@ -222,139 +158,106 @@
 
           {{-- Row 4: Address --}}
           <div>
-            <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                          text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-              Address
-            </label>
-            <textarea name="address" rows="2"
-                      placeholder="Complete address"
-                      style="width:100%; padding:11px 14px; background:var(--surface2);
-                             border:1px solid var(--border); border-radius:8px;
-                             color:var(--text); font-size:13px; outline:none; transition:.15s;
-                             resize:vertical; box-sizing:border-box; font-family:inherit;"
-                      onfocus="this.style.borderColor='var(--accent)'"
-                      onblur="this.style.borderColor='var(--border)'">{{ old('address') }}</textarea>
+            <label class="field-label">Address</label>
+            <textarea name="address" rows="2" placeholder="Complete address"
+                      class="field-input" style="resize:vertical; font-family:inherit;">{{ old('address') }}</textarea>
           </div>
-
         </div>
       </div>
     </div>
 
-    {{-- ── Card 2: Membership Details ────────────────────────────────────── --}}
+    {{-- ── Card 2: Account Credentials ── --}}
     <div style="background:var(--surface1); border:1px solid var(--border); border-radius:14px;
                 padding:32px; margin-bottom:24px;">
 
-      {{-- Card header --}}
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:28px;
                   padding-bottom:18px; border-bottom:1px solid var(--border);">
         <div style="width:32px; height:32px; background:rgba(200,255,0,0.1); border:1px solid rgba(200,255,0,0.25);
                     border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
           <svg width="15" height="15" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
           </svg>
         </div>
         <div>
-          <div style="font-size:15px; font-weight:700; color:var(--text);">Membership Details</div>
-          <div style="font-size:12px; color:var(--muted); margin-top:1px;">Plan, dates and fee</div>
+          <div style="font-size:15px; font-weight:700; color:var(--text);">Account Credentials</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:1px;">
+            Login details for the member's portal account
+          </div>
         </div>
       </div>
 
-      {{-- Row: Type + Start + End --}}
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:18px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
 
+        {{-- Password --}}
         <div>
-          <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                        text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-            Membership Type <span style="color:#f87171;">*</span>
-          </label>
-          <select name="membership_type" id="membership_type" class="custom-dropdown"
-                  style="width:100%; padding:11px 14px; background:var(--surface2);
-                         border:1px solid var(--border); border-radius:8px;
-                         color:var(--text); font-size:13px; outline:none; cursor:pointer; transition:.15s; box-sizing:border-box;"
-                  onfocus="this.style.borderColor='var(--accent)'"
-                  onblur="this.style.borderColor='var(--border)'"
-                  onchange="computeEndDate()" required>
-            <option value="">Select Type</option>
-            <option value="Monthly"     {{ old('membership_type')=='Monthly'     ?'selected':'' }}>Monthly — ₱800</option>
-            <option value="Quarterly"   {{ old('membership_type')=='Quarterly'   ?'selected':'' }}>Quarterly — ₱2,100</option>
-            <option value="Semi-Annual" {{ old('membership_type')=='Semi-Annual' ?'selected':'' }}>Semi-Annual — ₱4,000</option>
-            <option value="Annual"      {{ old('membership_type')=='Annual'      ?'selected':'' }}>Annual — ₱7,500</option>
-          </select>
-        </div>
-
-        {{-- Start Date with custom visible calendar icon --}}
-        <div>
-          <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                        text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-            Start Date <span style="color:#f87171;">*</span>
-          </label>
+          <label class="field-label">Password <span style="color:#f87171;">*</span></label>
           <div style="position:relative;">
-            <input type="date" name="start_date" id="start_date"
-                   value="{{ old('start_date', date('Y-m-d')) }}"
-                   style="width:100%; padding:11px 40px 11px 14px; background:var(--surface2);
-                          border:1px solid var(--border); border-radius:8px;
-                          color:var(--text); font-size:13px; outline:none; transition:.15s;
-                          box-sizing:border-box; color-scheme:dark;"
-                   onfocus="this.style.borderColor='var(--accent)'"
-                   onblur="this.style.borderColor='var(--border)'"
-                   onchange="computeEndDate()" required/>
-            <svg style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
-                        pointer-events:none; color:#c8ff00;"
-                 width="16" height="16" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8"  y1="2" x2="8"  y2="6"/>
-              <line x1="3"  y1="10" x2="21" y2="10"/>
-            </svg>
+            <input type="password" name="password" id="password"
+                   placeholder="Min. 8 characters"
+                   autocomplete="new-password"
+                   class="field-input" style="padding-right:44px;" required
+                   oninput="checkStrength(this.value)"/>
+            <button type="button" onclick="togglePw('password','eye1')"
+                    style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
+                           background:none; border:none; cursor:pointer; color:var(--muted); padding:2px;"
+                    onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">
+              <svg id="eye1" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
           </div>
+          <div class="strength-wrap">
+            <div class="strength-seg" id="seg1"></div>
+            <div class="strength-seg" id="seg2"></div>
+            <div class="strength-seg" id="seg3"></div>
+            <div class="strength-seg" id="seg4"></div>
+          </div>
+          <div id="strength-label" style="font-size:11px; color:var(--muted); margin-top:4px; height:14px;"></div>
         </div>
 
+        {{-- Confirm Password --}}
         <div>
-          <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                        text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-            End Date
-            <span style="font-weight:400; color:var(--muted); font-size:10px; text-transform:none; letter-spacing:0;">(auto-computed)</span>
-          </label>
-          <input type="text" id="end_date_display"
-                 placeholder="Select type & date" readonly
-                 style="width:100%; padding:11px 14px; background:rgba(200,255,0,0.04);
-                        border:1px solid rgba(200,255,0,0.2); border-radius:8px;
-                        color:var(--accent); font-size:13px; font-weight:600;
-                        cursor:not-allowed; box-sizing:border-box;"/>
-          <input type="hidden" name="end_date" id="end_date_value"/>
+          <label class="field-label">Confirm Password <span style="color:#f87171;">*</span></label>
+          <div style="position:relative;">
+            <input type="password" name="password_confirmation" id="password_confirmation"
+                   placeholder="Repeat password"
+                   autocomplete="new-password"
+                   class="field-input" style="padding-right:44px;" required
+                   oninput="checkMatch()"/>
+            <button type="button" onclick="togglePw('password_confirmation','eye2')"
+                    style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
+                           background:none; border:none; cursor:pointer; color:var(--muted); padding:2px;"
+                    onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">
+              <svg id="eye2" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <div id="match-label" style="font-size:11px; margin-top:6px; height:14px;"></div>
         </div>
+
       </div>
 
-      {{-- Fee --}}
-      <div>
-        <label style="display:block; font-size:11px; color:var(--muted); font-weight:600;
-                      text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-          Membership Fee (₱) <span style="color:#f87171;">*</span>
-        </label>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="position:relative; display:inline-block;">
-            <span style="position:absolute; left:13px; top:50%; transform:translateY(-50%);
-                         color:var(--accent); font-weight:700; font-size:14px; pointer-events:none;">₱</span>
-            <input type="number" name="fee" id="fee"
-                   step="0.01" min="0" placeholder="0.00"
-                   value="{{ old('fee', '0.00') }}"
-                   style="padding:11px 14px 11px 30px; background:var(--surface2);
-                          border:1px solid var(--border); border-radius:8px;
-                          color:var(--text); font-size:13px; outline:none; transition:.15s; width:200px;"
-                   onfocus="this.style.borderColor='var(--accent)'"
-                   onblur="this.style.borderColor='var(--border)'" required/>
-          </div>
-          <span style="font-size:12px; color:var(--muted);">Auto-filled — you may adjust if needed.</span>
+      {{-- Info note --}}
+      <div style="margin-top:20px; background:rgba(96,165,250,0.06); border:1px solid rgba(96,165,250,0.18);
+                  border-radius:10px; padding:12px 16px; display:flex; gap:10px; align-items:flex-start;">
+        <svg width="15" height="15" fill="none" stroke="#60a5fa" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px;">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div style="font-size:12px; color:rgba(96,165,250,0.85); line-height:1.6;">
+          A member portal account will be created automatically with the email and password above.
+          The member can log in at <strong>{{ config('app.url') }}</strong> using these credentials.
         </div>
       </div>
 
     </div>
 
-    {{-- ── Action Buttons ─────────────────────────────────────────────────── --}}
+    {{-- ── Action Buttons ── --}}
     <div style="display:flex; gap:12px; align-items:center;">
-      <button type="submit"
+      <button type="submit" id="submitBtn"
               style="padding:12px 28px; background:var(--accent); color:#000; border:none;
                      border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;
                      display:inline-flex; align-items:center; gap:8px; transition:.15s;"
@@ -378,55 +281,83 @@
   </form>
 </div>
 
-<script>
-const plans = {
-  'Monthly':     { months: 1,  fee: 800   },
-  'Quarterly':   { months: 3,  fee: 2100  },
-  'Semi-Annual': { months: 6,  fee: 4000  },
-  'Annual':      { months: 12, fee: 7500  },
-};
-
-function computeEndDate() {
-  const type     = document.getElementById('membership_type').value;
-  const startVal = document.getElementById('start_date').value;
-  const display  = document.getElementById('end_date_display');
-  const hidden   = document.getElementById('end_date_value');
-  const feeInput = document.getElementById('fee');
-
-  if (!type || !startVal) {
-    display.value = '';
-    display.placeholder = 'Select type & date';
-    hidden.value  = '';
-    return;
-  }
-
-  const plan  = plans[type];
-  const start = new Date(startVal + 'T00:00:00');
-  const end   = new Date(start);
-  end.setMonth(end.getMonth() + plan.months);
-
-  display.value = end.toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric'
-  });
-  hidden.value   = end.toISOString().slice(0, 10);
-  feeInput.value = plan.fee.toFixed(2);
+<style>
+.field-label {
+  display:block; font-size:11px; color:var(--muted); font-weight:600;
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;
 }
+.field-input {
+  width:100%; padding:11px 14px; background:var(--surface2);
+  border:1px solid var(--border); border-radius:8px;
+  color:var(--text); font-size:13px; outline:none;
+  transition:border-color .15s; box-sizing:border-box;
+}
+.field-input:focus { border-color: var(--accent); }
+</style>
 
+<script>
 function previewPhoto(input) {
   if (input.files && input.files[0]) {
     const reader = new FileReader();
-    reader.onload = function(e) {
-      const img         = document.getElementById('photo-img');
-      const placeholder = document.getElementById('photo-placeholder');
-      img.src           = e.target.result;
+    reader.onload = e => {
+      const img = document.getElementById('photo-img');
+      img.src = e.target.result;
       img.style.display = 'block';
-      placeholder.style.display = 'none';
+      document.getElementById('photo-placeholder').style.display = 'none';
     };
     reader.readAsDataURL(input.files[0]);
   }
 }
 
-// Run on load to restore old() values
-computeEndDate();
+function togglePw(fieldId, eyeId) {
+  const f = document.getElementById(fieldId);
+  const e = document.getElementById(eyeId);
+  if (f.type === 'password') {
+    f.type = 'text';
+    e.innerHTML = `
+      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>`;
+  } else {
+    f.type = 'password';
+    e.innerHTML = `
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>`;
+  }
+}
+
+function checkStrength(val) {
+  let score = 0;
+  if (val.length >= 8)          score++;
+  if (/[A-Z]/.test(val))        score++;
+  if (/[0-9]/.test(val))        score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const colors = ['', '#f87171', '#fbbf24', '#60a5fa', '#4ade80'];
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('seg' + i).style.background =
+      i <= score ? colors[score] : 'var(--border)';
+  }
+  const lbl = document.getElementById('strength-label');
+  lbl.textContent = val.length ? labels[score] : '';
+  lbl.style.color = colors[score] || 'var(--muted)';
+  checkMatch();
+}
+
+function checkMatch() {
+  const pw    = document.getElementById('password').value;
+  const conf  = document.getElementById('password_confirmation').value;
+  const label = document.getElementById('match-label');
+  if (!conf) { label.textContent = ''; return; }
+  if (pw === conf) {
+    label.textContent = '✓ Passwords match';
+    label.style.color = '#4ade80';
+  } else {
+    label.textContent = '✕ Passwords do not match';
+    label.style.color = '#f87171';
+  }
+}
 </script>
 @endsection

@@ -44,46 +44,29 @@
 
     @if($member)
       @php
-    // Define your SVGs once for clean reusability
-    $plans = [
-        'Calisthenics'      => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>',
-        'Bodybuilding'      => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 28 Q10 24 14 20 Q18 16 22 20 L26 28 Q30 32 26 36 Q22 40 18 36 Z"/><path d="M26 28 Q30 24 34 20"/><path d="M6 22 L14 20"/><path d="M34 20 L42 18"/><path d="M6 26 L14 28"/><path d="M34 28 L42 26"/></svg>',
-        'Plyometrics'       => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M24 11 L18 22 L24 20 L20 34"/><path d="M24 20 L30 18 L26 30"/><path d="M16 38 L32 38"/></svg>',
-        'Powerlifting'      => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>',
-        'Endurance'         => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>',
-        'Functional Training'=> '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>',
-        'Hybrid Training'   => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="24,6 28,18 40,18 30,26 34,38 24,30 14,38 18,26 8,18 20,18"/></svg>'
-    ];
-    
-    $icon = $plans[$member->fitness_plan] ?? '<circle cx="24" cy="24" r="20"/>';
-@endphp
+        $plans = [
+          'Calisthenics'       => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>',
+          'Bodybuilding'       => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 28 Q10 24 14 20 Q18 16 22 20 L26 28 Q30 32 26 36 Q22 40 18 36 Z"/><path d="M26 28 Q30 24 34 20"/><path d="M6 22 L14 20"/><path d="M34 20 L42 18"/><path d="M6 26 L14 28"/><path d="M34 28 L42 26"/></svg>',
+          'Plyometrics'        => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M24 11 L18 22 L24 20 L20 34"/><path d="M24 20 L30 18 L26 30"/><path d="M16 38 L32 38"/></svg>',
+          'Powerlifting'       => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>',
+          'Endurance'          => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>',
+          'Functional Training'=> '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>',
+          'Hybrid Training'    => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="24,6 28,18 40,18 30,26 34,38 24,30 14,38 18,26 8,18 20,18"/></svg>',
+        ];
+        $icon = $plans[$member->fitness_plan] ?? '<circle cx="24" cy="24" r="20"/>';
+      @endphp
 
-<div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
-    <div style="
-        width: 52px; 
-        height: 52px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        background-color: rgba(232, 255, 42, 0.15); 
-        color: var(--accent); 
-        border-radius: 14px;
-        flex-shrink: 0;
-    ">
-        <div style="width: 28px; height: 28px;">
-            {!! $icon !!}
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+        <div style="width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+                    background-color:rgba(232,255,42,0.15);color:var(--accent);border-radius:14px;flex-shrink:0;">
+          <div style="width:28px;height:28px;">{!! $icon !!}</div>
         </div>
-    </div>
-    
-    <div>
-        <div style="font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
-            Fitness Plan
+        <div>
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Fitness Plan</div>
+          <div style="font-size:20px;font-weight:700;color:#ffffff;">{{ $member->fitness_plan }}</div>
         </div>
-        <div style="font-size: 20px; font-weight: 700; color: #ffffff;">
-            {{ $member->fitness_plan }}
-        </div>
-    </div>
-</div>
+      </div>
+
       <div style="display:grid;gap:12px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);">
         <div>
           <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;">Duration</div>
@@ -101,25 +84,25 @@
         </div>
       </div>
 
-     <div style="display:flex; gap:10px;">
-    <a href="{{ route('member.select-plan') }}" class="btn btn-primary" style="flex:1; justify-content:center; display:flex; align-items:center; gap:8px;">
-    {{-- SVG Zap Icon --}}
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-    </svg>
-    {{ $member->isExpired() ? 'Renew Plan' : 'Change Plan' }}
-</a>
-
-    {{-- Edit Button with SVG Icon --}}
-    <button type="button" class="btn btn-secondary"
-            onclick="document.getElementById('editSubModal').style.display='flex'"
-            style="padding: 8px 12px; display: flex; align-items: center; justify-content: center;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <div style="display:flex;gap:10px;">
+        <a href="{{ route('member.select-plan') }}" class="btn btn-primary"
+           style="flex:1;justify-content:center;display:flex;align-items:center;gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          {{ $member->isExpired() ? 'Renew Plan' : 'Change Plan' }}
+        </a>
+        <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('editSubModal').style.display='flex'"
+                style="padding:8px 12px;display:flex;align-items:center;justify-content:center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-    </button>
-</div>
+          </svg>
+        </button>
+      </div>
 
     @else
       <div style="text-align:center;padding:32px 0;">
@@ -250,92 +233,134 @@
   @endif
 </div>
 
-{{-- Edit Subscription Modal --}}
+{{-- ═══════════════════════════════════════════════
+     Edit Subscription Modal
+═══════════════════════════════════════════════ --}}
 @if($member)
 <div id="editSubModal"
-     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);
             z-index:9999;align-items:center;justify-content:center;padding:20px;">
+
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;
-              width:100%;max-width:520px;padding:32px;position:relative;max-height:90vh;overflow-y:auto;">
+              width:100%;max-width:640px;padding:32px;position:relative;
+              max-height:90vh;overflow-y:auto;">
+
+    {{-- Close --}}
     <button onclick="document.getElementById('editSubModal').style.display='none'"
             style="position:absolute;top:16px;right:16px;background:none;border:none;
-                   color:var(--muted);font-size:20px;cursor:pointer;">✕</button>
+                   color:var(--muted);font-size:20px;cursor:pointer;line-height:1;">✕</button>
+
     <div style="font-size:18px;font-weight:700;margin-bottom:4px;">Edit Subscription</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:24px;">No charge will be made.</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:28px;">No charge will be made.</div>
+
     <form method="POST" action="{{ route('member.subscription.update') }}">
       @csrf
-      <div style="margin-bottom:20px;">
-        <label class="form-label">Fitness Plan</label>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-          @foreach(['Calisthenics','Bodybuilding','Plyometrics','Powerlifting','Endurance','Functional Training','Hybrid Training'] as $plan)
-            <label style="cursor:pointer;">
-              <input type="radio" name="fitness_plan" value="{{ $plan }}" style="display:none;" class="plan-radio"
-                     {{ $member->fitness_plan === $plan ? 'checked' : '' }}/>
-              <div class="plan-opt-card" style="border:2px solid var(--border);border-radius:8px;padding:10px;
-                          font-size:13px;font-weight:600;text-align:center;transition:all 0.2s;background:var(--surface2);
-                          {{ $member->fitness_plan === $plan ? 'border-color:var(--accent);background:rgba(232,255,42,0.08);color:var(--accent);' : '' }}">
-                {{ $plan }}
+
+      {{-- ── 1. FITNESS PLAN ── --}}
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+                  font-weight:600;margin-bottom:12px;">1. Fitness Plan</div>
+      @php
+        $svgPlans = [
+          'Calisthenics'       => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>',
+          'Bodybuilding'       => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 28 Q10 24 14 20 Q18 16 22 20 L26 28 Q30 32 26 36 Q22 40 18 36 Z"/><path d="M26 28 Q30 24 34 20"/><path d="M6 22 L14 20"/><path d="M34 20 L42 18"/><path d="M6 26 L14 28"/><path d="M34 28 L42 26"/></svg>',
+          'Plyometrics'        => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M24 11 L18 22 L24 20 L20 34"/><path d="M24 20 L30 18 L26 30"/><path d="M16 38 L32 38"/></svg>',
+          'Powerlifting'       => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>',
+          'Endurance'          => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>',
+          'Functional Training'=> '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>',
+          'Hybrid Training'    => '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="24,6 28,18 40,18 30,26 34,38 24,30 14,38 18,26 8,18 20,18"/></svg>',
+        ];
+      @endphp
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;">
+        @foreach($svgPlans as $planName => $planSvg)
+          @php $isPlan = $member->fitness_plan === $planName; @endphp
+          <label style="cursor:pointer;display:block;">
+            <input type="radio" name="fitness_plan" value="{{ $planName }}"
+                   class="emod-plan-radio" style="display:none;" {{ $isPlan ? 'checked' : '' }}/>
+            <div class="emod-card emod-plan-card{{ $isPlan ? ' emod-sel' : '' }}"
+                 style="border-radius:12px;padding:12px 8px;text-align:center;
+                        transition:border-color 0.18s,background 0.18s;position:relative;">
+              <div class="emod-icon" style="width:32px;height:32px;margin:0 auto 8px;">
+                {!! $planSvg !!}
               </div>
-            </label>
-          @endforeach
-        </div>
+              <div style="font-size:11px;font-weight:700;color:#fff;line-height:1.3;">{{ $planName }}</div>
+              <div class="emod-dot" style="position:absolute;top:7px;right:7px;width:7px;height:7px;
+                                           border-radius:50%;background:var(--accent);
+                                           display:{{ $isPlan ? 'block' : 'none' }};"></div>
+            </div>
+          </label>
+        @endforeach
       </div>
-      <div style="margin-bottom:20px;">
-        <label class="form-label">Duration</label>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-          @foreach(['Monthly'=>['₱800','30 days'],'Quarterly'=>['₱2,100','90 days'],'Annually'=>['₱7,500','365 days']] as $type=>$info)
-            <label style="cursor:pointer;">
-              <input type="radio" name="membership_type" value="{{ $type }}" style="display:none;" class="type-radio"
-                     {{ $member->membership_type === $type ? 'checked' : '' }}/>
-              <div class="type-opt-card" style="border:2px solid var(--border);border-radius:8px;padding:12px;
-                          text-align:center;transition:all 0.2s;background:var(--surface2);
-                          {{ $member->membership_type === $type ? 'border-color:var(--accent);background:rgba(232,255,42,0.08);' : '' }}">
-                <div style="font-size:15px;font-weight:700;color:var(--accent);">{{ $info[0] }}</div>
-                <div style="font-size:12px;font-weight:600;">{{ $type }}</div>
-                <div style="font-size:11px;color:var(--muted);">{{ $info[1] }}</div>
-              </div>
-            </label>
-          @endforeach
-        </div>
-      </div>
-      <div style="margin-bottom:24px;">
-        <label class="form-label">Instructor (optional)</label>
-        <select name="instructor_id" class="form-control">
-          <option value="">— No instructor —</option>
-          @foreach(\App\Models\User::where('role','instructor')->get() as $inst)
-            <option value="{{ $inst->id }}" {{ $member->instructor_id == $inst->id ? 'selected' : '' }}>
-              {{ $inst->name }}{{ $inst->specialization ? ' – '.$inst->specialization : '' }}
-            </option>
-          @endforeach
-        </select>
-      </div>
+      {{-- ── ACTIONS ── --}}
       <div style="display:flex;gap:10px;">
-        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;padding:12px;">✓ Save Changes</button>
+        <button type="submit" class="btn btn-primary"
+                style="flex:1;justify-content:center;padding:13px;">✓ Save Changes</button>
         <button type="button" class="btn btn-secondary"
                 onclick="document.getElementById('editSubModal').style.display='none'"
-                style="padding:12px 20px;">Cancel</button>
+                style="padding:13px 20px;">Cancel</button>
       </div>
     </form>
   </div>
 </div>
+
+{{-- Modal Styles --}}
 <style>
-.plan-radio:checked+.plan-opt-card,.plan-opt-card:hover{border-color:var(--accent)!important;background:rgba(232,255,42,0.08)!important;color:var(--accent)!important;}
-.type-radio:checked+.type-opt-card,.type-opt-card:hover{border-color:var(--accent)!important;background:rgba(232,255,42,0.08)!important;}
+/* Base card */
+.emod-card {
+  background: var(--surface2, #222);
+  border: 1.5px solid var(--border);
+  height: 100%;
+  box-sizing: border-box;
+}
+/* Selected state */
+.emod-card.emod-sel {
+  border-color: var(--accent) !important;
+  background: rgba(232,255,42,0.06) !important;
+}
+/* Hover */
+.emod-card:hover {
+  border-color: rgba(232,255,42,0.4);
+}
+/* Icon colour */
+.emod-plan-card .emod-icon { color: rgba(255,255,255,0.25); }
+.emod-plan-card.emod-sel .emod-icon { color: var(--accent); }
+/* Price colour on gym/coach cards */
+.emod-card.emod-sel .emod-gym-price,
+.emod-card.emod-sel .emod-coach-price { color: var(--accent); }
 </style>
+
+{{-- Modal JS --}}
 <script>
-document.querySelectorAll('.plan-radio').forEach(r=>{
-  r.addEventListener('change',()=>{
-    document.querySelectorAll('.plan-opt-card').forEach(c=>{c.style.borderColor='var(--border)';c.style.background='var(--surface2)';c.style.color='var(--text)';});
-    if(r.checked){const c=r.closest('label').querySelector('.plan-opt-card');c.style.borderColor='var(--accent)';c.style.background='rgba(232,255,42,0.08)';c.style.color='var(--accent)';}
-  });
-});
-document.querySelectorAll('.type-radio').forEach(r=>{
-  r.addEventListener('change',()=>{
-    document.querySelectorAll('.type-opt-card').forEach(c=>{c.style.borderColor='var(--border)';c.style.background='var(--surface2)';});
-    if(r.checked){const c=r.closest('label').querySelector('.type-opt-card');c.style.borderColor='var(--accent)';c.style.background='rgba(232,255,42,0.08)';}
-  });
-});
-document.getElementById('editSubModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
+(function () {
+  /* Generic radio → card selection handler */
+  function wireGroup(radioSel, cardClass) {
+    document.querySelectorAll(radioSel).forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        document.querySelectorAll('.' + cardClass).forEach(function (card) {
+          card.classList.remove('emod-sel');
+          var dot = card.querySelector('.emod-dot');
+          if (dot) dot.style.display = 'none';
+        });
+        if (radio.checked) {
+          var card = radio.closest('label').querySelector('.' + cardClass);
+          card.classList.add('emod-sel');
+          var dot = card.querySelector('.emod-dot');
+          if (dot) dot.style.display = 'block';
+        }
+      });
+    });
+  }
+
+  wireGroup('.emod-plan-radio',  'emod-plan-card');
+  wireGroup('.emod-inst-radio',  'emod-inst-card');
+
+  /* Close modal on backdrop click */
+  var modal = document.getElementById('editSubModal');
+  if (modal) {
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) modal.style.display = 'none';
+    });
+  }
+})();
 </script>
 @endif
 

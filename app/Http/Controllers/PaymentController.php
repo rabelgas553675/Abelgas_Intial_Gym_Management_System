@@ -32,28 +32,26 @@ class PaymentController extends Controller
             ->select('instructor_id',
                      DB::raw('SUM(amount) as total'),
                      DB::raw('COUNT(*) as txn_count'))
-            ->with('instructor:id,name,photo')   // instructors ARE users, photo is on users table
+            ->with('instructor:id,name,photo')
             ->groupBy('instructor_id')
             ->orderByDesc('total')
             ->get();
 
         // ── Table data ────────────────────────────────────────────────────────
-        // Admin sees ONLY gym_fee rows.
-        // Load member.user so the blade can resolve member photo via member->user->photo
+        // Sorted by created_at so newest recorded payment always appears first
         $payments = Payment::gymFees()
             ->with('member:id,name,user_id', 'member.user:id,name,photo')
-            ->latest('payment_date')
+            ->latest('created_at')
             ->get();
 
-        // Coach fee transaction log (shown in Instructor tab)
-        // Same fix: load member.user for photo resolution
+        // Coach fee transaction log — newest first
         $coachFeePayments = Payment::coachFees()
             ->with(
                 'member:id,name,user_id',
                 'member.user:id,name,photo',
                 'instructor:id,name,photo'
             )
-            ->latest('payment_date')
+            ->latest('created_at')
             ->get();
 
         // Member dropdown for manual record form

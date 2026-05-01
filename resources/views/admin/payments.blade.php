@@ -148,13 +148,6 @@ input[type="date"] { color-scheme:dark; }
           </select>
           @error('method')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
         </div>
-
-        <div class="form-group" style="margin-bottom:20px;">
-          <label class="form-label">Notes (optional)</label>
-          <textarea name="notes" class="form-control" rows="2"
-                    placeholder="Any notes...">{{ old('notes') }}</textarea>
-        </div>
-
         <button type="submit" class="btn btn-primary"
                 style="width:100%;justify-content:center;padding:12px;font-weight:600;">
           ✓ Record Payment

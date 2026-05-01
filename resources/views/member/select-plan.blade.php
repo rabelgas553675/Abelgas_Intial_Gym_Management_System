@@ -11,8 +11,18 @@
 </div>
 
 @if(session('success'))
-  <div class="alert alert-success" style="background: rgba(40, 167, 69, 0.1); border: 1px solid #28a745; color: #28a745; padding: 15px; border-radius: 10px; margin-bottom: 25px;">
+  <div style="background:rgba(40,167,69,0.1);border:1px solid #28a745;color:#28a745;
+              padding:15px;border-radius:10px;margin-bottom:25px;">
     ✓ {{ session('success') }}
+  </div>
+@endif
+
+@if($errors->any())
+  <div style="background:rgba(255,77,77,0.1);border:1px solid #ff4d4d;color:#ff4d4d;
+              padding:15px;border-radius:10px;margin-bottom:25px;">
+    @foreach($errors->all() as $error)
+      <div>✕ {{ $error }}</div>
+    @endforeach
   </div>
 @endif
 
@@ -22,25 +32,31 @@
 {{-- ── 1. FITNESS PLAN ── --}}
 <div class="section-group">
   <h2 class="section-title">1. Fitness Plan</h2>
-  <div class="grid-3">
+  <div class="grid-plans">
     @php
       $plans = [
-        ['name'=>'Calisthenics',       'desc'=>'Build strength using bodyweight exercises',           'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>'],
-        ['name'=>'Bodybuilding',        'desc'=>'Muscle hypertrophy and aesthetic development',        'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 28 Q10 24 14 20 Q18 16 22 20 L26 28 Q30 32 26 36 Q22 40 18 36 Z"/><path d="M26 28 Q30 24 34 20"/><path d="M6 22 L14 20"/><path d="M34 20 L42 18"/><path d="M6 26 L14 28"/><path d="M34 28 L42 26"/></svg>'],
-        ['name'=>'Plyometrics',         'desc'=>'Explosive power and athletic performance',            'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M24 11 L18 22 L24 20 L20 34"/><path d="M24 20 L30 18 L26 30"/><path d="M16 38 L32 38"/></svg>'],
-        ['name'=>'Powerlifting',        'desc'=>'Maximum strength in squat, bench, deadlift',         'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>'],
-        ['name'=>'Endurance',           'desc'=>'Cardiovascular fitness and stamina',                  'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>'],
-        ['name'=>'Functional Training', 'desc'=>'Movement patterns for daily life',                    'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>'],
+        ['name'=>'Calisthenics',        'desc'=>'Build strength using bodyweight exercises',        'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>'],
+        ['name'=>'Bodybuilding',         'desc'=>'Muscle hypertrophy and aesthetic development',    'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 28 Q10 24 14 20 Q18 16 22 20 L26 28 Q30 32 26 36 Q22 40 18 36 Z"/><path d="M26 28 Q30 24 34 20"/><path d="M6 22 L14 20"/><path d="M34 20 L42 18"/><path d="M6 26 L14 28"/><path d="M34 28 L42 26"/></svg>'],
+        ['name'=>'Plyometrics',          'desc'=>'Explosive power and athletic performance',        'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M24 11 L18 22 L24 20 L20 34"/><path d="M24 20 L30 18 L26 30"/><path d="M16 38 L32 38"/></svg>'],
+        ['name'=>'Powerlifting',         'desc'=>'Maximum strength in squat, bench, deadlift',     'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>'],
+        ['name'=>'Endurance',            'desc'=>'Cardiovascular fitness and stamina',              'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>'],
+        ['name'=>'Functional Training',  'desc'=>'Movement patterns for everyday life',            'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>'],
+        ['name'=>'Hybrid Training',      'desc'=>'Combined strength and cardio training',           'svg'=>'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="24,6 28,18 40,18 30,26 34,38 24,30 14,38 18,26 8,18 20,18"/></svg>'],
       ];
+
+      // Use old() only on validation failure, otherwise use member's current plan
+      $selectedPlan = old('fitness_plan') ?? $member?->fitness_plan ?? '';
     @endphp
 
     @foreach($plans as $plan)
-      @php $isCurrent = old('fitness_plan', $member?->fitness_plan) === $plan['name']; @endphp
+      @php $isCurrent = $selectedPlan === $plan['name']; @endphp
       <label class="selectable-label">
         <input type="radio" name="fitness_plan" value="{{ $plan['name'] }}"
                class="plan-radio" style="display:none;" {{ $isCurrent ? 'checked' : '' }}/>
         <div class="card plan-card {{ $isCurrent ? 'selected' : '' }}">
-          @if($isCurrent) <div class="badge">Current Plan</div> @endif
+          @if($member && $member->fitness_plan === $plan['name'] && !old('fitness_plan'))
+            <div class="badge">Current Plan</div>
+          @endif
           <div class="icon-box">{!! $plan['svg'] !!}</div>
           <div class="card-title">{{ $plan['name'] }}</div>
           <div class="card-desc">{{ $plan['desc'] }}</div>
@@ -57,20 +73,22 @@
   <div class="grid-3">
     @php
       $gymDurations = [
-        ['type'=>'Monthly',   'price'=>'800',   'label'=>'₱800/Month'],
-        ['type'=>'Quarterly', 'price'=>'3200',  'label'=>'₱3,200/Quarter'],
-        ['type'=>'Annually',  'price'=>'9600',  'label'=>'₱9,600/Year'],
+        ['type'=>'Monthly',   'price'=>'800',   'display'=>'₱800',   'label'=>'₱800 / Month',      'days'=>'30 days'],
+        ['type'=>'Quarterly', 'price'=>'2100',  'display'=>'₱2,100', 'label'=>'₱2,100 / Quarter',  'days'=>'90 days'],
+        ['type'=>'Annually',  'price'=>'7500',  'display'=>'₱7,500', 'label'=>'₱7,500 / Year',     'days'=>'365 days'],
       ];
+      $selectedGym = old('membership_type') ?? $member?->membership_type ?? '';
     @endphp
     @foreach($gymDurations as $d)
-      @php $isSelected = old('membership_type', $member?->membership_type) == $d['type']; @endphp
+      @php $isSelected = $selectedGym === $d['type']; @endphp
       <label class="selectable-label">
         <input type="radio" name="membership_type" value="{{ $d['type'] }}" data-price="{{ $d['price'] }}"
                class="gym-radio" style="display:none;" {{ $isSelected ? 'checked' : '' }}/>
         <div class="card gym-card {{ $isSelected ? 'selected' : '' }}">
           <div class="card-subtitle">{{ $d['type'] }}</div>
-          <div class="card-price">₱{{ number_format($d['price']) }}</div>
+          <div class="card-price">{{ $d['display'] }}</div>
           <div class="card-desc">{{ $d['label'] }}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">{{ $d['days'] }}</div>
           <div class="selected-indicator" style="{{ $isSelected ? 'display:flex' : 'display:none' }}">✓ Selected</div>
         </div>
       </label>
@@ -78,26 +96,30 @@
   </div>
 </div>
 
-{{-- ── 3. SELECT INSTRUCTOR & COACH PLAN ── --}}
+{{-- ── 3. PERSONAL COACHING ── --}}
 <div class="section-group">
-  <h2 class="section-title">3. Personal Coaching (Optional)</h2>
-  
-  <div class="grid-3" style="margin-bottom: 24px;">
-    {{-- No Instructor option --}}
-    @php $noInst = !old('instructor_id', $member?->instructor_id); @endphp
+  <h2 class="section-title">3. Personal Coaching <span style="font-size:14px;font-weight:400;color:var(--muted);">(Optional)</span></h2>
+
+  @php
+    $selectedInst = old('instructor_id') ?? ($member?->instructor_id ?? '');
+    $noInstSelected = ($selectedInst === '' || $selectedInst === null);
+  @endphp
+
+  <div class="grid-3" style="margin-bottom:24px;">
+    {{-- No Instructor --}}
     <label class="selectable-label">
       <input type="radio" name="instructor_id" value="" class="instructor-radio"
-             style="display:none;" {{ $noInst ? 'checked' : '' }}/>
-      <div class="card instructor-card {{ $noInst ? 'selected' : '' }}">
+             style="display:none;" {{ $noInstSelected ? 'checked' : '' }}/>
+      <div class="card instructor-card {{ $noInstSelected ? 'selected' : '' }}">
         <div class="avatar-placeholder">🚫</div>
         <div class="card-title">No Instructor</div>
         <div class="card-desc">Train independently</div>
-        <div class="selected-indicator" style="{{ $noInst ? 'display:flex' : 'display:none' }}">✓ Selected</div>
+        <div class="selected-indicator" style="{{ $noInstSelected ? 'display:flex' : 'display:none' }}">✓ Selected</div>
       </div>
     </label>
 
     @foreach($instructors as $inst)
-      @php $isInst = old('instructor_id', $member?->instructor_id) == $inst->id; @endphp
+      @php $isInst = (string)$selectedInst === (string)$inst->id; @endphp
       <label class="selectable-label">
         <input type="radio" name="instructor_id" value="{{ $inst->id }}" class="instructor-radio"
                style="display:none;" {{ $isInst ? 'checked' : '' }}/>
@@ -115,25 +137,31 @@
     @endforeach
   </div>
 
-  <div id="coach-duration-container">
-    <h3 class="card-subtitle" style="margin-bottom:15px;">Coach Subscription Duration</h3>
+  {{-- Coach Duration --}}
+  <div id="coach-duration-container"
+       style="{{ $noInstSelected ? 'opacity:0.4;pointer-events:none;' : 'opacity:1;pointer-events:auto;' }}">
+    <h3 style="font-size:16px;font-weight:700;color:#fff;margin-bottom:16px;">
+      Coach Subscription Duration
+    </h3>
     <div class="grid-3">
       @php
         $coachDurations = [
-          ['type'=>'Monthly',   'price'=>'300',   'label'=>'₱300/Month'],
-          ['type'=>'Quarterly', 'price'=>'1200',  'label'=>'₱1,200/Quarter'],
-          ['type'=>'Annually',  'price'=>'3600',  'label'=>'₱3,600/Year'],
+          ['type'=>'Monthly',   'price'=>'300',  'display'=>'₱300',   'label'=>'₱300 / Month',     'days'=>'30 days'],
+          ['type'=>'Quarterly', 'price'=>'1200', 'display'=>'₱1,200', 'label'=>'₱1,200 / Quarter', 'days'=>'90 days'],
+          ['type'=>'Annually',  'price'=>'3600', 'display'=>'₱3,600', 'label'=>'₱3,600 / Year',    'days'=>'365 days'],
         ];
+        $selectedCoach = old('coach_membership_type') ?? $member?->coach_membership_type ?? '';
       @endphp
       @foreach($coachDurations as $d)
-        @php $isCSelected = old('coach_membership_type') == $d['type']; @endphp
+        @php $isCSelected = $selectedCoach === $d['type']; @endphp
         <label class="selectable-label">
           <input type="radio" name="coach_membership_type" value="{{ $d['type'] }}" data-price="{{ $d['price'] }}"
                  class="coach-radio" style="display:none;" {{ $isCSelected ? 'checked' : '' }}/>
           <div class="card coach-card {{ $isCSelected ? 'selected' : '' }}">
             <div class="card-subtitle">{{ $d['type'] }} Coach</div>
-            <div class="card-price">₱{{ number_format($d['price']) }}</div>
+            <div class="card-price">{{ $d['display'] }}</div>
             <div class="card-desc">{{ $d['label'] }}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px;">{{ $d['days'] }}</div>
             <div class="selected-indicator" style="{{ $isCSelected ? 'display:flex' : 'display:none' }}">✓ Selected</div>
           </div>
         </label>
@@ -147,24 +175,24 @@
   <h2 class="section-title">Summary</h2>
 
   <div class="summary-row">
-    <span>Fitness Plan:</span>
+    <span>Fitness Plan</span>
     <span id="summary-plan" class="fw-600">--</span>
   </div>
   <div class="summary-row">
-    <span>Gym Membership:</span>
+    <span>Gym Membership</span>
     <span id="summary-duration" class="fw-600">--</span>
   </div>
   <div class="summary-row">
-    <span>Instructor:</span>
+    <span>Instructor</span>
     <span id="summary-instructor" class="fw-600">None</span>
   </div>
   <div class="summary-row">
-    <span>Coach Plan:</span>
+    <span>Coach Plan</span>
     <span id="summary-coach-duration" class="fw-600">None</span>
   </div>
-  
+
   <div class="summary-total">
-    <span>Total Fee:</span>
+    <span>Total Fee</span>
     <span id="summary-total-value">₱0</span>
   </div>
 
@@ -175,154 +203,198 @@
 
 </form>
 
+{{-- ════════ STYLES ════════ --}}
 <style>
 :root {
-    --accent: #e8ff2a;
-    --surface: #1a1a1a;
-    --border: #333;
-    --muted: #888;
-    --danger: #ff4d4d;
+  --accent: #e8ff2a;
+  --surface: #1a1a1a;
+  --border: #333;
+  --muted: #888;
 }
 
-.page-header { text-align: center; margin-bottom: 48px; }
-.page-header h1 { font-size: 48px; font-weight: 800; margin-bottom: 12px; color: #fff; }
-.page-header p { color: var(--muted); font-size: 16px; }
-.text-accent { color: var(--accent); }
+.page-header { text-align:center; margin-bottom:48px; }
+.page-header h1 { font-size:48px; font-weight:800; margin-bottom:12px; color:#fff; }
+.page-header p { color:var(--muted); font-size:16px; }
+.text-accent { color:var(--accent); }
 
-.section-group { margin-bottom: 48px; }
-.section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: #fff; }
+.section-group { margin-bottom:48px; }
+.section-title { font-size:22px; font-weight:700; margin-bottom:20px; color:#fff; }
 
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+/* 7-plan grid: 4 on first row, 3 on second */
+.grid-plans {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.grid-plans .selectable-label:nth-child(n+5) { grid-column: auto; }
+/* Centre the last 3 items */
+.grid-plans .selectable-label:nth-child(5) { grid-column: 1; }
+
+.grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+
+.selectable-label { display:block; height:100%; }
 
 .card {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 14px;
-    padding: 24px;
-    transition: all 0.2s;
-    height: 100%;
-    position: relative;
-    cursor: pointer;
+  background:var(--surface);
+  border:1.5px solid var(--border);
+  border-radius:14px;
+  padding:24px;
+  transition:border-color 0.2s, background 0.2s;
+  height:100%;
+  position:relative;
+  cursor:pointer;
+  box-sizing:border-box;
 }
-
-.card:hover { border-color: rgba(232, 255, 42, 0.4); }
+.card:hover { border-color:rgba(232,255,42,0.4); }
 .card.selected {
-    border-color: var(--accent) !important;
-    background: rgba(232, 255, 42, 0.04) !important;
+  border-color:var(--accent) !important;
+  background:rgba(232,255,42,0.04) !important;
 }
 
 .badge {
-    position: absolute; top: 14px; right: 14px; background: var(--accent);
-    color: #111; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px;
+  position:absolute; top:14px; right:14px;
+  background:var(--accent); color:#111;
+  font-size:11px; font-weight:700;
+  padding:3px 10px; border-radius:6px;
 }
 
-.icon-box { width: 44px; height: 44px; margin-bottom: 16px; color: rgba(255, 255, 255, 0.3); }
-.card.selected .icon-box { color: var(--accent); }
+.icon-box { width:44px; height:44px; margin-bottom:16px; color:rgba(255,255,255,0.3); }
+.card.selected .icon-box { color:var(--accent); }
 
-.card-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #fff;}
-.card-subtitle { font-size: 16px; font-weight: 600; margin-bottom: 10px; color: #fff;}
-.card-price { font-size: 32px; font-weight: 800; margin-bottom: 6px; color: #fff;}
-.card-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.card-title    { font-size:18px; font-weight:700; margin-bottom:8px; color:#fff; }
+.card-subtitle { font-size:15px; font-weight:600; margin-bottom:10px; color:#fff; }
+.card-price    { font-size:32px; font-weight:800; margin-bottom:6px; color:#fff; }
+.card.selected .card-price { color:var(--accent); }
+.card-desc     { font-size:13px; color:var(--muted); line-height:1.5; }
 
-.selected-indicator { margin-top: 16px; font-size: 13px; font-weight: 600; color: var(--accent); display: none; align-items: center; gap: 6px; }
+.selected-indicator {
+  margin-top:16px; font-size:13px; font-weight:600;
+  color:var(--accent); display:none; align-items:center; gap:6px;
+}
 
 .avatar-placeholder {
-    width: 52px; height: 52px; border-radius: 50%; background: #2a2a2a;
-    display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 14px;
+  width:52px; height:52px; border-radius:50%; background:#2a2a2a;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; margin-bottom:14px;
 }
-.avatar-img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; margin-bottom: 14px; }
+.avatar-img { width:52px; height:52px; border-radius:50%; object-fit:cover; margin-bottom:14px; }
 
-.summary-container { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 32px; margin-bottom: 24px; }
-.summary-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); color: var(--muted); }
-.summary-total { display: flex; justify-content: space-between; padding: 16px 0; font-size: 24px; font-weight: 800; color: var(--accent); }
-.fw-600 { font-weight: 600; color: #fff; }
+.summary-container {
+  background:var(--surface); border:1.5px solid var(--border);
+  border-radius:14px; padding:32px; margin-bottom:24px;
+}
+.summary-row {
+  display:flex; justify-content:space-between;
+  padding:13px 0; border-bottom:1px solid var(--border); color:var(--muted);
+}
+.summary-total {
+  display:flex; justify-content:space-between;
+  padding:18px 0; font-size:24px; font-weight:800; color:var(--accent);
+}
+.fw-600 { font-weight:600; color:#fff; }
 
 .btn-submit {
-    width: 100%; padding: 16px; border-radius: 10px; border: none;
-    font-size: 16px; font-weight: 700; background: #2a2a2a; color: var(--muted);
-    transition: all 0.2s; cursor: not-allowed;
+  width:100%; padding:16px; border-radius:10px; border:none;
+  font-size:16px; font-weight:700; background:#2a2a2a; color:var(--muted);
+  transition:all 0.2s; cursor:not-allowed;
 }
-.btn-submit.active { background: var(--accent); color: #111; cursor: pointer; }
+.btn-submit.active { background:var(--accent); color:#111; cursor:pointer; }
 
-@media (max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } }
+@media (max-width:900px) {
+  .grid-plans { grid-template-columns:repeat(3,1fr); }
+  .grid-plans .selectable-label:nth-child(5) { grid-column:auto; }
+}
+@media (max-width:600px) {
+  .grid-plans, .grid-3 { grid-template-columns:1fr; }
+}
 </style>
 
+{{-- ════════ SCRIPT ════════ --}}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const coachContainer = document.getElementById('coach-duration-container');
+document.addEventListener('DOMContentLoaded', function () {
 
-    function updateSummary() {
-        const plan = document.querySelector('.plan-radio:checked');
-        const gym = document.querySelector('.gym-radio:checked');
-        const instructor = document.querySelector('.instructor-radio:checked');
-        const coach = document.querySelector('.coach-radio:checked');
+  const coachContainer = document.getElementById('coach-duration-container');
 
-        const hasInstructor = (instructor && instructor.value !== "");
-        
-        // Visual indication that Coach plan is locked/unlocked
-        coachContainer.style.opacity = hasInstructor ? "1" : "0.4";
-        coachContainer.style.pointerEvents = hasInstructor ? "auto" : "none";
+  /* ── Summary updater ── */
+  function updateSummary() {
+    const plan       = document.querySelector('.plan-radio:checked');
+    const gym        = document.querySelector('.gym-radio:checked');
+    const instructor = document.querySelector('.instructor-radio:checked');
+    const coach      = document.querySelector('.coach-radio:checked');
 
-        // Summary Text Updates
-        document.getElementById('summary-plan').textContent = plan ? plan.value : '--';
-        document.getElementById('summary-duration').textContent = gym ? gym.value : '--';
-        
-        if (hasInstructor) {
-            const name = instructor.closest('label').querySelector('.card-title').textContent;
-            document.getElementById('summary-instructor').textContent = name;
-            document.getElementById('summary-coach-duration').textContent = coach ? coach.value : 'Select Duration';
-        } else {
-            document.getElementById('summary-instructor').textContent = 'None';
-            document.getElementById('summary-coach-duration').textContent = 'None';
-        }
+    const hasInstructor = instructor && instructor.value !== '';
 
-        // Calculation
-        let gymFee = gym ? parseInt(gym.dataset.price) : 0;
-        let coachFee = (hasInstructor && coach) ? parseInt(coach.dataset.price) : 0;
-        
-        const total = gymFee + coachFee;
-        document.getElementById('summary-total-value').textContent = '₱' + total.toLocaleString();
+    /* Lock / unlock coach section */
+    coachContainer.style.opacity       = hasInstructor ? '1'    : '0.4';
+    coachContainer.style.pointerEvents = hasInstructor ? 'auto' : 'none';
 
-        // Submit Button State
-        const gymReady = (plan && gym);
-        const coachReady = !hasInstructor || (hasInstructor && coach);
-
-        const btn = document.getElementById('submit-btn');
-        if (gymReady && coachReady) {
-            btn.disabled = false;
-            btn.classList.add('active');
-        } else {
-            btn.disabled = true;
-            btn.classList.remove('active');
-        }
+    /* Clear coach selection when no instructor */
+    if (!hasInstructor) {
+      document.querySelectorAll('.coach-radio').forEach(r => { r.checked = false; });
+      document.querySelectorAll('.coach-card').forEach(c => {
+        c.classList.remove('selected');
+        const ind = c.querySelector('.selected-indicator');
+        if (ind) ind.style.display = 'none';
+      });
     }
 
-    function handleRadioChange(selector, cardClass) {
-        document.querySelectorAll(selector).forEach(radio => {
-            radio.addEventListener('change', () => {
-                document.querySelectorAll('.' + cardClass).forEach(card => {
-                    card.classList.remove('selected');
-                    const indicator = card.querySelector('.selected-indicator');
-                    if (indicator) indicator.style.display = 'none';
-                });
-                
-                if (radio.checked) {
-                    const card = radio.closest('label').querySelector('.card');
-                    card.classList.add('selected');
-                    const indicator = card.querySelector('.selected-indicator');
-                    if (indicator) indicator.style.display = 'flex';
-                }
-                updateSummary();
-            });
+    /* Texts */
+    document.getElementById('summary-plan').textContent     = plan ? plan.value : '--';
+    document.getElementById('summary-duration').textContent = gym  ? gym.value  : '--';
+
+    if (hasInstructor) {
+      const nameEl = instructor.closest('label').querySelector('.card-title');
+      document.getElementById('summary-instructor').textContent     = nameEl ? nameEl.textContent.trim() : '--';
+      document.getElementById('summary-coach-duration').textContent = coach  ? coach.value : 'Select Duration';
+    } else {
+      document.getElementById('summary-instructor').textContent     = 'None';
+      document.getElementById('summary-coach-duration').textContent = 'None';
+    }
+
+    /* Totals */
+    const gymFee   = gym   ? parseInt(gym.dataset.price,   10) : 0;
+    const coachFee = (hasInstructor && coach) ? parseInt(coach.dataset.price, 10) : 0;
+    document.getElementById('summary-total-value').textContent = '₱' + (gymFee + coachFee).toLocaleString();
+
+    /* Submit button */
+    const ready = plan && gym && (!hasInstructor || (hasInstructor && coach));
+    const btn   = document.getElementById('submit-btn');
+    btn.disabled = !ready;
+    btn.classList.toggle('active', !!ready);
+  }
+
+  /* ── Generic radio → card selection ── */
+  function wireRadios(radioSel, cardClass) {
+    document.querySelectorAll(radioSel).forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        /* Deselect all in group */
+        document.querySelectorAll('.' + cardClass).forEach(function (card) {
+          card.classList.remove('selected');
+          const ind = card.querySelector('.selected-indicator');
+          if (ind) ind.style.display = 'none';
         });
-    }
+        /* Select current */
+        if (radio.checked) {
+          const card = radio.closest('label').querySelector('.card');
+          if (card) {
+            card.classList.add('selected');
+            const ind = card.querySelector('.selected-indicator');
+            if (ind) ind.style.display = 'flex';
+          }
+        }
+        updateSummary();
+      });
+    });
+  }
 
-    handleRadioChange('.plan-radio', 'plan-card');
-    handleRadioChange('.gym-radio', 'gym-card');
-    handleRadioChange('.instructor-radio', 'instructor-card');
-    handleRadioChange('.coach-radio', 'coach-card');
+  wireRadios('.plan-radio',       'plan-card');
+  wireRadios('.gym-radio',        'gym-card');
+  wireRadios('.instructor-radio', 'instructor-card');
+  wireRadios('.coach-radio',      'coach-card');
 
-    updateSummary();
+  /* Run once on load to reflect server-side pre-selections */
+  updateSummary();
 });
 </script>
+
 @endsection

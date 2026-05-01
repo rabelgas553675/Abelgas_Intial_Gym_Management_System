@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IRONFORGE – Ultimate Gym Management</title>
+<link rel="icon" type="image/png" href="{{ asset('favicon.svg') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -144,7 +145,6 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   <div class="scroll-dot active" data-target="hero" data-label="HOME" onclick="scrollToSection('hero')"></div>
   <div class="scroll-dot" data-target="features" data-label="FEATURES" onclick="scrollToSection('features')"></div>
   <div class="scroll-dot" data-target="plans" data-label="PLANS" onclick="scrollToSection('plans')"></div>
-  <div class="scroll-dot" data-target="footer-section" data-label="CONTACT" onclick="scrollToSection('footer-section')"></div>
 </div>
 
 <div class="cursor" id="cursor"></div>
