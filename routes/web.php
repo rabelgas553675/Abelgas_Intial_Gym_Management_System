@@ -46,7 +46,7 @@ Route::middleware(['auth'])->group(function () {
 
     // ── MEMBER PORTAL ───────────────────────────────────────────
     Route::prefix('my')->name('member.')->middleware('member')->group(function () {
-        Route::get('/dashboard',              [MemberDashboardController::class, 'index'])            ->name('dashboard');
+        Route::get('/dashboard',              [MemberDashboardController::class, 'index'])             ->name('dashboard')->middleware('coach.approved');
         Route::get('/profile',                [MemberDashboardController::class, 'editProfile'])       ->name('profile');
         Route::post('/profile',               [MemberDashboardController::class, 'updateProfile'])     ->name('profile.update');
         Route::get('/select-plan',            [MemberDashboardController::class, 'selectPlan'])        ->name('select-plan');
@@ -55,6 +55,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/payments',               [MemberDashboardController::class, 'paymentHistory'])    ->name('payments');
         Route::post('/subscription/update',   [MemberDashboardController::class, 'updateSubscription'])->name('subscription.update');
         Route::get('/schedule',               [WorkoutPlanController::class, 'memberSchedule'])        ->name('schedule');
+        // ✅ Waiting for approval page
+        Route::get('/waiting',                [MemberDashboardController::class, 'waiting'])           ->name('waiting');
+        // ✅ AJAX polling endpoint — check current coach_status
+        Route::get('/coach-status',           [MemberDashboardController::class, 'coachStatus'])       ->name('coach.status');
     });
 
     // ── INSTRUCTOR PORTAL ───────────────────────────────────────

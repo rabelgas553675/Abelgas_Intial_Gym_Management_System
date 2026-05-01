@@ -57,7 +57,19 @@
       Dashboard
     </a>
 
-    {{-- Added: My Schedule link --}}
+    {{-- Show Waiting only if member is pending --}}
+    @if(Auth::user()->memberProfile && Auth::user()->memberProfile->coach_status === 'pending')
+        <a href="{{ route('member.waiting') }}" 
+           class="nav-item {{ $active === 'waiting' ? 'active' : '' }}" 
+           style="color: var(--accent);">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            Waiting Approval
+        </a>
+    @endif
+
     <a href="{{ route('member.schedule') }}"
        class="nav-item {{ $active === 'schedule' ? 'active' : '' }}">
       <svg viewBox="0 0 24 24" stroke-width="2" fill="none" stroke="currentColor">
@@ -77,6 +89,7 @@
       </svg>
       Profile
     </a>
+
     <a href="{{ route('member.payments') }}"
        class="nav-item {{ $active === 'payments' ? 'active' : '' }}">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
