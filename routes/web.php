@@ -99,6 +99,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/destroy',        [AttendanceController::class, 'destroy'])       ->name('destroy');
         Route::post('/add-manual',     [AttendanceController::class, 'addManual'])     ->name('add-manual');
         Route::get('/qr-list',         [AttendanceController::class, 'qrList'])        ->name('qr-list');
+        Route::post('/live',           [AttendanceController::class, 'live'])          ->name('live'); // ← ADDED
 
         Route::get('/generate-tokens', [AttendanceController::class, 'generateTokens'])
              ->middleware('admin')
