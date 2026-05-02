@@ -11,6 +11,7 @@ use App\Services\Algorithms\MergeSort;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class InstructorController extends Controller
 {
@@ -47,7 +48,7 @@ class InstructorController extends Controller
         // 7. Graph degree = number of direct member edges for this instructor
         $graphDegree = $graph->degree($instructorId);
 
-        // 8. Payments for this instructor
+        // 8. Recent payments for this instructor (keep as Eloquent for dashboard widget)
         $payments = Payment::where('instructor_id', $instructorId)
                            ->with('member')
                            ->latest('payment_date')
@@ -116,17 +117,61 @@ class InstructorController extends Controller
         return back()->with('success', 'Profile updated successfully.');
     }
 
-    public function paymentHistory()
+    /**
+     * Instructor's own payment/earnings history.
+     *
+     * DSA integration:
+     *   - MergeSort::sortBy() sorts all payments by date descending
+     *     before paginating, replacing ->latest('payment_date').
+     *
+     * Also computes the three stats the blade requires:
+     *   - $thisMonthTotal  — sum of earnings in the current month
+     *   - $totalEarned     — all-time earnings sum
+     *   - $payments        — LengthAwarePaginator (blade calls ->total(), ->hasPages(), ->links())
+     */
+    public function paymentHistory(Request $request)
     {
         $instructorId = Auth::id();
 
-        $rawPayments = Payment::where('instructor_id', $instructorId)
-                              ->with('member')
-                              ->get()
-                              ->toArray();
+        // 1. Load all payments for this instructor with member relationship
+        $allPayments = Payment::where('instructor_id', $instructorId)
+                              ->with('member.user')
+                              ->get();
 
-        $payments = MergeSort::sortBy($rawPayments, 'payment_date', 'desc');
+        // 2. Compute stat totals from the full collection (before pagination)
+        $thisMonthTotal = $allPayments
+            ->filter(fn($p) => $p->payment_date
+                && \Carbon\Carbon::parse($p->payment_date)->month === now()->month
+                && \Carbon\Carbon::parse($p->payment_date)->year  === now()->year
+            )
+            ->sum('amount');
 
-        return view('instructor.payments', compact('payments'));
+        $totalEarned = $allPayments->sum('amount');
+
+        // 3. MergeSort all payments by payment_date descending
+        //    (replaces ->latest('payment_date') — fulfils DSA requirement)
+        $sorted = MergeSort::sortBy($allPayments->all(), 'payment_date', 'desc');
+
+        // 4. Manual pagination over the sorted array
+        $perPage     = 15;
+        $currentPage = (int) ($request->page ?? 1);
+        $offset      = ($currentPage - 1) * $perPage;
+        $pageItems   = array_slice($sorted, $offset, $perPage);
+
+        // 5. Wrap in LengthAwarePaginator so blade ->total(), ->hasPages(),
+        //    ->links() and the @forelse all work as expected
+        $payments = new LengthAwarePaginator(
+            $pageItems,
+            count($sorted),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('instructor.payments', compact(
+            'payments',
+            'thisMonthTotal',
+            'totalEarned'
+        ));
     }
 }
