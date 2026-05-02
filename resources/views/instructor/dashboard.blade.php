@@ -15,7 +15,7 @@
   <div class="stat-card">
     <div class="stat-card-left">
       <div class="stat-label">Total Members</div>
-      <div class="stat-value">{{ $members->count() }}</div>
+      <div class="stat-value">{{ count($members) }}</div>
     </div>
     <div class="stat-icon icon-green">
       <svg viewBox="0 0 24 24" stroke-width="1.5">
@@ -70,9 +70,8 @@
         @php
           $isExpiring  = $member->isDueWithinDays(7) && !$member->isExpired();
           $isExpired   = $member->isExpired();
-          $pillClass   = $isExpired  ? 'pill-expired' : ($isExpiring ? 'pill-expiring' : 'pill-active');
-          $pillLabel   = $isExpired  ? 'Expired'      : ($isExpiring ? 'Expiring'      : 'Active');
-          // FIX: photo lives on users table
+          $pillClass   = $isExpired ? 'pill-expired' : ($isExpiring ? 'pill-expiring' : 'pill-active');
+          $pillLabel   = $isExpired ? 'Expired'      : ($isExpiring ? 'Expiring'      : 'Active');
           $memberPhoto = $member->user?->photo ?? $member->photo ?? null;
         @endphp
         <div class="member-item"
@@ -227,17 +226,16 @@
 <div id="memberData" style="display:none;">
   @foreach($members as $member)
     @php
-      $isExpiring  = $member->isDueWithinDays(7) && !$member->isExpired();
-      $isExpired   = $member->isExpired();
-      $statusLabel = $isExpired  ? 'Expired' : ($isExpiring ? 'Expiring Soon' : 'Active');
-      $statusColor = $isExpired  ? '#f87171' : ($isExpiring ? '#fbbf24' : '#4ade80');
-      $statusBg    = $isExpired  ? 'rgba(248,113,113,0.15)' : ($isExpiring ? 'rgba(251,191,36,0.15)' : 'rgba(74,222,128,0.15)');
-      $daysRemaining = $isExpired ? 0 : (int) now()->diffInDays($member->end_date);
-      $totalDays   = ($member->start_date && $member->end_date)
-                       ? (int) $member->start_date->diffInDays($member->end_date) : 30;
-      $progressPct = $totalDays > 0 ? min(100, round(($daysRemaining / $totalDays) * 100)) : 0;
-      $barColor    = $isExpired ? '#f87171' : ($isExpiring ? '#fbbf24' : '#4ade80');
-      // FIX: photo lives on users table
+      $isExpiring     = $member->isDueWithinDays(7) && !$member->isExpired();
+      $isExpired      = $member->isExpired();
+      $statusLabel    = $isExpired ? 'Expired' : ($isExpiring ? 'Expiring Soon' : 'Active');
+      $statusColor    = $isExpired ? '#f87171' : ($isExpiring ? '#fbbf24' : '#4ade80');
+      $statusBg       = $isExpired ? 'rgba(248,113,113,0.15)' : ($isExpiring ? 'rgba(251,191,36,0.15)' : 'rgba(74,222,128,0.15)');
+      $daysRemaining  = $isExpired ? 0 : (int) now()->diffInDays($member->end_date);
+      $totalDays      = ($member->start_date && $member->end_date)
+                          ? (int) $member->start_date->diffInDays($member->end_date) : 30;
+      $progressPct    = $totalDays > 0 ? min(100, round(($daysRemaining / $totalDays) * 100)) : 0;
+      $barColor       = $isExpired ? '#f87171' : ($isExpiring ? '#fbbf24' : '#4ade80');
       $memberPhotoUrl = ($member->user?->photo ?? $member->photo ?? null)
                           ? asset('storage/' . ($member->user?->photo ?? $member->photo))
                           : '';
@@ -310,10 +308,10 @@ function showMemberDetail(id, el) {
   const pct      = parseInt(md.dataset.progressPct)   || 0;
   const barColor = md.dataset.barColor;
 
-  document.getElementById('daysRemainingLabel').textContent  =
+  document.getElementById('daysRemainingLabel').textContent    =
     days === 0 ? 'Expired' : `${days} day${days !== 1 ? 's' : ''} left`;
-  document.getElementById('daysRemainingLabel').style.color  = barColor;
-  document.getElementById('daysRemainingBar').style.width    = pct + '%';
+  document.getElementById('daysRemainingLabel').style.color    = barColor;
+  document.getElementById('daysRemainingBar').style.width      = pct + '%';
   document.getElementById('daysRemainingBar').style.background = barColor;
 
   document.getElementById('detailsViewBtn').href = md.dataset.url;

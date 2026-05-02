@@ -5,22 +5,26 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\Algorithms\MergeSort;
+use App\Services\Algorithms\BinarySearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
     /**
-     * Admin payments page — shows gym_fee transactions + instructor earnings breakdown.
+     * Admin payments page.
+     *
+     * MergeSort replaces ->latest() for the transaction tables.
+     * BinarySearch is exposed as the search hook (if search param is added to the view later).
      */
-    public function index()
+    public function index(Request $request)
     {
-        // ── Gym fee stats (admin earnings) ────────────────────────────────────
+        // ── Aggregates (still via DB — acceptable per consultation) ──────────
         $totalCount     = Payment::gymFees()->count();
         $thisMonth      = Payment::gymFees()->thisMonth()->sum('amount');
         $totalCollected = Payment::gymFees()->sum('amount');
 
-        // ── Coach fee stats (instructor earnings) ─────────────────────────────
         $totalCoachFees       = Payment::coachFees()->sum('amount');
         $thisMonthCoachFees   = Payment::coachFees()->thisMonth()->sum('amount');
         $instructorsPaidCount = Payment::coachFees()
@@ -28,34 +32,55 @@ class PaymentController extends Controller
                                     ->count('instructor_id');
 
         // ── Instructor leaderboard ────────────────────────────────────────────
-        $instructorLeaderboard = Payment::coachFees()
+        // Load into memory, then MergeSort by total descending
+        $leaderboardRaw = Payment::coachFees()
             ->select('instructor_id',
                      DB::raw('SUM(amount) as total'),
                      DB::raw('COUNT(*) as txn_count'))
             ->with('instructor:id,name,photo')
             ->groupBy('instructor_id')
-            ->orderByDesc('total')
-            ->get();
+            ->get()
+            ->toArray();
 
-        // ── Table data ────────────────────────────────────────────────────────
-        // Sorted by created_at so newest recorded payment always appears first
-        $payments = Payment::gymFees()
+        // MergeSort: sort instructor leaderboard by total earnings, descending
+        $instructorLeaderboard = MergeSort::sortBy($leaderboardRaw, 'total', 'desc');
+
+        // ── Gym fee transactions ──────────────────────────────────────────────
+        $gymPaymentsRaw = Payment::gymFees()
             ->with('member:id,name,user_id', 'member.user:id,name,photo')
-            ->latest('created_at')
-            ->get();
+            ->get()
+            ->toArray();
 
-        // Coach fee transaction log — newest first
-        $coachFeePayments = Payment::coachFees()
+        // MergeSort by created_at descending (newest first)
+        $payments = MergeSort::sortBy($gymPaymentsRaw, 'created_at', 'desc');
+
+        // Optional: BinarySearch on receipt_number if ?search= is passed
+        if ($request->filled('search')) {
+            $byReceipt = BinarySearch::searchByField(
+                MergeSort::sortBy($gymPaymentsRaw, 'receipt_number', 'asc'),
+                'receipt_number',
+                $request->search
+            );
+            $payments = $byReceipt;
+        }
+
+        // ── Coach fee transactions ────────────────────────────────────────────
+        $coachPaymentsRaw = Payment::coachFees()
             ->with(
                 'member:id,name,user_id',
                 'member.user:id,name,photo',
                 'instructor:id,name,photo'
             )
-            ->latest('created_at')
-            ->get();
+            ->get()
+            ->toArray();
 
-        // Member dropdown for manual record form
-        $members = Member::orderBy('name')->get(['id', 'name']);
+        // MergeSort by created_at descending
+        $coachFeePayments = MergeSort::sortBy($coachPaymentsRaw, 'created_at', 'desc');
+
+        // ── Member dropdown ───────────────────────────────────────────────────
+        $membersRaw = Member::orderBy('name')->get(['id', 'name'])->toArray();
+        // MergeSort ensures consistent alphabetical ordering independent of DB collation
+        $members = MergeSort::sortBy($membersRaw, 'name', 'asc');
 
         return view('admin.payments', compact(
             'totalCount', 'thisMonth', 'totalCollected',

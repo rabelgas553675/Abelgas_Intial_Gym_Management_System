@@ -3,114 +3,130 @@
 namespace App\Http\Controllers;
 
 use App\Models\Member;
-use App\Models\User;
 use App\Models\Payment;
+use App\Models\User;
+use App\Models\CoachRequest;
+use App\Services\Algorithms\GraphManager;
+use App\Services\Algorithms\MergeSort;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class InstructorController extends Controller
 {
-    // ─────────────────────────────────────────
-    //  Dashboard
-    // ─────────────────────────────────────────
-
     public function dashboard()
     {
-        $instructor = auth()->user();
+        $instructor   = Auth::user();
+        $instructorId = $instructor->id;
 
-        // FIX: load member.user so photo resolves via member->user->photo
-        $members = Member::where('instructor_id', $instructor->id)
-                         ->with('user', 'payments')
-                         ->get();
+        // 1. Load all members that have ANY instructor assignment
+        $allAssigned = Member::with('user')
+            ->whereNotNull('instructor_id')
+            ->get();
 
-        $active  = $members->filter(fn($m) => in_array($m->status, ['Active', 'Expiring Soon']))->count();
-        $expired = $members->filter(fn($m) => $m->status === 'Expired')->count();
-        $nearDue = $members->filter(fn($m) => $m->status === 'Expiring Soon')->count();
+        // 2. Build the directed graph: instructor_id → member_id edges
+        $graph = GraphManager::buildFromMembers($allAssigned->all());
+
+        // 3. BFS from this instructor's node to get assigned member objects
+        $myMemberObjects = $graph->bfsData($instructorId);
+
+        // 4. MergeSort the result by member name ascending
+        $sorted = MergeSort::sortBy($myMemberObjects, 'name', 'asc');
+
+        // 5. Wrap in a collection so blade can call ->count()
+        $members = collect($sorted);
+
+        // 6. Stats
+        $totalAssigned = $members->count();
+        $active        = $members->filter(fn($m) => !$m->isExpired() && !$m->isDueWithinDays(7))->count();
+        $nearDue       = $members->filter(fn($m) =>  $m->isDueWithinDays(7) && !$m->isExpired())->count();
+        $pendingCount  = CoachRequest::where('instructor_id', $instructorId)
+                                     ->where('status', 'pending')
+                                     ->count();
+
+        // 7. Graph degree = number of direct member edges for this instructor
+        $graphDegree = $graph->degree($instructorId);
+
+        // 8. Payments for this instructor
+        $payments = Payment::where('instructor_id', $instructorId)
+                           ->with('member')
+                           ->latest('payment_date')
+                           ->take(10)
+                           ->get();
 
         return view('instructor.dashboard', compact(
-            'instructor', 'members', 'active', 'expired', 'nearDue'
+            'instructor',
+            'members',
+            'totalAssigned',
+            'active',
+            'nearDue',
+            'pendingCount',
+            'graphDegree',
+            'payments'
         ));
     }
 
-    // ─────────────────────────────────────────
-    //  Member Detail
-    // ─────────────────────────────────────────
-
     public function showMember(Member $member)
     {
-        if ($member->instructor_id !== auth()->id()) {
+        $instructorId = Auth::id();
+
+        $allAssigned = Member::whereNotNull('instructor_id')->get();
+        $graph       = GraphManager::buildFromMembers($allAssigned->all());
+
+        if (!$graph->isReachable($instructorId, $member->id)) {
             abort(403, 'This member is not assigned to you.');
         }
 
-        // FIX: eager-load user so photo resolves via member->user->photo
-        $member->loadMissing('user');
-
-        $payments = $member->payments()->latest()->get();
-
-        return view('instructor.member-detail', compact('member', 'payments'));
+        return view('instructor.member-detail', compact('member'));
     }
-
-    // ─────────────────────────────────────────
-    //  Profile
-    // ─────────────────────────────────────────
 
     public function profile()
     {
-        $instructor = auth()->user();
+        $instructor = Auth::user();
         return view('instructor.profile', compact('instructor'));
     }
 
     public function updateProfile(Request $request)
     {
-        $instructor = auth()->user();
+        $user = Auth::user();
 
         $request->validate([
             'name'             => 'required|string|max:255',
             'phone'            => 'nullable|string|max:20',
+            'gender'           => 'nullable|in:Male,Female,Other',
+            'birthdate'        => 'nullable|date',
+            'address'          => 'nullable|string|max:500',
             'specialization'   => 'nullable|string|max:255',
             'experience_years' => 'nullable|integer|min:0|max:50',
-            'address'          => 'nullable|string',
             'photo'            => 'nullable|image|max:3072',
         ]);
 
-        $data = $request->only([
-            'name', 'phone', 'specialization', 'experience_years', 'address',
-        ]);
-
         if ($request->hasFile('photo')) {
-            if ($instructor->photo) {
-                Storage::disk('public')->delete($instructor->photo);
+            if ($user->photo) {
+                Storage::disk('public')->delete($user->photo);
             }
-            $data['photo'] = $request->file('photo')->store('avatars', 'public');
+            $user->photo = $request->file('photo')->store('profiles', 'public');
         }
 
-        $instructor->update($data);
+        $user->fill($request->only([
+            'name', 'phone', 'gender', 'birthdate',
+            'address', 'specialization', 'experience_years',
+        ]))->save();
 
-        return back()->with('success', 'Profile updated!');
+        return back()->with('success', 'Profile updated successfully.');
     }
-
-    // ─────────────────────────────────────────
-    //  Payment History
-    // ─────────────────────────────────────────
 
     public function paymentHistory()
     {
-        $instructor = auth()->user();
+        $instructorId = Auth::id();
 
-        // FIX: load member.user so photo resolves via payment->member->user->photo
-        $payments = Payment::forInstructor($instructor->id)
-                           ->with('member:id,name,user_id', 'member.user:id,photo')
-                           ->latest('payment_date')
-                           ->paginate(15);
+        $rawPayments = Payment::where('instructor_id', $instructorId)
+                              ->with('member')
+                              ->get()
+                              ->toArray();
 
-        $totalEarned    = Payment::forInstructor($instructor->id)->sum('amount');
-        $thisMonthTotal = Payment::forInstructor($instructor->id)->thisMonth()->sum('amount');
+        $payments = MergeSort::sortBy($rawPayments, 'payment_date', 'desc');
 
-        return view('instructor.payments', compact(
-            'payments',
-            'totalEarned',
-            'thisMonthTotal',
-            'instructor'
-        ));
+        return view('instructor.payments', compact('payments'));
     }
 }

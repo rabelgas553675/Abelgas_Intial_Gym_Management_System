@@ -6,6 +6,9 @@ use App\Models\Member;
 use App\Models\User;
 use App\Models\Payment;
 use App\Models\CoachRequest;
+use App\Services\Algorithms\BinarySearch;
+use App\Services\Algorithms\MergeSort;
+use App\Services\Algorithms\GreedyScheduler;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -16,59 +19,124 @@ use Carbon\Carbon;
 
 class MemberController extends Controller
 {
+    /**
+     * List members (admin/staff view).
+     *
+     * DSA integration:
+     *   - MergeSort::sortBy()       replaces ->latest() / ->orderBy()
+     *   - BinarySearch::searchByField()  replaces LIKE '%search%' queries
+     *
+     * Strategy: load all matching records into memory, sort with MergeSort,
+     * then narrow with BinarySearch when a search term is present.
+     */
     public function index(Request $request)
     {
         $roleFilter = $request->filled('role') ? strtolower($request->role) : null;
 
+        // ── Staff / Instructor filter path ────────────────────────────────────
         if ($roleFilter && in_array($roleFilter, ['staff', 'instructor'])) {
-            $userQuery = User::where('role', $roleFilter);
+            $users = User::where('role', $roleFilter)->get()->toArray();
 
+            // 1. MergeSort by name ascending (replaces ->latest())
+            $sorted = MergeSort::sortBy($users, 'name', 'asc');
+
+            // 2. BinarySearch by name if search term is provided
             if ($request->filled('search')) {
-                $userQuery->where(function ($q) use ($request) {
-                    $q->where('name', 'like', '%' . $request->search . '%')
-                      ->orWhere('email', 'like', '%' . $request->search . '%');
-                });
+                $sorted = BinarySearch::searchByField(
+                    MergeSort::sortBy($users, 'name', 'asc'),
+                    'name',
+                    $request->search
+                );
             }
 
-            $members = $userQuery->latest()->paginate(15)->through(function (User $user) {
+            // 3. Manual pagination after in-memory sort + search
+            $perPage     = 15;
+            $currentPage = (int) ($request->page ?? 1);
+            $offset      = ($currentPage - 1) * $perPage;
+            $pageItems   = array_slice($sorted, $offset, $perPage);
+
+            // 4. Shape into the same stdClass the blade expects
+            $shapedItems = array_map(function (array $user) {
                 return (object) [
-                    'id'              => $user->id,
-                    'name'            => $user->name,
-                    'first_name'      => $user->name,
+                    'id'              => $user['id'],
+                    'name'            => $user['name'],
+                    'first_name'      => $user['name'],
                     'last_name'       => '',
-                    'email'           => $user->email,
-                    'phone'           => $user->phone           ?? null,
-                    'photo'           => $user->photo           ?? null,
-                    'membership_type' => $user->membership_type ?? null,
-                    'role'            => ucfirst($user->role),
-                    'status'          => $user->status          ?? null,
-                    'start_date'      => $user->start_date      ?? null,
-                    'end_date'        => $user->end_date        ?? null,
-                    'qr_code_path'    => $user->qr_code_path    ?? null,
+                    'email'           => $user['email'],
+                    'phone'           => $user['phone']           ?? null,
+                    'photo'           => $user['photo']           ?? null,
+                    'membership_type' => $user['membership_type'] ?? null,
+                    'role'            => ucfirst($user['role']),
+                    'status'          => $user['status']          ?? null,
+                    'start_date'      => $user['start_date']      ?? null,
+                    'end_date'        => $user['end_date']        ?? null,
+                    'qr_code_path'    => $user['qr_code_path']    ?? null,
                 ];
-            });
+            }, $pageItems);
+
+            $members = new \Illuminate\Pagination\LengthAwarePaginator(
+                $shapedItems,
+                count($sorted),
+                $perPage,
+                $currentPage,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
 
             return view('members.index', compact('members'));
         }
 
+        // ── Regular member filter path ─────────────────────────────────────────
+
+        // Build base DB query (filters only — no ordering, no LIKE search)
         $query = Member::with('user');
 
-        if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->search . '%')
-                  ->orWhere('email', 'like', '%' . $request->search . '%');
-            });
-        }
         if ($request->filled('plan'))   { $query->where('membership_type', $request->plan); }
         if ($request->filled('status')) { $query->where('status', $request->status); }
 
-        $members = $query->latest()->paginate(15)->through(function (Member $m) {
+        // Load all matching members into memory
+        $allMembers = $query->get()->map(function (Member $m) {
             if (!$m->photo && $m->user && $m->user->photo) {
                 $m->photo = $m->user->photo;
             }
             $m->role = 'Member';
             return $m;
-        });
+        })->toArray();
+
+        // 1. MergeSort by name ascending (replaces ->latest())
+        $sorted = MergeSort::sortBy($allMembers, 'name', 'asc');
+
+        // 2. BinarySearch by name when a search term is provided
+        //    Pre-sort by name so binary search has a sorted input.
+        if ($request->filled('search')) {
+            $sorted = BinarySearch::searchByField(
+                MergeSort::sortBy($allMembers, 'name', 'asc'),
+                'name',
+                $request->search
+            );
+        }
+
+        // 3. Manual pagination after in-memory sort + search
+        $perPage     = 15;
+        $currentPage = (int) ($request->page ?? 1);
+        $offset      = ($currentPage - 1) * $perPage;
+        $pageItems   = array_slice($sorted, $offset, $perPage);
+
+        // 4. Re-hydrate plain arrays back into Member models for blade compatibility
+        $hydratedItems = array_map(function (array $data) {
+            $m = new Member();
+            foreach ($data as $key => $value) {
+                $m->{$key} = $value;
+            }
+            return $m;
+        }, $pageItems);
+
+        $members = new \Illuminate\Pagination\LengthAwarePaginator(
+            $hydratedItems,
+            count($sorted),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         return view('members.index', compact('members'));
     }
@@ -225,6 +293,15 @@ class MemberController extends Controller
         return view('member.select-plan', compact('member', 'instructors'));
     }
 
+    /**
+     * Process a member's plan subscription.
+     *
+     * DSA integration:
+     *   - GreedyScheduler::computeEndDate()   replaces Carbon match() block
+     *   - GreedyScheduler::computeGymFee()    replaces inline $gymPriceMap array
+     *   - GreedyScheduler::computeCoachFee()  replaces inline $coachPriceMap array
+     *   - GreedyScheduler::computeTotalFee()  computes combined amount
+     */
     public function subscribe(Request $request)
     {
         $request->validate([
@@ -236,21 +313,15 @@ class MemberController extends Controller
 
         $member = Auth::user()->member;
 
-        $gymPriceMap   = ['Monthly' => 800,  'Quarterly' => 3200, 'Annually' => 9600];
-        $coachPriceMap = ['Monthly' => 300,  'Quarterly' => 1200, 'Annually' => 3600];
+        // ── GreedyScheduler: compute fees ─────────────────────────────────────
+        $coachPlan   = $request->filled('instructor_id') ? $request->coach_membership_type : null;
+        $gymAmount   = GreedyScheduler::computeGymFee($request->membership_type);
+        $coachAmount = GreedyScheduler::computeCoachFee($coachPlan);
+        $totalAmount = GreedyScheduler::computeTotalFee($request->membership_type, $coachPlan);
 
-        $gymAmount   = $gymPriceMap[$request->membership_type]   ?? 0;
-        $coachAmount = $request->filled('instructor_id')
-                        ? ($coachPriceMap[$request->coach_membership_type] ?? 0)
-                        : 0;
-        $totalAmount = $gymAmount + $coachAmount;
-
+        // ── GreedyScheduler: compute end date ─────────────────────────────────
         $start = Carbon::now();
-        $end   = match($request->membership_type) {
-            'Monthly'   => $start->copy()->addMonth(),
-            'Quarterly' => $start->copy()->addMonths(3),
-            'Annually'  => $start->copy()->addYear(),
-        };
+        $end   = GreedyScheduler::computeEndDate($start, $request->membership_type);
 
         DB::beginTransaction();
         try {
@@ -258,7 +329,7 @@ class MemberController extends Controller
                 'fitness_plan'          => $request->fitness_plan,
                 'membership_type'       => $request->membership_type,
                 'instructor_id'         => null,
-                'coach_membership_type' => $request->filled('instructor_id') ? $request->coach_membership_type : null,
+                'coach_membership_type' => $coachPlan,
                 'start_date'            => $start,
                 'end_date'              => $end,
                 'fee'                   => $totalAmount,
@@ -297,10 +368,20 @@ class MemberController extends Controller
         }
     }
 
+    /**
+     * Member's own payment history.
+     *
+     * DSA integration:
+     *   - MergeSort::sortBy() replaces ->latest('payment_date')
+     */
     public function paymentHistory()
     {
-        $member   = Auth::user()->member;
-        $payments = Payment::where('member_id', $member->id)->latest('payment_date')->get();
+        $member      = Auth::user()->member;
+        $rawPayments = Payment::where('member_id', $member->id)->get()->toArray();
+
+        // MergeSort by payment_date descending (replaces ->latest('payment_date'))
+        $payments = MergeSort::sortBy($rawPayments, 'payment_date', 'desc');
+
         return view('member.payments', compact('payments', 'member'));
     }
 
