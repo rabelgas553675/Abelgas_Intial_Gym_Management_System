@@ -5,12 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\Algorithms\MergeSort;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
+    /**
+     * Admin dashboard.
+     *
+     * DSA integration:
+     *   - MergeSort::sortBy() replaces ->latest() for recentMembers,
+     *     recentPayments, and recentUsers.
+     */
     public function index()
     {
         $stats = [
@@ -26,9 +34,23 @@ class DashboardController extends Controller
                                  ->sum('amount');
         $totalCollected = Payment::sum('amount');
 
-        $recentMembers  = Member::latest()->take(8)->get();
-        $recentPayments = Payment::with('member')->latest('payment_date')->take(6)->get();
-        $recentUsers    = User::latest()->take(6)->get();
+        // MergeSort replaces ->latest()->take(8) for recent members
+        $allMembers    = Member::get()->all();
+        $recentMembers = collect(
+            array_slice(MergeSort::sortBy($allMembers, 'created_at', 'desc'), 0, 8)
+        );
+
+        // MergeSort replaces ->latest('payment_date')->take(6) for recent payments
+        $allPayments    = Payment::with('member')->get()->all();
+        $recentPayments = collect(
+            array_slice(MergeSort::sortBy($allPayments, 'payment_date', 'desc'), 0, 6)
+        );
+
+        // MergeSort replaces ->latest()->take(6) for recent users
+        $allUsers    = User::get()->all();
+        $recentUsers = collect(
+            array_slice(MergeSort::sortBy($allUsers, 'created_at', 'desc'), 0, 6)
+        );
 
         return view('dashboard', compact(
             'stats', 'thisMonth', 'totalCollected',
@@ -55,7 +77,6 @@ class DashboardController extends Controller
             'photo'     => 'nullable|image|max:3072',
         ]);
 
-        // Handle photo upload
         if ($request->hasFile('photo')) {
             if ($user->photo) {
                 Storage::disk('public')->delete($user->photo);

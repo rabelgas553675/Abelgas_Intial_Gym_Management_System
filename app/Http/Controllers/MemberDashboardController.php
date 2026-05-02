@@ -6,6 +6,8 @@ use App\Models\Member;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\CoachRequest;
+use App\Services\Algorithms\GreedyScheduler;
+use App\Services\Algorithms\MergeSort;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +26,9 @@ class MemberDashboardController extends Controller
 
     /**
      * Show the member's own dashboard.
+     *
+     * DSA integration:
+     *   - MergeSort::sortBy() replaces ->latest()
      */
     public function index()
     {
@@ -33,11 +38,16 @@ class MemberDashboardController extends Controller
 
         $payments = collect();
         if ($member) {
-            $payments = Payment::query()
-                               ->where('member_id', $member->id)
-                               ->where('payment_type', 'gym_fee')
-                               ->latest()
-                               ->get();
+            // Load into memory, then MergeSort by payment_date descending
+            $rawPayments = Payment::query()
+                                  ->where('member_id', $member->id)
+                                  ->where('payment_type', 'gym_fee')
+                                  ->get()
+                                  ->all();
+
+            // MergeSort replaces ->latest()
+            $sorted   = MergeSort::sortBy($rawPayments, 'payment_date', 'desc');
+            $payments = collect($sorted);
         }
 
         $nearDue = $member && $member->isDueWithinDays(7);
@@ -91,6 +101,11 @@ class MemberDashboardController extends Controller
 
     /**
      * Save plan selection and process payment.
+     *
+     * DSA integration:
+     *   - GreedyScheduler::computeGymFee()    replaces inline $gymPriceMap array
+     *   - GreedyScheduler::computeCoachFee()  replaces inline $coachPriceMap array
+     *   - GreedyScheduler::computeEndDate()   replaces Carbon match() block
      */
     public function subscribePlan(Request $request)
     {
@@ -108,22 +123,14 @@ class MemberDashboardController extends Controller
             return back()->with('error', 'Unauthenticated. Please log in again.');
         }
 
-        // Pricing maps
-        $gymPriceMap   = ['Monthly' => 800,  'Quarterly' => 3200, 'Annually' => 9600];
-        $coachPriceMap = ['Monthly' => 300,  'Quarterly' => 1200, 'Annually' => 3600];
+        // ── GreedyScheduler: compute fees ────────────────────────────────────
+        $coachPlan   = $request->filled('instructor_id') ? $request->coach_membership_type : null;
+        $gymAmount   = GreedyScheduler::computeGymFee($request->membership_type);
+        $coachAmount = GreedyScheduler::computeCoachFee($coachPlan);
 
-        $gymAmount   = $gymPriceMap[$request->membership_type] ?? 0;
-        $coachAmount = $request->filled('instructor_id')
-                        ? ($coachPriceMap[$request->coach_membership_type] ?? 0)
-                        : 0;
-
-        // Date calculation
+        // ── GreedyScheduler: compute end date ────────────────────────────────
         $start = Carbon::now();
-        $end   = match ($request->membership_type) {
-            'Monthly'   => $start->copy()->addMonth(),
-            'Quarterly' => $start->copy()->addMonths(3),
-            'Annually'  => $start->copy()->addYear(),
-        };
+        $end   = GreedyScheduler::computeEndDate($start, $request->membership_type);
 
         DB::beginTransaction();
         try {
@@ -137,7 +144,7 @@ class MemberDashboardController extends Controller
                     'fitness_plan'          => $request->fitness_plan,
                     'membership_type'       => $request->membership_type,
                     'instructor_id'         => null, // stays null until coach approved
-                    'coach_membership_type' => $request->filled('instructor_id') ? $request->coach_membership_type : null,
+                    'coach_membership_type' => $coachPlan,
                     'coach_status'          => $request->filled('instructor_id') ? 'pending' : 'none',
                     'start_date'            => $start,
                     'end_date'              => $end,
@@ -323,6 +330,9 @@ class MemberDashboardController extends Controller
 
     /**
      * Show payment history.
+     *
+     * DSA integration:
+     *   - MergeSort::sortBy() replaces ->latest() on both gym and coach payments
      */
     public function paymentHistory()
     {
@@ -332,18 +342,20 @@ class MemberDashboardController extends Controller
             return view('member.payment-history', ['payments' => collect(), 'member' => null]);
         }
 
-        $gymPayments = Payment::query()
+        // Load gym payments and MergeSort by payment_date descending
+        $gymPaymentsRaw = Payment::query()
             ->where('member_id', $member->id)
             ->where('payment_type', 'gym_fee')
-            ->latest()
             ->get();
 
+        // Load coach payments (no sort needed — matched by date below)
         $coachPayments = Payment::query()
             ->where('member_id', $member->id)
             ->where('payment_type', 'coach_fee')
             ->get();
 
-        $gymPayments->each(function ($gymPayment) use ($coachPayments) {
+        // Attach matching coach payment to each gym payment
+        $gymPaymentsRaw->each(function ($gymPayment) use ($coachPayments) {
             $match = $coachPayments
                 ->filter(fn ($cp) =>
                     Carbon::parse($cp->payment_date)->isSameDay($gymPayment->payment_date)
@@ -354,6 +366,10 @@ class MemberDashboardController extends Controller
             $gymPayment->coach_fee_payment = $match;
         });
 
-        return view('member.payment-history', ['payments' => $gymPayments, 'member' => $member]);
+        // MergeSort by payment_date descending (replaces ->latest())
+        $sorted   = MergeSort::sortBy($gymPaymentsRaw->all(), 'payment_date', 'desc');
+        $payments = collect($sorted);
+
+        return view('member.payment-history', ['payments' => $payments, 'member' => $member]);
     }
 }
