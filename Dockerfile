@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# Install system packages and PHP extensions
+# Install system packages, PHP extensions, and Node.js together
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     zip \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip mbstring xml \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -28,9 +30,6 @@ RUN printf '<Directory /var/www/html/public>\n\
     Require all granted\n\
 </Directory>\n' > /etc/apache2/conf-available/laravel.conf \
     && a2enconf laravel
-
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
