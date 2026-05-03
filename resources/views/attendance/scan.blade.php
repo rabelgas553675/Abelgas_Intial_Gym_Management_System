@@ -35,10 +35,7 @@
         <div id="liveDate"  style="color:rgba(255,255,255,.55);font-size:13px;margin-top:2px;"></div>
       </div>
 
-      {{-- ── COOLDOWN OVERLAY ──
-           This bar sits above the camera feed while the 3-second lock is active.
-           It shows a countdown so the operator knows exactly when the scanner
-           will accept the next scan. --}}
+      {{-- Cooldown Overlay --}}
       <div id="cooldownOverlay"
            style="display:none;position:relative;border-radius:14px;overflow:hidden;
                   background:rgba(15,15,26,0.92);border:3px solid rgba(200,255,0,0.5);
@@ -47,7 +44,6 @@
         <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:6px;">
           Next scan ready in <span id="cooldownSec">3</span>s…
         </div>
-        {{-- Progress bar that drains over 3 seconds --}}
         <div style="margin-top:16px;height:4px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
           <div id="cooldownBar"
                style="height:100%;width:100%;background:var(--accent);
@@ -183,7 +179,6 @@
       <div style="font-size:15px;font-weight:700;">
         Today's Attendance — {{ now()->format('F d, Y') }}
       </div>
-      {{-- Live-update indicator --}}
       <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
         <span id="liveDot"
               style="width:8px;height:8px;border-radius:50%;background:#4ade80;
@@ -210,9 +205,7 @@
           @php
             $personName  = $log->member?->name ?? $log->user?->name ?? 'Staff';
             $personRole  = $log->member?->membership_type ?? ucfirst($log->user?->role ?? 'Staff');
-            $personPhoto = $log->member?->user?->photo
-                        ?? $log->member?->photo
-                        ?? $log->user?->photo;
+            $personPhoto = $log->member?->user?->photo ?? $log->member?->photo ?? $log->user?->photo;
             $isStaffRow  = !$log->member_id;
             $dataKey     = $isStaffRow ? 'staff-'.$log->staff_user_id : $log->member_id;
           @endphp
@@ -246,9 +239,7 @@
                              font-weight:700;background:rgba(74,222,128,0.15);color:#4ade80;">Inside</span>
               @endif
             </td>
-            <td style="padding:12px 16px;font-size:13px;color:var(--muted);">
-              {{ $log->duration_formatted }}
-            </td>
+            <td style="padding:12px 16px;font-size:13px;color:var(--muted);">{{ $log->duration_formatted }}</td>
             <td style="padding:12px 16px;">
               <span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;
                            {{ $log->entry_method === 'manual' ? 'background:rgba(251,191,36,0.15);color:#fbbf24;' : 'background:var(--surface2);color:var(--muted);' }}">
@@ -279,7 +270,6 @@
 
 </div>
 
-{{-- ═══════════════════════════════════════════════════════════════════════ --}}
 <style>
 @keyframes scanMove {
   0%   { opacity:0; transform:translateY(-60px); }
@@ -307,453 +297,388 @@
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════════════════════════
-//  IRONFORGE — Attendance Scanner JS
-//
-//  Features:
-//   1. 3-second hard cooldown between scans (visual countdown + disabled state)
-//   2. Live attendance table — polls every 10 seconds for new rows
-//   3. Real-time row injection on scan success (no refresh needed)
-// ═══════════════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function () {
 
-// ── Live Clock ─────────────────────────────────────────────────────────────
-function updateClock() {
-  const now = new Date();
-  document.getElementById('liveClock').textContent =
-    now.toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  document.getElementById('liveDate').textContent =
-    now.toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ── Cooldown state ──────────────────────────────────────────────────────────
-//
-//  IMPLEMENTATION NOTE:
-//  We use a single boolean + a JS Date timestamp rather than relying on
-//  the html5-qrcode library's internal deduplication, because the library
-//  does NOT prevent the same code being decoded in rapid succession when
-//  the user holds the QR code still in frame.
-//
-//  Flow:
-//    scan detected
-//      → set scanning = true
-//      → hide camera, show 3-second countdown overlay
-//      → disable all manual input buttons
-//      → after 3 s → hide overlay, re-enable buttons, set scanning = false
-//
-let scanning     = false;          // master lock — true = scanner blocked
-let lastScanned  = '';             // last raw QR string (prevent exact dupe)
-let cooldownTimer = null;          // holds the setInterval for the countdown
-
-const COOLDOWN_MS = 3000;          // ← change this if you want a different delay
-
-function startCooldown() {
-  scanning = true;
-  setStatus('locked');
-
-  // Show the overlay, hide the live camera feed
-  document.getElementById('cooldownOverlay').style.display = 'block';
-  document.getElementById('reader').style.opacity           = '0.15';
-
-  // Disable all input buttons while locked
-  setButtonsEnabled(false);
-
-  // Countdown display
-  let remaining = COOLDOWN_MS / 1000;
-  document.getElementById('cooldownNumber').textContent = remaining;
-  document.getElementById('cooldownSec').textContent    = remaining;
-
-  // Drain the progress bar from 100% → 0% over COOLDOWN_MS
-  const bar = document.getElementById('cooldownBar');
-  bar.style.transition = 'none';
-  bar.style.width      = '100%';
-  // Force reflow so the transition plays from 100%
-  bar.getBoundingClientRect();
-  bar.style.transition = `width ${COOLDOWN_MS}ms linear`;
-  bar.style.width      = '0%';
-
-  // Tick every second for the number display
-  cooldownTimer = setInterval(() => {
-    remaining -= 1;
-    if (remaining <= 0) remaining = 0;
-    document.getElementById('cooldownNumber').textContent = remaining;
-    document.getElementById('cooldownSec').textContent    = remaining;
-  }, 1000);
-
-  // After full delay, release the lock
-  setTimeout(() => {
-    clearInterval(cooldownTimer);
-    scanning = false;
-    lastScanned = '';
-
-    document.getElementById('cooldownOverlay').style.display = 'none';
-    document.getElementById('reader').style.opacity           = '1';
-    setButtonsEnabled(true);
-    setStatus('ready');
-  }, COOLDOWN_MS);
-}
-
-// ── Status badge helper ─────────────────────────────────────────────────────
-function setStatus(state) {
-  const badge = document.getElementById('statusBadge');
-  const dot   = document.getElementById('statusDot');
-  if (state === 'ready') {
-    badge.style.background = 'rgba(74,222,128,0.12)';
-    badge.style.color      = '#4ade80';
-    badge.style.border     = '1px solid rgba(74,222,128,0.3)';
-    dot.style.background   = '#4ade80';
-    badge.querySelector ? null : null;
-    badge.lastChild.textContent = ' Scanner ready';
-    // Rebuild inner HTML safely
-    badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#4ade80;
-      animation:pulse 1.5s ease-in-out infinite;display:inline-block;"></span> Scanner ready`;
-  } else {
-    badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#f87171;
-      display:inline-block;"></span> Cooldown — next scan in 3s`;
-    badge.style.background = 'rgba(248,113,113,0.12)';
-    badge.style.color      = '#f87171';
-    badge.style.border     = '1px solid rgba(248,113,113,0.3)';
+  // ── Live Clock ────────────────────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    const clockEl = document.getElementById('liveClock');
+    const dateEl  = document.getElementById('liveDate');
+    if (clockEl) clockEl.textContent = now.toLocaleTimeString('en-PH', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    if (dateEl)  dateEl.textContent  = now.toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   }
-}
+  setInterval(updateClock, 1000);
+  updateClock();
 
-// ── Enable / disable all action buttons ────────────────────────────────────
-function setButtonsEnabled(enabled) {
-  const ids = ['manualSubmitBtn', 'timeInBtn', 'timeOutBtn'];
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.disabled      = !enabled;
-    el.style.opacity = enabled ? '1' : '0.4';
-    el.style.cursor  = enabled ? 'pointer' : 'not-allowed';
-  });
-  const input = document.getElementById('manualInput');
-  if (input) {
-    input.disabled = !enabled;
-    input.style.opacity = enabled ? '1' : '0.5';
-  }
-}
+  // ── Cooldown state ────────────────────────────────────────────────────────
+  let scanning     = false;
+  let lastScanned  = '';
+  let cooldownTimer = null;
+  const COOLDOWN_MS = 3000;
 
-// ── QR Scanner init ─────────────────────────────────────────────────────────
-const html5QrCode = new Html5Qrcode("reader");
-html5QrCode.start(
-  { facingMode: "environment" },
-  { fps: 10, qrbox: { width: 240, height: 240 } },
-  (decodedText) => {
-    // ── GUARD 1: cooldown lock ──────────────────────────────────────────────
-    if (scanning) return;
+  function startCooldown() {
+    scanning = true;
+    setStatus('locked');
 
-    // ── GUARD 2: exact duplicate of last scan ───────────────────────────────
-    //  (belt-and-suspenders — the cooldown timer resets lastScanned after 3s)
-    if (decodedText === lastScanned) return;
+    const overlay = document.getElementById('cooldownOverlay');
+    const reader  = document.getElementById('reader');
+    if (overlay) overlay.style.display = 'block';
+    if (reader)  reader.style.opacity  = '0.15';
 
-    lastScanned = decodedText;
-    startCooldown();          // lock immediately before the AJAX request
-    processQR(decodedText);
-  },
-  () => {} // decode error — ignored (happens on every non-QR frame)
-).catch(() => {
-  document.getElementById('reader').innerHTML =
-    '<div style="color:rgba(255,255,255,.5);text-align:center;padding:40px;font-size:13px;">'+
-    'Camera unavailable.<br>Use Manual Entry below.</div>';
-});
+    setButtonsEnabled(false);
 
-// ── Manual input from the text field ───────────────────────────────────────
-function processManual() {
-  if (scanning) return;                                // honour the lock
-  const val = document.getElementById('manualInput').value.trim();
-  if (!val) return;
-  startCooldown();
-  processQR(val);
-  document.getElementById('manualInput').value = '';
-}
-document.getElementById('manualInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') processManual();
-});
+    let remaining = COOLDOWN_MS / 1000;
+    const numEl = document.getElementById('cooldownNumber');
+    const secEl = document.getElementById('cooldownSec');
+    if (numEl) numEl.textContent = remaining;
+    if (secEl) secEl.textContent = remaining;
 
-// ── Core AJAX: send QR data to server ──────────────────────────────────────
-function processQR(qrData) {
-  fetch('{{ route("attendance.scan.process") }}', {
-    method:  'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'X-CSRF-TOKEN': '{{ csrf_token() }}'
-    },
-    body: 'qr_data=' + encodeURIComponent(qrData)
-  })
-  .then(r => r.json())
-  .then(data => showResult(data))
-  .catch(() => showResult({ success: false, message: 'Server error. Try again.' }));
-}
-
-// ── Manual entry panel ──────────────────────────────────────────────────────
-function manualRecord(action) {
-  if (scanning) return;                                // honour the lock
-  const mid = document.getElementById('manualMemberId').value;
-  const msg = document.getElementById('manualMsg');
-  if (!mid) {
-    msg.innerHTML = '<span style="color:#fbbf24;">Select a person first.</span>';
-    return;
-  }
-
-  msg.innerHTML = '<span style="color:rgba(255,255,255,0.5);">Processing…</span>';
-  startCooldown();                                     // lock during request
-
-  fetch('{{ route("attendance.manual") }}', {
-    method:  'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'X-CSRF-TOKEN': '{{ csrf_token() }}'
-    },
-    body: 'manual_member_id=' + encodeURIComponent(mid) +
-          '&manual_action='   + action
-  })
-  .then(r => { if (!r.ok) throw new Error('Server error'); return r.json(); })
-  .then(data => {
-    msg.innerHTML = data.success
-      ? `<span style="color:#4ade80;">✅ ${data.message}</span>`
-      : `<span style="color:#f87171;">❌ ${data.message}</span>`;
-
-    if (data.success) {
-      if (action === 'timein') {
-        appendLogRow(data, 'timein');
-      } else {
-        updateLogRowTimeout(data);
-      }
-      playBeep(true);
-      document.getElementById('manualMemberId').value = '';
-    } else {
-      playBeep(false);
+    const bar = document.getElementById('cooldownBar');
+    if (bar) {
+      bar.style.transition = 'none';
+      bar.style.width      = '100%';
+      bar.getBoundingClientRect();
+      bar.style.transition = `width ${COOLDOWN_MS}ms linear`;
+      bar.style.width      = '0%';
     }
-  })
-  .catch(() => {
-    msg.innerHTML = '<span style="color:#f87171;">❌ Connection error. Check console.</span>';
-  });
-}
 
-// ── Show result card ────────────────────────────────────────────────────────
-function showResult(data) {
-  const card    = document.getElementById('resultCard');
-  const isStaff = data.is_staff || false;
+    cooldownTimer = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) remaining = 0;
+      if (numEl) numEl.textContent = remaining;
+      if (secEl) secEl.textContent = remaining;
+    }, 1000);
 
-  const avatar = data.photo
-    ? `<img src="${data.photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:4px solid #fff;margin:0 auto;display:block;">`
-    : `<div style="width:80px;height:80px;border-radius:50%;
-        background:${isStaff ? 'linear-gradient(135deg,#60a5fa,#3b82f6)' : 'linear-gradient(135deg,#c8ff00,#4ade80)'};
-        display:flex;align-items:center;justify-content:center;font-size:28px;
-        font-weight:700;color:#111;margin:0 auto;">
-        ${(data.member || '?').charAt(0).toUpperCase()}</div>`;
-
-  document.getElementById('resultAvatar').innerHTML       = avatar;
-  document.getElementById('resultName').textContent       = data.member     || 'Unknown';
-  document.getElementById('resultMembership').textContent = data.membership || '';
-
-  let cls = 'result-error';
-  if (data.success && data.action === 'timein')  { cls = 'result-timein';  appendLogRow(data, 'timein'); }
-  if (data.success && data.action === 'timeout') { cls = 'result-timeout'; updateLogRowTimeout(data); }
-  if (data.status === 'expired')                  cls = 'result-expired';
-  if (data.status === 'suspended')                cls = 'result-suspended';
-
-  card.className = cls;
-
-  if (data.success && data.action === 'timein') {
-    document.getElementById('resultTimes').innerHTML =
-      `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
-        Time In: <strong>${data.time_in}</strong></span>
-       ${!isStaff ? `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
-        Valid Until: <strong>${data.end_date || 'N/A'}</strong></span>` : ''}`;
-  } else if (data.success && data.action === 'timeout') {
-    document.getElementById('resultTimes').innerHTML =
-      `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
-        In: <strong>${data.time_in}</strong></span>
-       <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
-        Out: <strong>${data.time_out}</strong></span>
-       <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
-        Duration: <strong>${data.duration}</strong></span>`;
-  } else {
-    document.getElementById('resultTimes').innerHTML = '';
+    setTimeout(() => {
+      clearInterval(cooldownTimer);
+      scanning    = false;
+      lastScanned = '';
+      if (overlay) overlay.style.display = 'none';
+      if (reader)  reader.style.opacity  = '1';
+      setButtonsEnabled(true);
+      setStatus('ready');
+    }, COOLDOWN_MS);
   }
 
-  document.getElementById('resultMessage').textContent = data.message || '';
-  card.style.display = 'block';
-  playBeep(data.success);
-}
-
-// ── Inject a new Time-In row at the top of the table ───────────────────────
-function appendLogRow(data, action) {
-  const tbody    = document.getElementById('todayLogBody');
-  const emptyRow = document.getElementById('emptyRow');
-  if (emptyRow) emptyRow.remove();
-
-  // Remove any stale row for the same person (will be re-added fresh)
-  const existing = tbody.querySelector(`[data-member="${data.member_id}"]`);
-  if (existing) existing.remove();
-
-  const isStaff = data.is_staff ||
-                  (typeof data.member_id === 'string' && data.member_id.toString().startsWith('staff-'));
-
-  const avatar = data.photo
-    ? `<img src="${data.photo}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);">`
-    : `<div style="width:34px;height:34px;border-radius:50%;
-        background:${isStaff ? 'rgba(96,165,250,0.08)' : 'rgba(200,255,0,0.08)'};
-        border:1px solid ${isStaff ? 'rgba(96,165,250,0.15)' : 'rgba(200,255,0,0.15)'};
-        display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
-        color:${isStaff ? '#60a5fa' : 'var(--accent)'};">
-        ${(data.member || '?').charAt(0).toUpperCase()}</div>`;
-
-  const methodBadge = data.entry_method === 'manual'
-    ? `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:rgba(251,191,36,0.15);color:#fbbf24;">Manual</span>`
-    : `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:var(--surface2);color:var(--muted);">QR Scan</span>`;
-
-  const insideBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:rgba(74,222,128,0.15);color:#4ade80;">Inside</span>`;
-
-  const row = document.createElement('tr');
-  row.setAttribute('data-member', data.member_id);
-  row.classList.add('row-new');                        // slide-in animation
-  row.style.borderTop = '1px solid var(--border)';
-  row.innerHTML = `
-    <td style="padding:12px 16px;">${avatar}</td>
-    <td style="padding:12px 16px;">
-      <div style="font-size:13px;font-weight:600;">${data.member}</div>
-      <div style="font-size:11px;color:var(--muted);">${data.membership || ''}</div>
-    </td>
-    <td style="padding:12px 16px;font-size:13px;">${data.time_in}</td>
-    <td style="padding:12px 16px;">${insideBadge}</td>
-    <td style="padding:12px 16px;font-size:13px;color:var(--muted);">—</td>
-    <td style="padding:12px 16px;">${methodBadge}</td>
-    <td style="padding:12px 16px;">${insideBadge}</td>`;
-
-  tbody.prepend(row);
-
-  // Update live counters
-  document.getElementById('insideCount').textContent =
-    parseInt(document.getElementById('insideCount').textContent || 0) + 1;
-  document.getElementById('todayTotal').textContent =
-    parseInt(document.getElementById('todayTotal').textContent  || 0) + 1;
-}
-
-// ── Update an existing row when someone Times Out ───────────────────────────
-function updateLogRowTimeout(data) {
-  const row = document.querySelector(`[data-member="${data.member_id}"]`);
-  if (row) {
-    row.cells[3].textContent = data.time_out;
-    row.cells[4].textContent = data.duration;
-    row.cells[6].innerHTML   =
-      '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:var(--surface2);color:var(--muted);">Done</span>';
-    row.classList.add('row-new');                      // subtle flash on update
-    setTimeout(() => row.classList.remove('row-new'), 500);
+  // ── Status badge ──────────────────────────────────────────────────────────
+  function setStatus(state) {
+    const badge = document.getElementById('statusBadge');
+    if (!badge) return;
+    if (state === 'ready') {
+      badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#4ade80;
+        animation:pulse 1.5s ease-in-out infinite;display:inline-block;"></span> Scanner ready`;
+      badge.style.background = 'rgba(74,222,128,0.12)';
+      badge.style.color      = '#4ade80';
+      badge.style.border     = '1px solid rgba(74,222,128,0.3)';
+    } else {
+      badge.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#f87171;
+        display:inline-block;"></span> Cooldown — next scan in 3s`;
+      badge.style.background = 'rgba(248,113,113,0.12)';
+      badge.style.color      = '#f87171';
+      badge.style.border     = '1px solid rgba(248,113,113,0.3)';
+    }
   }
-  document.getElementById('insideCount').textContent =
-    Math.max(0, parseInt(document.getElementById('insideCount').textContent || 1) - 1);
-}
 
-// ── Beep ────────────────────────────────────────────────────────────────────
-function playBeep(success) {
-  try {
-    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
-    const osc  = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = success ? 880 : 300;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.4);
-  } catch (e) {}
-}
+  // ── Enable / disable buttons ──────────────────────────────────────────────
+  function setButtonsEnabled(enabled) {
+    ['manualSubmitBtn', 'timeInBtn', 'timeOutBtn'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.disabled      = !enabled;
+      el.style.opacity = enabled ? '1' : '0.4';
+      el.style.cursor  = enabled ? 'pointer' : 'not-allowed';
+    });
+    const input = document.getElementById('manualInput');
+    if (input) {
+      input.disabled      = !enabled;
+      input.style.opacity = enabled ? '1' : '0.5';
+    }
+  }
 
-// ═══════════════════════════════════════════════════════════════════════════
-//  AUTO-REFRESH — polls the server every 10 seconds and syncs any rows
-//  that were added by another terminal / device without needing a page reload.
-//
-//  HOW IT WORKS:
-//   1. Every 10 s we POST to /attendance/live with the set of member_ids
-//      already shown in the table.
-//   2. The server returns only rows that are NOT in our current set.
-//   3. We prepend those rows and update the counters.
-//
-//  This keeps bandwidth low (we don't re-fetch the whole table) and means
-//  two staff members scanning at different desks both see each other's scans.
-//
-//  IMPORTANT: You need to add the route + controller method listed in the
-//  comments below. The full implementation is in AttendanceController.php.
-// ═══════════════════════════════════════════════════════════════════════════
-const POLL_INTERVAL_MS = 10000;  // ← 10 s — safe for most servers
-
-function getRenderedKeys() {
-  // Collect every data-member value currently in the table
-  return Array.from(
-    document.querySelectorAll('#todayLogBody tr[data-member]')
-  ).map(r => r.getAttribute('data-member'));
-}
-
-function pollAttendance() {
-  const known = getRenderedKeys();
-
-  fetch('{{ route("attendance.live") }}', {
-    method:  'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-TOKEN': '{{ csrf_token() }}'
+  // ── QR Scanner init ───────────────────────────────────────────────────────
+  const html5QrCode = new Html5Qrcode("reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 240, height: 240 } },
+    (decodedText) => {
+      if (scanning) return;
+      if (decodedText === lastScanned) return;
+      lastScanned = decodedText;
+      startCooldown();
+      processQR(decodedText);
     },
-    body: JSON.stringify({ known_keys: known })
-  })
-  .then(r => r.ok ? r.json() : null)
-  .then(data => {
-    if (!data || !data.rows || data.rows.length === 0) {
-      flashLiveIndicator();
+    () => {}
+  ).catch(() => {
+    const reader = document.getElementById('reader');
+    if (reader) reader.innerHTML =
+      '<div style="color:rgba(255,255,255,.5);text-align:center;padding:40px;font-size:13px;">' +
+      'Camera unavailable.<br>Use Manual Entry below.</div>';
+  });
+
+  // ── Manual input ──────────────────────────────────────────────────────────
+  function processManual() {
+    if (scanning) return;
+    const input = document.getElementById('manualInput');
+    const val   = input ? input.value.trim() : '';
+    if (!val) return;
+    startCooldown();
+    processQR(val);
+    if (input) input.value = '';
+  }
+  window.processManual = processManual;
+
+  const manualInput = document.getElementById('manualInput');
+  if (manualInput) {
+    manualInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') processManual();
+    });
+  }
+
+  // ── Core AJAX ─────────────────────────────────────────────────────────────
+  function processQR(qrData) {
+    fetch('{{ route("attendance.scan.process") }}', {
+      method:  'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+      },
+      body: 'qr_data=' + encodeURIComponent(qrData)
+    })
+    .then(r => r.json())
+    .then(data => showResult(data))
+    .catch(() => showResult({ success: false, message: 'Server error. Try again.' }));
+  }
+
+  // ── Manual entry panel ────────────────────────────────────────────────────
+  function manualRecord(action) {
+    if (scanning) return;
+    const mid = document.getElementById('manualMemberId')?.value;
+    const msg = document.getElementById('manualMsg');
+    if (!mid) {
+      if (msg) msg.innerHTML = '<span style="color:#fbbf24;">Select a person first.</span>';
       return;
     }
+    if (msg) msg.innerHTML = '<span style="color:rgba(255,255,255,0.5);">Processing…</span>';
+    startCooldown();
 
-    // Prepend each new row (server returns newest-first)
-    data.rows.forEach(row => {
-      // Skip if we already have it (race condition guard)
-      if (document.querySelector(`[data-member="${row.key}"]`)) return;
-
-      const tbody    = document.getElementById('todayLogBody');
-      const emptyRow = document.getElementById('emptyRow');
-      if (emptyRow) emptyRow.remove();
-
-      const el = document.createElement('tr');
-      el.setAttribute('data-member', row.key);
-      el.classList.add('row-new');
-      el.style.borderTop = '1px solid var(--border)';
-      el.innerHTML = row.html;
-      tbody.prepend(el);
+    fetch('{{ route("attendance.manual") }}', {
+      method:  'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+      },
+      body: 'manual_member_id=' + encodeURIComponent(mid) + '&manual_action=' + action
+    })
+    .then(r => { if (!r.ok) throw new Error('Server error'); return r.json(); })
+    .then(data => {
+      if (msg) msg.innerHTML = data.success
+        ? `<span style="color:#4ade80;">✅ ${data.message}</span>`
+        : `<span style="color:#f87171;">❌ ${data.message}</span>`;
+      if (data.success) {
+        if (action === 'timein') appendLogRow(data, 'timein');
+        else updateLogRowTimeout(data);
+        playBeep(true);
+        const sel = document.getElementById('manualMemberId');
+        if (sel) sel.value = '';
+      } else {
+        playBeep(false);
+      }
+    })
+    .catch(() => {
+      if (msg) msg.innerHTML = '<span style="color:#f87171;">❌ Connection error.</span>';
     });
+  }
+  window.manualRecord = manualRecord;
 
-    // Refresh counters from server-authoritative values
-    if (data.inside_count !== undefined) {
-      document.getElementById('insideCount').textContent = data.inside_count;
+  // ── Show result card ──────────────────────────────────────────────────────
+  function showResult(data) {
+    const card    = document.getElementById('resultCard');
+    if (!card) return;
+    const isStaff = data.is_staff || false;
+
+    const avatar = data.photo
+      ? `<img src="${data.photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:4px solid #fff;margin:0 auto;display:block;">`
+      : `<div style="width:80px;height:80px;border-radius:50%;
+          background:${isStaff ? 'linear-gradient(135deg,#60a5fa,#3b82f6)' : 'linear-gradient(135deg,#c8ff00,#4ade80)'};
+          display:flex;align-items:center;justify-content:center;font-size:28px;
+          font-weight:700;color:#111;margin:0 auto;">
+          ${(data.member || '?').charAt(0).toUpperCase()}</div>`;
+
+    document.getElementById('resultAvatar').innerHTML       = avatar;
+    document.getElementById('resultName').textContent       = data.member     || 'Unknown';
+    document.getElementById('resultMembership').textContent = data.membership || '';
+
+    let cls = 'result-error';
+    if (data.success && data.action === 'timein')  { cls = 'result-timein';  appendLogRow(data, 'timein'); }
+    if (data.success && data.action === 'timeout') { cls = 'result-timeout'; updateLogRowTimeout(data); }
+    if (data.status === 'expired')   cls = 'result-expired';
+    if (data.status === 'suspended') cls = 'result-suspended';
+    card.className = cls;
+
+    const timesEl = document.getElementById('resultTimes');
+    if (data.success && data.action === 'timein') {
+      timesEl.innerHTML =
+        `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
+          Time In: <strong>${data.time_in}</strong></span>
+         ${!isStaff ? `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
+          Valid Until: <strong>${data.end_date || 'N/A'}</strong></span>` : ''}`;
+    } else if (data.success && data.action === 'timeout') {
+      timesEl.innerHTML =
+        `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
+          In: <strong>${data.time_in}</strong></span>
+         <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
+          Out: <strong>${data.time_out}</strong></span>
+         <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.08);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;margin:3px;">
+          Duration: <strong>${data.duration}</strong></span>`;
+    } else {
+      timesEl.innerHTML = '';
     }
-    if (data.today_total !== undefined) {
-      document.getElementById('todayTotal').textContent = data.today_total;
+
+    document.getElementById('resultMessage').textContent = data.message || '';
+    card.style.display = 'block';
+    playBeep(data.success);
+  }
+
+  // ── Append Time-In row ────────────────────────────────────────────────────
+  function appendLogRow(data, action) {
+    const tbody    = document.getElementById('todayLogBody');
+    if (!tbody) return;
+    const emptyRow = document.getElementById('emptyRow');
+    if (emptyRow) emptyRow.remove();
+
+    const existing = tbody.querySelector(`[data-member="${data.member_id}"]`);
+    if (existing) existing.remove();
+
+    const isStaff = data.is_staff ||
+                    (typeof data.member_id === 'string' && data.member_id.toString().startsWith('staff-'));
+
+    const avatar = data.photo
+      ? `<img src="${data.photo}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);">`
+      : `<div style="width:34px;height:34px;border-radius:50%;
+          background:${isStaff ? 'rgba(96,165,250,0.08)' : 'rgba(200,255,0,0.08)'};
+          border:1px solid ${isStaff ? 'rgba(96,165,250,0.15)' : 'rgba(200,255,0,0.15)'};
+          display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+          color:${isStaff ? '#60a5fa' : 'var(--accent)'};">
+          ${(data.member || '?').charAt(0).toUpperCase()}</div>`;
+
+    const methodBadge = data.entry_method === 'manual'
+      ? `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:rgba(251,191,36,0.15);color:#fbbf24;">Manual</span>`
+      : `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:var(--surface2);color:var(--muted);">QR Scan</span>`;
+
+    const insideBadge = `<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:rgba(74,222,128,0.15);color:#4ade80;">Inside</span>`;
+
+    const row = document.createElement('tr');
+    row.setAttribute('data-member', data.member_id);
+    row.classList.add('row-new');
+    row.style.borderTop = '1px solid var(--border)';
+    row.innerHTML = `
+      <td style="padding:12px 16px;">${avatar}</td>
+      <td style="padding:12px 16px;">
+        <div style="font-size:13px;font-weight:600;">${data.member}</div>
+        <div style="font-size:11px;color:var(--muted);">${data.membership || ''}</div>
+      </td>
+      <td style="padding:12px 16px;font-size:13px;">${data.time_in}</td>
+      <td style="padding:12px 16px;">${insideBadge}</td>
+      <td style="padding:12px 16px;font-size:13px;color:var(--muted);">—</td>
+      <td style="padding:12px 16px;">${methodBadge}</td>
+      <td style="padding:12px 16px;">${insideBadge}</td>`;
+    tbody.prepend(row);
+
+    const insideEl = document.getElementById('insideCount');
+    const totalEl  = document.getElementById('todayTotal');
+    if (insideEl) insideEl.textContent = parseInt(insideEl.textContent || 0) + 1;
+    if (totalEl)  totalEl.textContent  = parseInt(totalEl.textContent  || 0) + 1;
+  }
+
+  // ── Update row on Time Out ────────────────────────────────────────────────
+  function updateLogRowTimeout(data) {
+    const row = document.querySelector(`[data-member="${data.member_id}"]`);
+    if (row) {
+      row.cells[3].textContent = data.time_out;
+      row.cells[4].textContent = data.duration;
+      row.cells[6].innerHTML   =
+        '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:var(--surface2);color:var(--muted);">Done</span>';
+      row.classList.add('row-new');
+      setTimeout(() => row.classList.remove('row-new'), 500);
     }
+    const insideEl = document.getElementById('insideCount');
+    if (insideEl) insideEl.textContent = Math.max(0, parseInt(insideEl.textContent || 1) - 1);
+  }
 
-    flashLiveIndicator();
-  })
-  .catch(() => {
-    // Silently ignore poll failures — the next tick will retry
-  });
-}
+  // ── Beep ──────────────────────────────────────────────────────────────────
+  function playBeep(success) {
+    try {
+      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = success ? 880 : 300;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch (e) {}
+  }
 
-// Briefly turn the live dot orange on each poll to show it's working
-function flashLiveIndicator() {
-  const dot   = document.getElementById('liveDot');
-  const label = document.getElementById('liveLabel');
-  if (!dot) return;
-  dot.style.background   = '#fbbf24';
-  label.textContent      = 'Synced';
-  setTimeout(() => {
-    dot.style.background = '#4ade80';
-    label.textContent    = 'Live';
-  }, 600);
-}
+  // ── Live polling ──────────────────────────────────────────────────────────
+  const POLL_INTERVAL_MS = 10000;
 
-// Kick off polling
-setInterval(pollAttendance, POLL_INTERVAL_MS);
+  function getRenderedKeys() {
+    return Array.from(
+      document.querySelectorAll('#todayLogBody tr[data-member]')
+    ).map(r => r.getAttribute('data-member'));
+  }
+
+  function pollAttendance() {
+    fetch('{{ route("attendance.live") }}', {
+      method:  'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({ known_keys: getRenderedKeys() })
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data || !data.rows || data.rows.length === 0) { flashLiveIndicator(); return; }
+      data.rows.forEach(row => {
+        if (document.querySelector(`[data-member="${row.key}"]`)) return;
+        const tbody    = document.getElementById('todayLogBody');
+        const emptyRow = document.getElementById('emptyRow');
+        if (emptyRow) emptyRow.remove();
+        const el = document.createElement('tr');
+        el.setAttribute('data-member', row.key);
+        el.classList.add('row-new');
+        el.style.borderTop = '1px solid var(--border)';
+        el.innerHTML = row.html;
+        tbody.prepend(el);
+      });
+      const insideEl = document.getElementById('insideCount');
+      const totalEl  = document.getElementById('todayTotal');
+      if (data.inside_count !== undefined && insideEl) insideEl.textContent = data.inside_count;
+      if (data.today_total  !== undefined && totalEl)  totalEl.textContent  = data.today_total;
+      flashLiveIndicator();
+    })
+    .catch(() => {});
+  }
+
+  function flashLiveIndicator() {
+    const dot   = document.getElementById('liveDot');
+    const label = document.getElementById('liveLabel');
+    if (!dot) return;
+    dot.style.background = '#fbbf24';
+    if (label) label.textContent = 'Synced';
+    setTimeout(() => {
+      dot.style.background = '#4ade80';
+      if (label) label.textContent = 'Live';
+    }, 600);
+  }
+
+  setInterval(pollAttendance, POLL_INTERVAL_MS);
+
+}); // end DOMContentLoaded
 </script>
 
 @endsection
