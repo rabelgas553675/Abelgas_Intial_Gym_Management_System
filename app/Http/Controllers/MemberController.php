@@ -306,9 +306,9 @@ class MemberController extends Controller
     {
         $request->validate([
             'fitness_plan'          => 'required|string',
-            'membership_type'       => 'required|in:Monthly,Quarterly,Annually',
+            'membership_type'       => 'required|in:Monthly,Quarterly,Semi-Annual,Annually',
             'instructor_id'         => 'nullable|string',
-            'coach_membership_type' => 'nullable|required_if:instructor_id,!=,null|in:Monthly,Quarterly,Annually',
+            'coach_membership_type' => 'nullable|required_if:instructor_id,!=,null|in:Monthly,Quarterly,Semi-Annual,Annually',
         ]);
 
         $member = Auth::user()->member;

@@ -111,9 +111,9 @@ class MemberDashboardController extends Controller
     {
         $request->validate([
             'fitness_plan'          => 'required|in:Calisthenics,Bodybuilding,Plyometrics,Powerlifting,Endurance,Functional Training,Hybrid Training',
-            'membership_type'       => 'required|in:Monthly,Quarterly,Annually',
+            'membership_type'       => 'required|in:Monthly,Quarterly,Semi-Annual,Annually',
             'instructor_id'         => 'nullable|exists:users,id',
-            'coach_membership_type' => 'nullable|in:Monthly,Quarterly,Annually',
+            'coach_membership_type' => 'nullable|in:Monthly,Quarterly,Semi-Annual,Annually',
         ]);
 
         /** @var \App\Models\User $user */
@@ -285,7 +285,7 @@ class MemberDashboardController extends Controller
     {
         $request->validate([
             'fitness_plan'    => 'required|in:Calisthenics,Bodybuilding,Plyometrics,Powerlifting,Endurance,Functional Training,Hybrid Training',
-            'membership_type' => 'required|in:Monthly,Quarterly,Annually',
+            'membership_type' => 'required|in:Monthly,Quarterly,Semi-Annual,Annually',
             'instructor_id'   => 'nullable|exists:users,id',
         ]);
 

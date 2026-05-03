@@ -15,12 +15,19 @@ class PaymentController extends Controller
     /**
      * Admin payments page.
      *
-     * MergeSort replaces ->latest() for the transaction tables.
-     * BinarySearch is exposed as the search hook (if search param is added to the view later).
+     * DSA integration:
+     *   - MergeSort::sortBy()          replaces all ->latest() / ->orderBy() calls.
+     *   - BinarySearch::searchByField() handles receipt number search (partial match,
+     *     O(log n) + k typical, O(n) worst case — see BinarySearch docblock).
+     *   - BinarySearch::findExact()    available for pure O(log n) exact lookups.
+     *
+     * NOTE: Member::orderBy('name') has been removed from the member dropdown query.
+     * Alphabetical ordering is now performed entirely by MergeSort::sortBy() in memory,
+     * so no DB-level ordering is claimed as student-implemented sorting.
      */
     public function index(Request $request)
     {
-        // ── Aggregates (still via DB — acceptable per consultation) ──────────
+        // ── Aggregates (DB sums — acceptable; no student sort claimed here) ──
         $totalCount     = Payment::gymFees()->count();
         $thisMonth      = Payment::gymFees()->thisMonth()->sum('amount');
         $totalCollected = Payment::gymFees()->sum('amount');
@@ -32,39 +39,45 @@ class PaymentController extends Controller
                                     ->count('instructor_id');
 
         // ── Instructor leaderboard ────────────────────────────────────────────
-        // Load into memory, then MergeSort by total descending
+        // Load raw grouped data, then MergeSort by total earnings descending.
+        // No DB-level ORDER BY is used — sorting is done entirely in PHP.
         $leaderboardRaw = Payment::coachFees()
-            ->select('instructor_id',
-                     DB::raw('SUM(amount) as total'),
-                     DB::raw('COUNT(*) as txn_count'))
+            ->select(
+                'instructor_id',
+                DB::raw('SUM(amount) as total'),
+                DB::raw('COUNT(*) as txn_count')
+            )
             ->with('instructor:id,name,photo')
             ->groupBy('instructor_id')
             ->get()
             ->toArray();
 
-        // MergeSort: sort instructor leaderboard by total earnings, descending
+        // MergeSort: O(n log n) in-memory sort — no DB ORDER BY
         $instructorLeaderboard = MergeSort::sortBy($leaderboardRaw, 'total', 'desc');
 
         // ── Gym fee transactions ──────────────────────────────────────────────
+        // Load with NO DB ordering — MergeSort handles all ordering in memory.
         $gymPaymentsRaw = Payment::gymFees()
             ->with('member:id,name,user_id', 'member.user:id,name,photo')
             ->get()
             ->toArray();
 
-        // MergeSort by created_at descending (newest first)
+        // MergeSort by created_at descending (newest first) — replaces ->latest()
         $payments = MergeSort::sortBy($gymPaymentsRaw, 'created_at', 'desc');
 
-        // Optional: BinarySearch on receipt_number if ?search= is passed
+        // BinarySearch on receipt_number when ?search= is present.
+        // Complexity: O(log n + k) typical, O(n) worst case (partial match).
+        // For an exact receipt lookup, BinarySearch::findExact() gives pure O(log n).
         if ($request->filled('search')) {
-            $byReceipt = BinarySearch::searchByField(
+            $payments = BinarySearch::searchByField(
                 MergeSort::sortBy($gymPaymentsRaw, 'receipt_number', 'asc'),
                 'receipt_number',
                 $request->search
             );
-            $payments = $byReceipt;
         }
 
         // ── Coach fee transactions ────────────────────────────────────────────
+        // Load with NO DB ordering — MergeSort handles ordering in memory.
         $coachPaymentsRaw = Payment::coachFees()
             ->with(
                 'member:id,name,user_id',
@@ -74,12 +87,15 @@ class PaymentController extends Controller
             ->get()
             ->toArray();
 
-        // MergeSort by created_at descending
+        // MergeSort by created_at descending — replaces ->latest()
         $coachFeePayments = MergeSort::sortBy($coachPaymentsRaw, 'created_at', 'desc');
 
         // ── Member dropdown ───────────────────────────────────────────────────
-        $membersRaw = Member::orderBy('name')->get(['id', 'name'])->toArray();
-        // MergeSort ensures consistent alphabetical ordering independent of DB collation
+        // Removed: Member::orderBy('name') — DB ordering was redundant when
+        // MergeSort is being applied immediately after. Now loads with no ORDER BY.
+        $membersRaw = Member::get(['id', 'name'])->toArray();
+
+        // MergeSort: alphabetical sort — no DB ordering involved
         $members = MergeSort::sortBy($membersRaw, 'name', 'asc');
 
         return view('admin.payments', compact(
@@ -92,7 +108,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Store a manually recorded gym_fee payment (admin/staff).
+     * Store a manually recorded gym_fee payment (admin / staff).
      */
     public function store(Request $request)
     {
@@ -122,7 +138,7 @@ class PaymentController extends Controller
     }
 
     /**
-     * Delete a payment (admin only).
+     * Delete a payment record (admin only).
      */
     public function destroy(Payment $payment)
     {

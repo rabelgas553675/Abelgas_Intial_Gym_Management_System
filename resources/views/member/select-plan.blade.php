@@ -70,12 +70,13 @@
 {{-- ── 2. GYM SUBSCRIPTION ── --}}
 <div class="section-group">
   <h2 class="section-title">2. Gym Subscription</h2>
-  <div class="grid-3">
+  <div class="grid-4">
     @php
       $gymDurations = [
-        ['type'=>'Monthly',   'price'=>'800',   'display'=>'₱800',   'label'=>'₱800 / Month',      'days'=>'30 days'],
-        ['type'=>'Quarterly', 'price'=>'2100',  'display'=>'₱2,100', 'label'=>'₱2,100 / Quarter',  'days'=>'90 days'],
-        ['type'=>'Annually',  'price'=>'7500',  'display'=>'₱7,500', 'label'=>'₱7,500 / Year',     'days'=>'365 days'],
+        ['type'=>'Monthly',     'price'=>'800',  'display'=>'₱800',   'label'=>'₱800 / Month',       'days'=>'30 days'],
+        ['type'=>'Quarterly',   'price'=>'2100', 'display'=>'₱2,100', 'label'=>'₱2,100 / Quarter',   'days'=>'90 days'],
+        ['type'=>'Semi-Annual', 'price'=>'4500', 'display'=>'₱4,500', 'label'=>'₱4,500 / 6 Months',  'days'=>'180 days'],
+        ['type'=>'Annually',    'price'=>'7500', 'display'=>'₱7,500', 'label'=>'₱7,500 / Year',      'days'=>'365 days'],
       ];
       $selectedGym = old('membership_type') ?? $member?->membership_type ?? '';
     @endphp
@@ -143,15 +144,16 @@
     <h3 style="font-size:16px;font-weight:700;color:#fff;margin-bottom:16px;">
       Coach Subscription Duration
     </h3>
-    <div class="grid-3">
-      @php
+    @php
         $coachDurations = [
-          ['type'=>'Monthly',   'price'=>'300',  'display'=>'₱300',   'label'=>'₱300 / Month',     'days'=>'30 days'],
-          ['type'=>'Quarterly', 'price'=>'1200', 'display'=>'₱1,200', 'label'=>'₱1,200 / Quarter', 'days'=>'90 days'],
-          ['type'=>'Annually',  'price'=>'3600', 'display'=>'₱3,600', 'label'=>'₱3,600 / Year',    'days'=>'365 days'],
+          ['type'=>'Monthly',     'price'=>'300',  'display'=>'₱300',   'label'=>'₱300 / Month',      'days'=>'30 days'],
+          ['type'=>'Quarterly',   'price'=>'1200', 'display'=>'₱1,200', 'label'=>'₱1,200 / Quarter',  'days'=>'90 days'],
+          ['type'=>'Semi-Annual', 'price'=>'1800', 'display'=>'₱1,800', 'label'=>'₱1,800 / 6 Months', 'days'=>'180 days'],
+          ['type'=>'Annually',    'price'=>'3600', 'display'=>'₱3,600', 'label'=>'₱3,600 / Year',     'days'=>'365 days'],
         ];
         $selectedCoach = old('coach_membership_type') ?? $member?->coach_membership_type ?? '';
       @endphp
+    <div class="grid-4">
       @foreach($coachDurations as $d)
         @php $isCSelected = $selectedCoach === $d['type']; @endphp
         <label class="selectable-label">
@@ -231,6 +233,7 @@
 .grid-plans .selectable-label:nth-child(5) { grid-column: 1; }
 
 .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
 
 .selectable-label { display:block; height:100%; }
 
@@ -303,9 +306,10 @@
 @media (max-width:900px) {
   .grid-plans { grid-template-columns:repeat(3,1fr); }
   .grid-plans .selectable-label:nth-child(5) { grid-column:auto; }
+  .grid-4 { grid-template-columns:repeat(2,1fr); }
 }
 @media (max-width:600px) {
-  .grid-plans, .grid-3 { grid-template-columns:1fr; }
+  .grid-plans, .grid-3, .grid-4 { grid-template-columns:1fr; }
 }
 </style>
 

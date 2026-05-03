@@ -13,27 +13,50 @@ use Carbon\Carbon;
  * commit to the locally optimal flat-rate price and canonical interval
  * for the chosen membership type — no backtracking, no partial periods.
  *
- * Used in: MemberController::subscribe()
+ * Supported plans (aligned with proposal):
+ *   Monthly    →  1 month   / ₱800   gym  / ₱300   coach
+ *   Quarterly  →  3 months  / ₱2,100 gym  / ₱1,200 coach
+ *   Semi-Annual→  6 months  / ₱4,500 gym  / ₱1,800 coach
+ *   Annually   →  12 months / ₱7,500 gym  / ₱3,600 coach
+ *
+ * Used in: MemberController::subscribe(), MemberDashboardController::subscribePlan()
  */
 class GreedyScheduler
 {
     /**
      * Gym membership price map (PHP Pesos).
-     * Greedy rates — the system always picks the fixed price for the chosen plan.
+     *
+     * Greedy rates — the algorithm always commits immediately to the
+     * flat rate for the chosen plan with no partial-period adjustments.
      */
     private const GYM_PRICES = [
-        'Monthly'   => 800,
-        'Quarterly' => 3200,
-        'Annually'  => 9600,
+        'Monthly'     => 800,
+        'Quarterly'   => 2100,
+        'Semi-Annual' => 4500,
+        'Annually'    => 7500,
     ];
 
     /**
-     * Coach/instructor fee price map (PHP Pesos).
+     * Coach / instructor fee price map (PHP Pesos).
      */
     private const COACH_PRICES = [
-        'Monthly'   => 300,
-        'Quarterly' => 1200,
-        'Annually'  => 3600,
+        'Monthly'     => 300,
+        'Quarterly'   => 1200,
+        'Semi-Annual' => 1800,
+        'Annually'    => 3600,
+    ];
+
+    /**
+     * All valid plan types — use this constant in controller validation rules.
+     *
+     * Example:
+     *   'membership_type' => 'required|in:' . implode(',', GreedyScheduler::VALID_PLANS)
+     */
+    public const VALID_PLANS = [
+        'Monthly',
+        'Quarterly',
+        'Semi-Annual',
+        'Annually',
     ];
 
     /**
@@ -45,18 +68,20 @@ class GreedyScheduler
      * or pro-rata adjustments — the greedy choice maximises simplicity.
      *
      * @param  Carbon $start           Membership start date
-     * @param  string $membershipType  'Monthly' | 'Quarterly' | 'Annually'
+     * @param  string $membershipType  'Monthly' | 'Quarterly' | 'Semi-Annual' | 'Annually'
      * @return Carbon                  Computed end date (copy of $start + interval)
      * @throws \InvalidArgumentException  If an unrecognised type is passed
      */
     public static function computeEndDate(Carbon $start, string $membershipType): Carbon
     {
         return match ($membershipType) {
-            'Monthly'   => $start->copy()->addMonth(),
-            'Quarterly' => $start->copy()->addMonths(3),
-            'Annually'  => $start->copy()->addYear(),
-            default     => throw new \InvalidArgumentException(
-                "GreedyScheduler: unknown membership type \"{$membershipType}\"."
+            'Monthly'     => $start->copy()->addMonth(),
+            'Quarterly'   => $start->copy()->addMonths(3),
+            'Semi-Annual' => $start->copy()->addMonths(6),
+            'Annually'    => $start->copy()->addYear(),
+            default       => throw new \InvalidArgumentException(
+                "GreedyScheduler: unknown membership type \"{$membershipType}\". "
+                . 'Valid: ' . implode(', ', self::VALID_PLANS)
             ),
         };
     }
@@ -65,9 +90,9 @@ class GreedyScheduler
      * Greedy gym fee lookup.
      *
      * Returns the flat-rate gym fee for the given plan.
-     * Returns 0 if the type is unrecognised (safe default).
+     * Returns 0 for unrecognised types (safe default — no exception thrown).
      *
-     * @param  string $membershipType  'Monthly' | 'Quarterly' | 'Annually'
+     * @param  string $membershipType  'Monthly' | 'Quarterly' | 'Semi-Annual' | 'Annually'
      * @return int                     Amount in PHP pesos
      */
     public static function computeGymFee(string $membershipType): int
@@ -79,9 +104,9 @@ class GreedyScheduler
      * Greedy coach fee lookup.
      *
      * Returns the flat-rate coach fee for the given plan.
-     * Returns 0 if the type is unrecognised or null is passed.
+     * Returns 0 if null is passed (member has no coach) or type is unrecognised.
      *
-     * @param  string|null $membershipType  'Monthly' | 'Quarterly' | 'Annually' | null
+     * @param  string|null $membershipType  'Monthly' | 'Quarterly' | 'Semi-Annual' | 'Annually' | null
      * @return int                          Amount in PHP pesos
      */
     public static function computeCoachFee(?string $membershipType): int
@@ -96,12 +121,12 @@ class GreedyScheduler
     /**
      * Greedy total fee computation.
      *
-     * Greedily sums the applicable fees:
+     * Greedily sums all applicable fees:
      *   - Always adds the gym fee for the chosen plan.
-     *   - Appends the coach fee only when a coach plan is selected.
+     *   - Appends the coach fee only when a coach plan is provided.
      *
-     * This mirrors the greedy principle: commit immediately to the
-     * full cost of every selected component without deferring.
+     * This mirrors the greedy principle: commit immediately to the full
+     * cost of every selected component without deferring any amount.
      *
      * @param  string      $gymMembershipType    Gym plan type
      * @param  string|null $coachMembershipType  Coach plan type, or null if no coach
