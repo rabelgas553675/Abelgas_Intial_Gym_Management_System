@@ -1,6 +1,9 @@
 # Base Image
 FROM php:8.2-apache
 
+# Set Composer memory
+ENV COMPOSER_MEMORY_LIMIT=-1
+
 # Install system dependencies + PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
@@ -11,8 +14,10 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libpng-dev \
+    libicu-dev \
     zip \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip mbstring xml \
+    && docker-php-ext-install \
+    pdo pdo_mysql pdo_pgsql zip mbstring xml bcmath intl gd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -47,18 +52,25 @@ WORKDIR /var/www/html
 # Copy Laravel app
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Create .env (IMPORTANT)
+RUN cp .env.example .env || true
+
+# Install PHP dependencies (SAFE MODE)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
+# Generate app key + run Laravel setup
+RUN php artisan key:generate || true \
+    && php artisan package:discover || true
 
 # Install frontend dependencies
 RUN npm install && npm run build
 
-# Clear caches (safe)
+# Clear caches
 RUN php artisan config:clear \
     && php artisan route:clear \
     && php artisan view:clear || true
 
-# Storage link (safe)
+# Storage link
 RUN php artisan storage:link || true
 
 # Fix permissions
@@ -70,7 +82,7 @@ RUN mkdir -p storage/framework/cache \
     && chown -R www-data:www-data storage bootstrap/cache public/uploads \
     && chmod -R 775 storage bootstrap/cache public/uploads
 
-# Optional: run migrations (can fail safely)
+# (Optional) Run migrations
 RUN php artisan migrate --force || true
 
 # Expose port
