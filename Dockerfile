@@ -1,4 +1,4 @@
-FROM php:8.4-apache
+FROM php:8.2-apache
 
 # Install system packages and PHP extensions
 RUN apt-get update && apt-get install -y \
@@ -40,7 +40,7 @@ COPY . .
 
 RUN cp .env.example .env
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs
 
 RUN php artisan key:generate --force
 
