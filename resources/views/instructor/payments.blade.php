@@ -1,4 +1,4 @@
-@extends('layouts.member')
+@extends('layouts.instructor')
 @section('title', 'My Earnings – IRONFORGE')
 @section('active', 'payments')
 
@@ -6,7 +6,7 @@
 
 <div style="margin-bottom:32px;">
   <h1 style="font-size:32px;font-weight:700;margin-bottom:6px;">
-    My <span style="color:var(--accent);">Earnings</span>
+    My <span style="color:var(--accent);">Earnings</span>`
   </h1>
   <p style="color:var(--muted);font-size:14px;">
     Coach subscription fees automatically allocated from member subscriptions
