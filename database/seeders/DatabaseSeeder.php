@@ -147,7 +147,7 @@ class DatabaseSeeder extends Seeder
             $fee = match($m['membership_type']) {
                 'Monthly'     => 800,
                 'Quarterly'   => 2100,
-                'Semi-Annual' => 4000,
+                'Semi-Annual' => 4500,
                 'Annually'    => 7500,
                 default       => 800,
             };
