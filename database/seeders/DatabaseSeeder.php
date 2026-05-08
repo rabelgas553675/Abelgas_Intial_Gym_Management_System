@@ -4,9 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\Member;
+use App\Services\Algorithms\GreedyScheduler;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
@@ -133,24 +133,11 @@ class DatabaseSeeder extends Seeder
             $fullName  = $m['first_name'] . ' ' . $m['last_name'];
             $startDate = Carbon::parse($m['start_date']);
 
-            // Compute end_date from membership_type (mirrors GreedyScheduler logic)
-            $months = match($m['membership_type']) {
-                'Monthly'     => 1,
-                'Quarterly'   => 3,
-                'Semi-Annual' => 6,
-                'Annually'    => 12,
-                default       => 1,
-            };
-            $endDate = $startDate->copy()->addMonths($months);
-
-            // Fee from Payment constants
-            $fee = match($m['membership_type']) {
-                'Monthly'     => 800,
-                'Quarterly'   => 2100,
-                'Semi-Annual' => 4500,
-                'Annually'    => 7500,
-                default       => 800,
-            };
+            // ── Delegate to GreedyScheduler — single source of truth ─────────
+            // This ensures the seeder and the live application always agree on
+            // end dates and fees. No inline match() blocks that can drift.
+            $endDate = GreedyScheduler::computeEndDate($startDate, $m['membership_type']);
+            $fee     = GreedyScheduler::computeGymFee($m['membership_type']);
 
             $instructorId = isset($m['instructor']) && $m['instructor'] !== null
                 ? $instructors[$m['instructor']]->id
@@ -198,6 +185,8 @@ class DatabaseSeeder extends Seeder
             'birthdate' => '1995-01-01',
         ]);
 
+        $testStart = Carbon::now();
+
         Member::create([
             'user_id'         => $testUser->id,
             'instructor_id'   => null,
@@ -210,9 +199,9 @@ class DatabaseSeeder extends Seeder
             'birthdate'       => '1995-01-01',
             'membership_type' => 'Monthly',
             'fitness_plan'    => 'General Fitness',
-            'start_date'      => Carbon::now(),
-            'end_date'        => Carbon::now()->addMonth(),
-            'fee'             => 800,
+            'start_date'      => $testStart,
+            'end_date'        => GreedyScheduler::computeEndDate($testStart, 'Monthly'),
+            'fee'             => GreedyScheduler::computeGymFee('Monthly'),
             'coach_status'    => 'none',
         ]);
     }
