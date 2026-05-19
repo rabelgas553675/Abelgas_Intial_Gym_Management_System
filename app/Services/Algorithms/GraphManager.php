@@ -9,18 +9,32 @@ namespace App\Services\Algorithms;
  * Supports BFS/DFS traversal for instructor → member relationship mapping.
  *
  * Used in: InstructorController::dashboard() and showMember()
+ *
+ * OPTIMIZATIONS over baseline:
+ *   - visited set uses hash keys (isset) instead of in_array → O(1) vs O(n)
+ *   - adjacency list stores neighbors as hash keys for O(1) duplicate check
+ *   - bfsData() skips full BFS — instructor→member is a 1-level graph,
+ *     so we directly return the neighbor objects (no queue needed)
+ *   - isReachable() short-circuits with O(1) direct hash lookup
+ *   - memberObjects keyed by integer member_id for direct numeric lookup
  */
 class GraphManager
 {
     /**
-     * Adjacency list: node => [neighbor nodes]
+     * Adjacency list: node => [neighborNode => true]  (hash set, not array)
      */
     protected array $adjacency = [];
 
     /**
-     * Store member objects keyed by member node string for fast lookup.
+     * Member objects keyed by integer member_id for O(1) retrieval.
      */
     protected array $memberObjects = [];
+
+    /**
+     * Direct instructor → member_ids map for O(1) neighbor lookup.
+     * instructor_id (int) => [member_id (int) => true]
+     */
+    protected array $instructorMembers = [];
 
     // ────────────────────────────────────────────────────────────────
     //  Graph Construction
@@ -38,72 +52,52 @@ class GraphManager
         $instance = new static();
 
         foreach ($members as $member) {
-            $instructorNode = 'instructor_' . $member->instructor_id;
-            $memberNode     = 'member_'     . $member->id;
+            $iid = (int) $member->instructor_id;
+            $mid = (int) $member->id;
 
-            // Ensure both nodes exist
-            if (!isset($instance->adjacency[$instructorNode])) {
-                $instance->adjacency[$instructorNode] = [];
-            }
-            if (!isset($instance->adjacency[$memberNode])) {
-                $instance->adjacency[$memberNode] = [];
-            }
+            // Integer-keyed direct maps — no string concat overhead
+            $instance->instructorMembers[$iid][$mid] = true;
+            $instance->memberObjects[$mid]            = $member;
 
-            // Directed edge: instructor → member
-            if (!in_array($memberNode, $instance->adjacency[$instructorNode])) {
-                $instance->adjacency[$instructorNode][] = $memberNode;
-            }
+            // Keep string-keyed adjacency for getAdjacency() / degree() compat
+            $instructorNode = 'instructor_' . $iid;
+            $memberNode     = 'member_'     . $mid;
 
-            // Store the member object for retrieval in bfsData()
-            $instance->memberObjects[$memberNode] = $member;
+            $instance->adjacency[$instructorNode][$memberNode] = true;
+            $instance->adjacency[$memberNode]                  ??= [];
         }
 
         return $instance;
     }
 
     // ────────────────────────────────────────────────────────────────
-    //  BFS Traversal
+    //  BFS Traversal  (optimised: 1-level graph → direct lookup)
     // ────────────────────────────────────────────────────────────────
 
     /**
-     * BFS from this instructor's node.
-     * Returns the actual Member model objects (not just IDs).
+     * Return all Member objects assigned to an instructor.
+     *
+     * Because the graph is a strict 2-level bipartite structure
+     * (instructor → members, no deeper edges), a full BFS queue is
+     * wasteful. We directly read the instructor's neighbor hash set.
+     *
+     * O(k) where k = number of members for this instructor.
      *
      * Used in: InstructorController::dashboard()
      *
      * @param  int $instructorId
-     * @return array  Array of Member models assigned to this instructor
+     * @return array  Array of Member models
      */
     public function bfsData(int $instructorId): array
     {
-        $startNode = 'instructor_' . $instructorId;
-
-        if (!isset($this->adjacency[$startNode])) {
+        if (!isset($this->instructorMembers[$instructorId])) {
             return [];
         }
 
-        $visited = [];
-        $queue   = [$startNode];
         $members = [];
-
-        while (!empty($queue)) {
-            $current = array_shift($queue);
-
-            if (in_array($current, $visited)) {
-                continue;
-            }
-
-            $visited[] = $current;
-
-            // If this node is a member node, collect the object
-            if (str_starts_with($current, 'member_') && isset($this->memberObjects[$current])) {
-                $members[] = $this->memberObjects[$current];
-            }
-
-            foreach ($this->adjacency[$current] ?? [] as $neighbor) {
-                if (!in_array($neighbor, $visited)) {
-                    $queue[] = $neighbor;
-                }
+        foreach ($this->instructorMembers[$instructorId] as $mid => $_) {
+            if (isset($this->memberObjects[$mid])) {
+                $members[] = $this->memberObjects[$mid];
             }
         }
 
@@ -111,12 +105,14 @@ class GraphManager
     }
 
     // ────────────────────────────────────────────────────────────────
-    //  DFS Reachability
+    //  DFS Reachability  (hash-keyed visited set)
     // ────────────────────────────────────────────────────────────────
 
     /**
      * DFS check: is a member reachable from a given instructor?
-     * Used to verify instructor ownership before granting access.
+     *
+     * Short-circuits with a direct hash lookup for the 1-level case.
+     * Falls back to generic DFS with O(1) visited checks for deeper graphs.
      *
      * Used in: InstructorController::showMember()
      *
@@ -126,6 +122,12 @@ class GraphManager
      */
     public function isReachable(int $instructorId, int $memberId): bool
     {
+        // Fast path: direct adjacency check — O(1)
+        if (isset($this->instructorMembers[$instructorId][$memberId])) {
+            return true;
+        }
+
+        // Generic DFS fallback (hash-keyed visited)
         $startNode  = 'instructor_' . $instructorId;
         $targetNode = 'member_'     . $memberId;
 
@@ -133,7 +135,7 @@ class GraphManager
             return false;
         }
 
-        $visited = [];
+        $visited = [];   // [node => true] — O(1) lookup
         $stack   = [$startNode];
 
         while (!empty($stack)) {
@@ -143,14 +145,14 @@ class GraphManager
                 return true;
             }
 
-            if (in_array($current, $visited)) {
+            if (isset($visited[$current])) {
                 continue;
             }
 
-            $visited[] = $current;
+            $visited[$current] = true;
 
-            foreach ($this->adjacency[$current] ?? [] as $neighbor) {
-                if (!in_array($neighbor, $visited)) {
+            foreach ($this->adjacency[$current] as $neighbor => $_) {
+                if (!isset($visited[$neighbor])) {
                     $stack[] = $neighbor;
                 }
             }
@@ -165,17 +167,15 @@ class GraphManager
 
     /**
      * Out-degree of an instructor node.
-     * = number of direct member edges from this instructor.
-     *
-     * Used in: InstructorController::dashboard()
      *
      * @param  int $instructorId
      * @return int
      */
     public function degree(int $instructorId): int
     {
-        $node = 'instructor_' . $instructorId;
-        return count($this->adjacency[$node] ?? []);
+        return isset($this->instructorMembers[$instructorId])
+            ? count($this->instructorMembers[$instructorId])
+            : 0;
     }
 
     /**

@@ -32,25 +32,48 @@ class PaymentController extends Controller
         $thisMonth      = Payment::gymFees()->thisMonth()->sum('amount');
         $totalCollected = Payment::gymFees()->sum('amount');
 
-        $totalCoachFees       = Payment::coachFees()->sum('amount');
-        $thisMonthCoachFees   = Payment::coachFees()->thisMonth()->sum('amount');
-        $instructorsPaidCount = Payment::coachFees()
-                                    ->distinct('instructor_id')
-                                    ->count('instructor_id');
+        $totalCoachFees     = Payment::coachFees()->sum('amount');
+        $thisMonthCoachFees = Payment::coachFees()->thisMonth()->sum('amount');
+
+        // Fix: instructor_id lives on members, not payments.
+        // Count distinct instructors who have at least one coach_fee payment
+        // through their assigned members.
+        $instructorsPaidCount = Member::whereHas('payments', function ($q) {
+                                    $q->where('payment_type', 'coach_fee');
+                                })
+                                ->whereNotNull('instructor_id')
+                                ->distinct('instructor_id')
+                                ->count('instructor_id');
 
         // ── Instructor leaderboard ────────────────────────────────────────────
-        // Load raw grouped data, then MergeSort by total earnings descending.
-        // No DB-level ORDER BY is used — sorting is done entirely in PHP.
+        // Fix: instructor_id is on members, not payments.
+        // Join through members to group coach_fee payments by instructor.
+        // No DB-level ORDER BY — MergeSort handles ordering in PHP.
         $leaderboardRaw = Payment::coachFees()
             ->select(
-                'instructor_id',
-                DB::raw('SUM(amount) as total'),
+                'members.instructor_id',
+                DB::raw('SUM(payments.amount) as total'),
                 DB::raw('COUNT(*) as txn_count')
             )
-            ->with('instructor:id,name,photo')
-            ->groupBy('instructor_id')
+            ->join('members', 'payments.member_id', '=', 'members.id')
+            ->with('member.instructor:id,name,photo')
+            ->groupBy('members.instructor_id')
             ->get()
             ->toArray();
+
+        // Attach instructor details via the User model for the leaderboard display.
+        // Map instructor_id to user info so the view has name/photo available.
+        $instructorIds = array_column($leaderboardRaw, 'instructor_id');
+        $instructorUsers = User::whereIn('id', $instructorIds)
+            ->get(['id', 'name', 'photo'])
+            ->keyBy('id')
+            ->toArray();
+
+        // Merge instructor info into each leaderboard row.
+        $leaderboardRaw = array_map(function ($row) use ($instructorUsers) {
+            $row['instructor'] = $instructorUsers[$row['instructor_id']] ?? null;
+            return $row;
+        }, $leaderboardRaw);
 
         // MergeSort: O(n log n) in-memory sort — no DB ORDER BY
         $instructorLeaderboard = MergeSort::sortBy($leaderboardRaw, 'total', 'desc');
@@ -82,7 +105,7 @@ class PaymentController extends Controller
             ->with(
                 'member:id,name,user_id',
                 'member.user:id,name,photo',
-                'instructor:id,name,photo'
+                'member.instructor:id,name,photo'
             )
             ->get()
             ->toArray();

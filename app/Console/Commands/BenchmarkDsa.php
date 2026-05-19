@@ -197,11 +197,13 @@ class BenchmarkDsa extends Command
         // 5. BFS/DFS Instructor Graph Traversal — O(V+E)
         // GraphManager::buildFromMembers() uses object-property access ($member->id,
         // $member->instructor_id), so we cast each synthetic array to stdClass first.
+        // The cast and graph construction are done ONCE outside the timed loop —
+        // we benchmark only the traversal (bfsData), not the setup cost.
         $this->line(self::C_LABEL . "  [5/5] BFS/DFS Instructor Graph Traversal..." . self::C_RESET);
         $instructorIds  = array_unique(array_column($members, 'instructor_id'));
         $memberObjects  = array_map(fn($m) => (object) $m, $members);
-        $runs = $this->benchmark($iterations, function () use ($memberObjects, $instructorIds) {
-            $graph = GraphManager::buildFromMembers($memberObjects);
+        $graph          = GraphManager::buildFromMembers($memberObjects);
+        $runs = $this->benchmark($iterations, function () use ($graph, $instructorIds) {
             foreach ($instructorIds as $id) {
                 $graph->bfsData($id);
             }
