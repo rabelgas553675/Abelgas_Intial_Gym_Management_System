@@ -2,60 +2,76 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>@yield('title', 'IRONFORGE GMS')</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>@yield('title', 'APEX FITNESS GYM GMS')</title>
 <link rel="icon" type="image/png" href="{{ asset('favicon.svg') }}">
+<link rel="stylesheet" href="{{ asset('css/ironforge.css') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 <style>
 :root{
   --bg:#0a0a0a;--surface:#111111;--surface2:#181818;--surface3:#202020;
-  --border:#222222;--accent:#c8ff00;--accent2:#ff6b35;--text:#f0f0f0;
+  --border:#222222;--accent:#ff2b3d;--accent2:#ff6b35;--text:#f0f0f0;
   --muted:#555;--success:#4ade80;--danger:#f87171;--info:#60a5fa;--warning:#fbbf24;
   --radius:10px;
+  --sidebar-width:220px;
+  --topbar-height:56px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;display:flex;min-height:100vh;}
 
 /* ── SIDEBAR ── */
-.sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+.sidebar{width:var(--sidebar-width);min-width:var(--sidebar-width);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;}
 
-.sidebar-brand{padding:22px 20px 18px;border-bottom:1px solid var(--border);}
+.sidebar-brand{padding:22px 20px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
 .brand-name{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--accent);letter-spacing:3px;line-height:1;}
 .brand-sub{font-size:9px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:3px;}
 .role-badge{display:inline-block;font-size:10px;padding:3px 10px;border-radius:4px;font-weight:700;letter-spacing:1.5px;margin-top:10px;text-transform:uppercase;}
-.role-admin     {background:rgba(200,255,0,0.12);color:var(--accent);border:1px solid rgba(200,255,0,0.25);}
+.role-admin     {background:rgba(255,43,61,0.12);color:var(--accent);border:1px solid rgba(255,43,61,0.25);}
 .role-staff     {background:rgba(251,191,36,0.12);color:var(--warning);border:1px solid rgba(251,191,36,0.25);}
 .role-instructor{background:rgba(255,107,53,0.12);color:var(--accent2);border:1px solid rgba(255,107,53,0.25);}
 .role-member    {background:rgba(74,222,128,0.12);color:var(--success);border:1px solid rgba(74,222,128,0.25);}
+
+.sidebar-close{display:none;background:transparent;border:1px solid var(--border);border-radius:8px;width:30px;height:30px;color:var(--muted);font-size:18px;cursor:pointer;flex-shrink:0;align-items:center;justify-content:center;}
+.sidebar-close:hover{color:var(--text);border-color:var(--accent);}
 
 .sidebar-nav{padding:10px 0;flex:1;overflow-y:auto;}
 .nav-section{font-size:9px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;padding:14px 20px 5px;}
 .nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;color:#444;font-size:13px;font-weight:500;border-left:3px solid transparent;text-decoration:none;transition:all 0.15s;}
 .nav-link:hover{color:var(--text);background:var(--surface2);}
-.nav-link.active{color:var(--accent);background:rgba(200,255,0,0.05);border-left-color:var(--accent);}
+.nav-link.active{color:var(--accent);background:rgba(255,43,61,0.05);border-left-color:var(--accent);}
 .nav-link.active svg{stroke:var(--accent);}
 .nav-link svg{width:15px;height:15px;flex-shrink:0;stroke:#444;transition:stroke 0.15s;}
 .nav-link:hover svg{stroke:var(--text);}
 
 .sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);}
-.user-avatar{width:34px;height:34px;border-radius:50%;background:rgba(200,255,0,0.1);border:1px solid rgba(200,255,0,0.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--accent);flex-shrink:0;}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:rgba(255,43,61,0.1);border:1px solid rgba(255,43,61,0.2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--accent);flex-shrink:0;}
 .user-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .user-email{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .btn-logout{width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:12px;cursor:pointer;margin-top:10px;font-family:'DM Sans',sans-serif;transition:all 0.15s;letter-spacing:0.5px;}
 .btn-logout:hover{border-color:var(--danger);color:var(--danger);}
 
+/* ── SIDEBAR OVERLAY (mobile only) ── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;}
+.sidebar-overlay.open{display:block;}
+
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;min-width:0;}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;}
-.page-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--text);}
-.content{flex:1;padding:28px;overflow-y:auto;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:var(--topbar-height);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:90;}
+.topbar-left{display:flex;align-items:center;gap:14px;min-width:0;}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.content{flex:1;padding:28px;overflow-y:auto;overflow-x:hidden;}
+
+/* Hamburger button — hidden on desktop */
+.menu-toggle{display:none;background:transparent;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;align-items:center;justify-content:center;cursor:pointer;color:var(--text);flex-shrink:0;}
+.menu-toggle:hover{border-color:var(--accent);}
+.menu-toggle svg{width:18px;height:18px;stroke:currentColor;}
 
 /* ── BUTTONS ── */
-.btn{padding:8px 18px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:all 0.15s;}
+.btn{padding:8px 18px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:all 0.15s;white-space:nowrap;}
 .btn-primary{background:var(--accent);color:#111;}
-.btn-primary:hover{background:#b8ef00;transform:translateY(-1px);}
+.btn-primary:hover{background:#e0141f;transform:translateY(-1px);}
 .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
 .btn-secondary:hover{background:var(--surface3);}
 .btn-danger{background:rgba(248,113,113,0.1);color:var(--danger);border:1px solid rgba(248,113,113,0.2);}
@@ -63,8 +79,8 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .btn-sm{padding:5px 12px;font-size:12px;}
 
 /* ── STAT CARDS ── */
-.stat-grid{display:grid;gap:14px;margin-bottom:28px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px;position:relative;overflow:hidden;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 20px;position:relative;overflow:hidden;min-width:0;}
 .stat-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--accent);}
 .stat-card.orange::before{background:var(--accent2);}
 .stat-card.blue::before  {background:var(--info);}
@@ -78,16 +94,19 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 
 /* ── TABLE ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
 .section-title{font-size:17px;font-weight:700;}
-table{width:100%;border-collapse:collapse;}
+
+/* Horizontal scroll wrapper so tables never squish on small screens */
+.table-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;min-width:560px;}
 thead{background:var(--surface2);}
-th{padding:12px 18px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;}
+th{padding:12px 18px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;white-space:nowrap;}
 td{padding:14px 18px;font-size:14px;border-top:1px solid var(--border);vertical-align:middle;}
 tr:hover td{background:rgba(255,255,255,0.015);}
 
 /* ── BADGES ── */
-.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:0.3px;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:0.3px;white-space:nowrap;}
 .badge-monthly   {background:rgba(96,165,250,0.15);color:var(--info);}
 .badge-quarterly {background:rgba(34,211,238,0.15);color:#22d3ee;}
 .badge-yearly,.badge-annual,.badge-annually{background:rgba(74,222,128,0.15);color:var(--success);}
@@ -98,7 +117,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
 
 /* ── FORMS ── */
-.form-page{max-width:640px;}
+.form-page{max-width:640px;width:100%;}
 .form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;}
 .form-card-title{font-size:14px;font-weight:600;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
 .form-group{margin-bottom:16px;}
@@ -114,7 +133,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 .alert-danger {background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:var(--danger);}
 
 /* ── MISC ── */
-.search-bar{padding:9px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:220px;}
+.search-bar{padding:9px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:220px;max-width:100%;}
 .search-bar:focus{border-color:var(--accent);}
 .plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
 .plan-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;position:relative;}
@@ -130,25 +149,80 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
 .access-denied{text-align:center;padding:80px 20px;color:var(--muted);}
 .access-denied h2{font-size:22px;font-weight:600;color:var(--text);margin-bottom:8px;}
+
+/* ══════════════════ RESPONSIVE ══════════════════ */
+
+/* Tablets / small laptops */
+@media (max-width: 1024px) {
+  .content{padding:22px;}
+  .plan-grid{grid-template-columns:repeat(2,1fr);}
+  .two-col{grid-template-columns:1fr;}
+}
+
+/* Sidebar becomes an off-canvas drawer below 900px */
+@media (max-width: 900px) {
+  .menu-toggle{display:flex;}
+  .sidebar-close{display:flex;}
+
+  .sidebar{
+    position:fixed;
+    top:0;left:0;bottom:0;
+    z-index:200;
+    transform:translateX(-100%);
+    transition:transform 0.25s ease;
+    box-shadow:0 0 40px rgba(0,0,0,0.5);
+  }
+  .sidebar.open{transform:translateX(0);}
+
+  .topbar{padding:0 16px;}
+  .page-title{font-size:21px;}
+}
+
+/* Phones */
+@media (max-width: 640px) {
+  .content{padding:16px;}
+  .stat-grid{grid-template-columns:1fr 1fr;gap:10px;}
+  .stat-value{font-size:28px;}
+  .plan-grid{grid-template-columns:1fr;}
+  .form-row{grid-template-columns:1fr;}
+  .section-header{flex-direction:column;align-items:flex-start;}
+  .search-bar{width:100%;}
+  .topbar-left{gap:10px;}
+  .page-title{font-size:19px;}
+  th, td{padding:10px 12px;font-size:13px;}
+  .btn{padding:8px 14px;font-size:12.5px;}
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .stat-grid{grid-template-columns:1fr;}
+  .brand-name{font-size:22px;}
+}
 </style>
 </head>
 <body>
 
+{{-- Overlay shown behind the sidebar drawer on mobile --}}
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
 {{-- SIDEBAR --}}
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <div class="brand-name">IRONFORGE</div>
-    <div class="brand-sub">Management System</div>
-    @auth
-      <span class="role-badge
-        @if(auth()->user()->isAdmin())          role-admin
-        @elseif(auth()->user()->isStaff())      role-staff
-        @elseif(auth()->user()->isInstructor()) role-instructor
-        @elseif(auth()->user()->isMember())     role-member
-        @endif">
-        {{ strtoupper(auth()->user()->role) }}
-      </span>
-    @endauth
+    <div>
+      <div class="brand-name">APEX FITNESS GYM</div>
+      <div class="brand-sub">Management System</div>
+      @auth
+        <span class="role-badge
+          @if(auth()->user()->isAdmin())          role-admin
+          @elseif(auth()->user()->isStaff())      role-staff
+          @elseif(auth()->user()->isInstructor()) role-instructor
+          @elseif(auth()->user()->isMember())     role-member
+          @endif">
+          {{ strtoupper(auth()->user()->role) }}
+        </span>
+      @endauth
+    </div>
+    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Close menu">×</button>
   </div>
 
   <nav class="sidebar-nav">
@@ -257,7 +331,14 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 {{-- MAIN --}}
 <div class="main">
   <div class="topbar">
-    <div class="page-title">@yield('page_title', 'Dashboard')</div>
+    <div class="topbar-left">
+      <button class="menu-toggle" onclick="openSidebar()" aria-label="Open menu">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <div class="page-title">@yield('page_title', 'Dashboard')</div>
+    </div>
     <div style="display:flex;gap:10px;align-items:center;">
       @yield('topbar_actions')
     </div>
@@ -272,6 +353,23 @@ tr:hover td{background:rgba(255,255,255,0.015);}
     @yield('content')
   </div>
 </div>
+
+<script>
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Close drawer automatically if the viewport is resized back to desktop width
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 900) closeSidebar();
+});
+</script>
 
 </body>
 </html>

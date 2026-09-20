@@ -2,25 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IRONFORGE – Ultimate Gym Management</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>APEX FITNESS GYM – Ultimate Gym Management</title>
 <link rel="icon" type="image/png" href="{{ asset('favicon.svg') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;scroll-behavior:smooth;}
-body{background:#0e1108;color:#fff;font-family:'DM Sans',sans-serif;overflow-x:hidden;cursor:none;}
+body{background:#0d0d0d;color:#fff;font-family:'DM Sans',sans-serif;overflow-x:hidden;cursor:none;}
 
-.cursor{width:10px;height:10px;background:#c8ff00;border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;mix-blend-mode:difference;transition:transform 0.15s;}
-.cursor-ring{width:36px;height:36px;border:1.5px solid rgba(200,255,0,0.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;}
+.cursor{width:10px;height:10px;background:#ff2b3d;border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;mix-blend-mode:difference;transition:transform 0.15s;}
+.cursor-ring{width:36px;height:36px;border:1.5px solid rgba(255,43,61,0.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;}
 
 .scroll-dots{position:fixed;right:28px;top:50%;transform:translateY(-50%);z-index:100;display:flex;flex-direction:column;gap:12px;align-items:center;}
 .scroll-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25);border:1.5px solid rgba(255,255,255,0.3);cursor:pointer;transition:all 0.3s ease;position:relative;}
-.scroll-dot::after{content:attr(data-label);position:absolute;right:18px;top:50%;transform:translateY(-50%);background:rgba(14,17,8,0.9);border:1px solid rgba(200,255,0,0.3);color:#c8ff00;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+.scroll-dot::after{content:attr(data-label);position:absolute;right:18px;top:50%;transform:translateY(-50%);background:rgba(14,17,8,0.9);border:1px solid rgba(255,43,61,0.3);color:#ff2b3d;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s;}
 .scroll-dot:hover::after{opacity:1;}
-.scroll-dot.active{background:#c8ff00;border-color:#c8ff00;width:10px;height:10px;box-shadow:0 0 8px rgba(200,255,0,0.5);}
-.scroll-dot:hover{background:rgba(200,255,0,0.5);border-color:#c8ff00;}
+.scroll-dot.active{background:#ff2b3d;border-color:#ff2b3d;width:10px;height:10px;box-shadow:0 0 8px rgba(255,43,61,0.5);}
+.scroll-dot:hover{background:rgba(255,43,61,0.5);border-color:#ff2b3d;}
 
 .hero{position:relative;width:100%;height:100vh;min-height:600px;display:flex;flex-direction:column;overflow:hidden;}
 .hero-image{position:absolute;inset:0;background-image:url("statue3.png");background-size:cover;background-position:center right;background-repeat:no-repeat;}
@@ -28,53 +28,53 @@ body{background:#0e1108;color:#fff;font-family:'DM Sans',sans-serif;overflow-x:h
 
 nav{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:20px 48px;flex-shrink:0;}
 .nav-left{display:flex;align-items:center;gap:12px;}
-.nav-logo{width:40px;height:40px;background:#c8ff00;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nav-logo{width:40px;height:40px;background:#ff2b3d;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .nav-logo svg{width:22px;height:22px;}
 .nav-brand{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:3px;color:#fff;text-transform:uppercase;}
-.nav-center{display:flex;align-items:center;gap:6px;border:1px solid rgba(200,255,0,0.4);border-radius:100px;padding:7px 18px;}
-.nav-center-dot{width:6px;height:6px;background:#c8ff00;border-radius:50%;animation:blink 2s infinite;}
+.nav-center{display:flex;align-items:center;gap:6px;border:1px solid rgba(255,43,61,0.4);border-radius:100px;padding:7px 18px;}
+.nav-center-dot{width:6px;height:6px;background:#ff2b3d;border-radius:50%;animation:blink 2s infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
-.nav-center-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;color:#c8ff00;text-transform:uppercase;}
+.nav-center-text{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:3px;color:#ff2b3d;text-transform:uppercase;}
 .nav-right{display:flex;align-items:center;gap:10px;}
 .btn-nav-login{padding:10px 24px;background:transparent;border:1px solid rgba(255,255,255,0.3);border-radius:8px;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
-.btn-nav-login:hover{border-color:#c8ff00;color:#c8ff00;}
-.btn-nav-register{padding:10px 24px;background:#c8ff00;border:none;border-radius:8px;color:#111;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
-.btn-nav-register:hover{background:#b8ef00;transform:translateY(-1px);}
+.btn-nav-login:hover{border-color:#ff2b3d;color:#ff2b3d;}
+.btn-nav-register{padding:10px 24px;background:#ff2b3d;border:none;border-radius:8px;color:#111;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:1px;cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
+.btn-nav-register:hover{background:#e0141f;transform:translateY(-1px);}
 
 .hero-content{position:relative;z-index:5;flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 48px 48px;max-width:680px;}
 .hero-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(60px,10.5vw,148px);font-weight:900;line-height:0.88;letter-spacing:-2px;text-transform:uppercase;color:#fff;margin-bottom:28px;animation:fadeUp 0.5s ease both;}
-.hero-title span{color:#c8ff00;}
+.hero-title span{color:#ff2b3d;}
 .hero-features{display:flex;flex-direction:column;gap:10px;margin-bottom:32px;animation:fadeUp 0.5s 0.15s ease both;}
 .hero-feature{display:flex;align-items:center;gap:14px;}
-.feature-divider{width:1px;height:20px;background:rgba(200,255,0,0.4);}
-.feature-icon-box{width:30px;height:30px;border:1px solid rgba(200,255,0,0.35);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.feature-icon-box svg{width:14px;height:14px;stroke:#c8ff00;}
+.feature-divider{width:1px;height:20px;background:rgba(255,43,61,0.4);}
+.feature-icon-box{width:30px;height:30px;border:1px solid rgba(255,43,61,0.35);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.feature-icon-box svg{width:14px;height:14px;stroke:#ff2b3d;}
 .feature-text{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,0.85);text-transform:uppercase;}
 .hero-cta{display:flex;gap:14px;align-items:center;animation:fadeUp 0.5s 0.25s ease both;}
-.btn-join{padding:16px 34px;background:#c8ff00;color:#111;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
-.btn-join:hover{background:#b8ef00;transform:translateY(-2px);box-shadow:0 10px 30px rgba(200,255,0,0.25);}
+.btn-join{padding:16px 34px;background:#ff2b3d;color:#111;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.btn-join:hover{background:#e0141f;transform:translateY(-2px);box-shadow:0 10px 30px rgba(255,43,61,0.25);}
 .btn-login-hero{padding:16px 34px;background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,0.25);border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:8px;}
 .btn-login-hero:hover{border-color:rgba(255,255,255,0.6);}
 .hero-diamond{position:absolute;bottom:24px;right:48px;z-index:10;display:flex;align-items:center;gap:8px;}
-.diamond{width:28px;height:28px;background:#c8ff00;transform:rotate(45deg);border-radius:3px;animation:pulse-diamond 3s ease-in-out infinite;}
-.diamond-sm{width:18px;height:18px;background:rgba(200,255,0,0.4);transform:rotate(45deg);border-radius:2px;margin-left:-10px;}
+.diamond{width:28px;height:28px;background:#ff2b3d;transform:rotate(45deg);border-radius:3px;animation:pulse-diamond 3s ease-in-out infinite;}
+.diamond-sm{width:18px;height:18px;background:rgba(255,43,61,0.4);transform:rotate(45deg);border-radius:2px;margin-left:-10px;}
 @keyframes pulse-diamond{0%,100%{opacity:1;transform:rotate(45deg) scale(1);}50%{opacity:0.7;transform:rotate(45deg) scale(0.9);}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
 
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s;}
 .modal-overlay.open{opacity:1;pointer-events:all;}
-.modal{background:#111;border:1px solid rgba(200,255,0,0.15);border-radius:20px;width:100%;max-width:440px;padding:36px 40px;position:relative;transform:translateY(20px) scale(0.97);transition:all 0.25s;max-height:90vh;overflow-y:auto;}
+.modal{background:#111;border:1px solid rgba(255,43,61,0.15);border-radius:20px;width:100%;max-width:440px;padding:36px 40px;position:relative;transform:translateY(20px) scale(0.97);transition:all 0.25s;max-height:90vh;overflow-y:auto;}
 .modal-overlay.open .modal{transform:translateY(0) scale(1);}
 .modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#666;font-size:18px;transition:all 0.15s;}
-.modal-close:hover{color:#fff;border-color:#c8ff00;}
+.modal-close:hover{color:#fff;border-color:#ff2b3d;}
 .modal-logo-row{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
-.modal-logo-icon{width:28px;height:28px;background:#c8ff00;border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.modal-logo-icon{width:28px;height:28px;background:#ff2b3d;border-radius:6px;display:flex;align-items:center;justify-content:center;}
 .modal-logo-icon svg{width:16px;height:16px;}
-.modal-logo-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;color:#c8ff00;text-transform:uppercase;}
+.modal-logo-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;color:#ff2b3d;text-transform:uppercase;}
 .modal-tabs{display:flex;gap:4px;background:#1a1a1a;border-radius:10px;padding:4px;margin-bottom:24px;}
 .modal-tab{flex:1;padding:9px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:7px;color:#555;transition:all 0.15s;border:none;background:transparent;}
-.modal-tab.active{background:#c8ff00;color:#111;}
+.modal-tab.active{background:#ff2b3d;color:#111;}
 .modal-heading{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;letter-spacing:2px;margin-bottom:4px;text-transform:uppercase;}
 .modal-sub{font-size:13px;color:#555;margin-bottom:20px;}
 .form-panel{display:none;}
@@ -82,61 +82,144 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 .fm-group{margin-bottom:14px;}
 .fm-label{display:block;font-size:11px;font-weight:600;color:#555;margin-bottom:10px;letter-spacing:2px;text-transform:uppercase;}
 .fm-input{width:100%;padding:11px 14px;background:#1a1a1a;border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.15s;}
-.fm-input:focus{border-color:#c8ff00;}
+.fm-input:focus{border-color:#ff2b3d;}
 .fm-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.btn-submit{width:100%;padding:14px;background:#c8ff00;color:#111;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:3px;text-transform:uppercase;border:none;border-radius:10px;cursor:pointer;margin-top:8px;transition:all 0.2s;}
-.btn-submit:hover{background:#b8ef00;transform:translateY(-1px);}
+.btn-submit{width:100%;padding:14px;background:#ff2b3d;color:#111;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:3px;text-transform:uppercase;border:none;border-radius:10px;cursor:pointer;margin-top:8px;transition:all 0.2s;}
+.btn-submit:hover{background:#e0141f;transform:translateY(-1px);}
 .fm-footer{text-align:center;font-size:13px;color:#555;margin-top:14px;}
-.fm-footer a{color:#c8ff00;text-decoration:none;cursor:pointer;}
+.fm-footer a{color:#ff2b3d;text-decoration:none;cursor:pointer;}
 .fm-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#ef4444;}
 .fm-member-badge{
   display:flex;align-items:center;gap:10px;
-  background:rgba(200,255,0,0.06);
-  border:1px solid rgba(200,255,0,0.2);
+  background:rgba(255,43,61,0.06);
+  border:1px solid rgba(255,43,61,0.2);
   border-radius:10px;padding:10px 14px;
   margin-bottom:18px;
 }
-.fm-member-badge svg{width:16px;height:16px;stroke:#c8ff00;flex-shrink:0;}
-.fm-member-badge-text{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#c8ff00;}
+.fm-member-badge svg{width:16px;height:16px;stroke:#ff2b3d;flex-shrink:0;}
+.fm-member-badge-text{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#ff2b3d;}
 
 /* SECTIONS */
 .section{padding:80px 60px;position:relative;}
-.section-dark{background:#0a0c05;}
-.section-mid{background:#0e1108;}
-.section-eyebrow{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:4px;color:#c8ff00;text-transform:uppercase;margin-bottom:10px;}
+.section-dark{background:#0a0a0a;}
+.section-mid{background:#0d0d0d;}
+.section-eyebrow{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:4px;color:#ff2b3d;text-transform:uppercase;margin-bottom:10px;}
 .section-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(36px,5vw,60px);font-weight:900;letter-spacing:1px;line-height:1;text-transform:uppercase;margin-bottom:48px;}
 .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.05);}
-.feat-card{background:#0e1108;padding:36px 32px;border-top:2px solid transparent;transition:all 0.3s;}
-.feat-card:hover{background:#141808;border-top-color:#c8ff00;}
-.feat-card:hover .feat-icon-wrap{background:rgba(200,255,0,0.12);}
-.feat-icon-wrap{width:44px;height:44px;background:rgba(200,255,0,0.06);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:background 0.3s;}
-.feat-icon-wrap svg{width:22px;height:22px;stroke:#c8ff00;fill:none;}
+.feat-card{background:#0d0d0d;padding:36px 32px;border-top:2px solid transparent;transition:all 0.3s;}
+.feat-card:hover{background:#1a1010;border-top-color:#ff2b3d;}
+.feat-card:hover .feat-icon-wrap{background:rgba(255,43,61,0.12);}
+.feat-icon-wrap{width:44px;height:44px;background:rgba(255,43,61,0.06);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:background 0.3s;}
+.feat-icon-wrap svg{width:22px;height:22px;stroke:#ff2b3d;fill:none;}
 .feat-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
 .feat-desc{font-size:14px;color:#555;line-height:1.7;}
 .plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;}
-.plan-card{background:#0a0c05;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:32px 28px;position:relative;transition:all 0.3s;}
-.plan-card:hover{transform:translateY(-4px);border-color:rgba(200,255,0,0.2);}
-.plan-card.hot{border-color:#c8ff00;background:linear-gradient(135deg,rgba(200,255,0,0.04),transparent);}
-.plan-hot-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#c8ff00;color:#111;font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:3px 14px;border-radius:100px;white-space:nowrap;font-family:'Barlow Condensed',sans-serif;}
+.plan-card{background:#0a0a0a;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:32px 28px;position:relative;transition:all 0.3s;}
+.plan-card:hover{transform:translateY(-4px);border-color:rgba(255,43,61,0.2);}
+.plan-card.hot{border-color:#ff2b3d;background:linear-gradient(135deg,rgba(255,43,61,0.04),transparent);}
+.plan-hot-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:#ff2b3d;color:#111;font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:3px 14px;border-radius:100px;white-space:nowrap;font-family:'Barlow Condensed',sans-serif;}
 .plan-label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#555;margin-bottom:6px;}
 .plan-price{font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;line-height:1;margin-bottom:4px;}
 .plan-dur{font-size:13px;color:#444;margin-bottom:24px;}
 .plan-feats{list-style:none;margin-bottom:28px;}
 .plan-feats li{font-size:13px;color:#555;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;gap:8px;}
 .plan-feats li:last-child{border:none;}
-.plan-feats li::before{content:"✓";color:#c8ff00;font-weight:700;font-size:11px;flex-shrink:0;}
+.plan-feats li::before{content:"✓";color:#ff2b3d;font-weight:700;font-size:11px;flex-shrink:0;}
 .btn-plan{width:100%;padding:13px;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:none;transition:all 0.2s;}
 .btn-plan-ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.1);}
-.btn-plan-ghost:hover{border-color:#c8ff00;color:#c8ff00;}
-.btn-plan-solid{background:#c8ff00;color:#111;}
-.btn-plan-solid:hover{background:#b8ef00;}
+.btn-plan-ghost:hover{border-color:#ff2b3d;color:#ff2b3d;}
+.btn-plan-solid{background:#ff2b3d;color:#111;}
+.btn-plan-solid:hover{background:#e0141f;}
 footer{padding:48px 60px 32px;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;}
 .footer-name{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:3px;color:#444;text-transform:uppercase;}
-.footer-name span{color:#c8ff00;}
+.footer-name span{color:#ff2b3d;}
 .footer-copy{font-size:12px;color:#333;}
 .reveal{opacity:0;transform:translateY(24px);transition:all 0.5s ease;}
 .reveal.visible{opacity:1;transform:translateY(0);}
 body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:500;opacity:0.35;}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE — mobile / tablet / any device
+   ══════════════════════════════════════════════ */
+
+/* Custom cursor never fires on touch (no mousemove) — without this,
+   phone/tablet users get NO visible cursor at all. Also frees up
+   the "cursor:none" so native tap feedback works normally. */
+@media (hover: none), (pointer: coarse){
+  body{ cursor:auto; }
+  .cursor, .cursor-ring{ display:none; }
+}
+
+/* ---------- Tablets / small laptops (≤1024px) ---------- */
+@media (max-width: 1024px){
+  .features-grid{ grid-template-columns:repeat(2,1fr); }
+  .plans-grid{ grid-template-columns:repeat(2,1fr); }
+  .section{ padding:60px 32px; }
+  nav{ padding:18px 32px; }
+  .hero-content{ padding:0 32px 40px; max-width:600px; }
+  .hero-title{ font-size:clamp(50px,9vw,110px); }
+}
+
+/* ---------- Nav wraps before it collides (≤860px) ---------- */
+@media (max-width: 860px){
+  nav{ flex-wrap:wrap; row-gap:12px; padding:16px 24px; }
+  .nav-center{ order:3; width:100%; justify-content:center; }
+  .hero-diamond{ display:none; }   /* purely decorative, saves vertical space */
+  .scroll-dots{ display:none; }    /* would overlap hero copy on narrow screens */
+}
+
+/* ---------- Phones (≤640px) ---------- */
+@media (max-width: 640px){
+  .hero{ min-height:100svh; }                      /* avoids mobile URL-bar jump-scroll */
+  .hero-image{ background-position:65% center; }   /* re-center subject so crop doesn't cut them off */
+  .hero-overlay{
+    background:
+      linear-gradient(180deg, rgba(14,17,8,0.55) 0%, rgba(14,17,8,0.75) 45%, rgba(14,17,8,0.96) 100%);
+    /* flatten the desktop side-gradient into a top-to-bottom one so text
+       stays legible over the image at any crop */
+  }
+  .hero-content{ padding:0 20px 32px; max-width:100%; }
+  .hero-title{ letter-spacing:-1px; margin-bottom:20px; }
+  .hero-features{ gap:8px; margin-bottom:24px; }
+  .feature-text{ font-size:12px; letter-spacing:2px; }
+  .feature-icon-box{ width:26px; height:26px; }
+
+  .hero-cta{ flex-direction:column; align-items:stretch; }
+  .btn-join, .btn-login-hero{ width:100%; justify-content:center; padding:15px; font-size:16px; }
+
+  .nav-left{ gap:8px; }
+  .nav-brand{ font-size:15px; letter-spacing:2px; }
+  .nav-logo{ width:34px; height:34px; }
+  .nav-logo svg{ width:18px; height:18px; }
+  .nav-center-text{ font-size:10px; letter-spacing:2px; }
+  .nav-center{ padding:6px 14px; }
+  .nav-right{ gap:8px; }
+  .btn-nav-login, .btn-nav-register{ padding:9px 16px; font-size:12.5px; }
+
+  .section{ padding:48px 20px; }
+  .section-title{ margin-bottom:32px; }
+  .features-grid, .plans-grid{ grid-template-columns:1fr; }
+  .feat-card{ padding:28px 24px; }
+  .plan-card{ padding:28px 24px; }
+  .plan-price{ font-size:44px; }
+
+  .modal{ padding:28px 22px; max-width:92vw; border-radius:16px; }
+  .modal-heading{ font-size:26px; }
+  .fm-row{ grid-template-columns:1fr; gap:14px; }
+
+  footer{ flex-direction:column; gap:10px; padding:32px 24px; text-align:center; }
+}
+
+/* ---------- Very small phones (≤380px) ---------- */
+@media (max-width: 380px){
+  .hero-title{ font-size:clamp(42px,15vw,60px); }
+  .nav-brand{ display:none; }   /* logo mark alone is enough at this width */
+}
+
+/* ---------- Respect reduced-motion preference ---------- */
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; }
+}
 </style>
 </head>
 <body>
@@ -156,7 +239,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   <nav>
     <div class="nav-left">
       <div class="nav-logo"><svg fill="none" stroke="#111" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
-      <span class="nav-brand">IRONFORGE</span>
+      <span class="nav-brand">APEX FITNESS GYM</span>
     </div>
     <div class="nav-center"><div class="nav-center-dot"></div><span class="nav-center-text">Gym Management System</span></div>
     <div class="nav-right">
@@ -180,7 +263,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 </section>
 
 <section class="section section-mid" id="features">
-  <div class="reveal"><div class="section-eyebrow">Why IRONFORGE</div><div class="section-title">EVERYTHING YOU NEED</div></div>
+  <div class="reveal"><div class="section-eyebrow">Why APEX FITNESS GYM</div><div class="section-title">EVERYTHING YOU NEED</div></div>
   <div class="features-grid reveal">
     <div class="feat-card"><div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div><div class="feat-title">Member Management</div><p class="feat-desc">Complete CRUD with photo upload, personal info, membership plans, and auto end-date calculation.</p></div>
     <div class="feat-card"><div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div><div class="feat-title">Payment Tracking</div><p class="feat-desc">Record payments via Cash, GCash, or Bank Transfer. Track monthly and total revenue in real time.</p></div>
@@ -195,34 +278,28 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   <div class="reveal"><div class="section-eyebrow">Membership Tiers</div><div class="section-title">CHOOSE YOUR PLAN</div></div>
   <div class="plans-grid reveal">
     <div class="plan-card"><div class="plan-label">Monthly</div><div class="plan-price">₱800</div><div class="plan-dur">/ 30 days</div><ul class="plan-feats"><li>Full gym access</li><li>Locker included</li><li>4 trainer sessions</li><li>Group classes</li></ul><button class="btn-plan btn-plan-ghost" onclick="openModal('register')">Get Started</button></div>
-    <div class="plan-card hot"><div class="plan-hot-badge">Most Popular</div><div class="plan-label">Quarterly</div><div class="plan-price" style="color:#c8ff00;">₱2,100</div><div class="plan-dur">/ 90 days</div><ul class="plan-feats"><li>Full gym access</li><li>Locker included</li><li>12 trainer sessions</li><li>Group classes</li><li>Save ₱300 vs monthly</li></ul><button class="btn-plan btn-plan-solid" onclick="openModal('register')">Get Started</button></div>
+    <div class="plan-card hot"><div class="plan-hot-badge">Most Popular</div><div class="plan-label">Quarterly</div><div class="plan-price" style="color:#ff2b3d;">₱2,100</div><div class="plan-dur">/ 90 days</div><ul class="plan-feats"><li>Full gym access</li><li>Locker included</li><li>12 trainer sessions</li><li>Group classes</li><li>Save ₱300 vs monthly</li></ul><button class="btn-plan btn-plan-solid" onclick="openModal('register')">Get Started</button></div>
     <div class="plan-card"><div class="plan-label">Annual</div><div class="plan-price">₱7,500</div><div class="plan-dur">/ 365 days</div><ul class="plan-feats"><li>Full gym access</li><li>Locker included</li><li>Unlimited sessions</li><li>Group classes</li><li>2 guest passes/month</li></ul><button class="btn-plan btn-plan-ghost" onclick="openModal('register')">Get Started</button></div>
   </div>
 </section>
 
 <footer id="footer-section">
-  <div class="footer-name">IRON<span>FORGE</span> GMS</div>
-  <div class="footer-copy">© 2026 IRONFORGE. Built with Laravel + Breeze.</div>
+  <div class="footer-name">APEX<span>FITNESS</span> GYM</div>
+  <div class="footer-copy">© 2026 APEX FITNESS GYM. Built with Laravel + Breeze.</div>
 </footer>
 
-<!-- ══════════════════════════════════════════════
-     MODAL  —  role selectors REMOVED
-     Registration always creates role = member
-     Login determines role from backend only
-     ══════════════════════════════════════════════ -->
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">×</button>
     <div class="modal-logo-row">
       <div class="modal-logo-icon"><svg fill="none" stroke="#111" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>
-      <div class="modal-logo-name">IRONFORGE</div>
+      <div class="modal-logo-name">APEX FITNESS GYM</div>
     </div>
     <div class="modal-tabs">
       <button class="modal-tab active" id="tab-login" onclick="switchTab('login')">Login</button>
       <button class="modal-tab" id="tab-register" onclick="switchTab('register')">Register</button>
     </div>
 
-    <!-- ── LOGIN ── -->
     <div class="form-panel active" id="panel-login">
       <div class="modal-heading">WELCOME BACK</div>
       <div class="modal-sub">Sign in to your account</div>
@@ -233,7 +310,6 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
       <form method="POST" action="{{ route('login') }}">
         @csrf
-        {{-- Hidden field so we can identify which form errored --}}
         <input type="hidden" name="_form" value="login"/>
 
         <div class="fm-group">
@@ -257,12 +333,10 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
       <div class="fm-footer">No account? <a onclick="switchTab('register')">Create one</a></div>
     </div>
 
-    <!-- ── REGISTER ── -->
     <div class="form-panel" id="panel-register">
       <div class="modal-heading">JOIN NOW</div>
       <div class="modal-sub">Create your free account</div>
 
-      {{-- Member role badge --}}
       <div class="fm-member-badge">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <circle cx="12" cy="4" r="2"/>
@@ -284,9 +358,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
       <form method="POST" action="{{ route('register') }}">
         @csrf
-        {{-- Hidden field so we can identify which form errored --}}
         <input type="hidden" name="_form" value="register"/>
-        {{-- Role is always member — set on backend, NOT from UI --}}
 
         <div class="fm-group">
           <label class="fm-label">Full Name</label>
@@ -323,12 +395,15 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 <script>
 const cursor=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
 let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx-5+'px';cursor.style.top=my-5+'px';});
-(function tick(){rx+=(mx-rx-18)*0.1;ry+=(my-ry-18)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(tick);})();
-document.querySelectorAll('button,a,input,label').forEach(el=>{
-  el.addEventListener('mouseenter',()=>cursor.style.transform='scale(2.5)');
-  el.addEventListener('mouseleave',()=>cursor.style.transform='scale(1)');
-});
+const isTouch = matchMedia('(hover: none), (pointer: coarse)').matches;
+if(!isTouch){
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx-5+'px';cursor.style.top=my-5+'px';});
+  (function tick(){rx+=(mx-rx-18)*0.1;ry+=(my-ry-18)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(tick);})();
+  document.querySelectorAll('button,a,input,label').forEach(el=>{
+    el.addEventListener('mouseenter',()=>cursor.style.transform='scale(2.5)');
+    el.addEventListener('mouseleave',()=>cursor.style.transform='scale(1)');
+  });
+}
 
 function scrollToSection(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});}
 const sections=[{id:'hero'},{id:'features'},{id:'plans'},{id:'footer-section'}];
@@ -350,7 +425,6 @@ function switchTab(tab){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
-// Re-open modal on validation error and restore correct tab
 @if($errors->any())
   @if(old('_form') === 'login')
     openModal('login');

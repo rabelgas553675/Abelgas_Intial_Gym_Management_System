@@ -80,4 +80,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(WorkoutPlan::class, 'instructor_id');
     }
+
+    /**
+     * Get the QR token record associated with this user (admin/staff/instructor).
+     */
+    public function qrToken()
+    {
+        return $this->hasOne(UserQrToken::class);
+    }
 }
