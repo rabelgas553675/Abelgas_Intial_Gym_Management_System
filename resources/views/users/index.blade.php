@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Manage Users – IRONFORGE')
+@section('title', 'Manage Users – APEX')
 @section('page_title', 'Manage Users')
 @section('active_nav', 'users')
 

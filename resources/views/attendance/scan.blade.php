@@ -1,5 +1,5 @@
 @extends(auth()->user()->isAdmin() ? 'layouts.admin' : 'layouts.staff')
-@section('title', 'QR Attendance Scanner – IRONFORGE')
+@section('title', 'QR Attendance Scanner – APEX')
 @section('active_nav', 'attendance')
 
 @section('content')
@@ -1344,7 +1344,7 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════════
-//  IRONFORGE — Attendance Scanner JS (Fully Responsive)
+//  APEX — Attendance Scanner JS (Fully Responsive)
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── Live Clock ─────────────────────────────────────────────────────────────
@@ -1433,23 +1433,108 @@ function setButtonsEnabled(enabled) {
 }
 
 // ── QR Scanner init ─────────────────────────────────────────────────────────
-const html5QrCode = new Html5Qrcode("reader");
-html5QrCode.start(
-  { facingMode: "environment" },
-  { fps: 10, qrbox: { width: 240, height: 240 } },
-  (decodedText) => {
-    if (scanning) return;
-    if (decodedText === lastScanned) return;
-    lastScanned = decodedText;
-    startCooldown();
-    processQR(decodedText);
-  },
-  () => {}
-).catch(() => {
-  document.getElementById('reader').innerHTML =
-    '<div style="color:rgba(255,255,255,.5);text-align:center;padding:40px;font-size:13px;">'+
-    'Camera unavailable.<br>Use Manual Entry below.</div>';
-});
+function showCameraError(message) {
+  const readerEl = document.getElementById('reader');
+  if (!readerEl) return;
+
+  readerEl.innerHTML = `
+    <div style="color:rgba(255,255,255,.72);text-align:center;padding:32px 20px;font-size:13px;line-height:1.6;">
+      ${message}<br>
+      <span style="color:rgba(255,255,255,.5);">Use Manual Entry below.</span>
+    </div>
+  `;
+}
+
+function getCameraErrorMessage(error) {
+  if (!error) {
+    return 'Camera access is unavailable right now. Please allow camera access to continue.';
+  }
+
+  const name = (error.name || '').toString();
+  const message = ((error.message || '') + '').toLowerCase();
+
+  if (name === 'NotAllowedError' || message.includes('permission')) {
+    return 'Camera permission was blocked. Please allow access to your camera and refresh the page.';
+  }
+
+  if (name === 'NotFoundError' || message.includes('no camera') || message.includes('device not found')) {
+    return 'No camera was detected on this device. Please connect a camera or use Manual Entry.';
+  }
+
+  if (name === 'NotReadableError' || message.includes('in use') || message.includes('already in use')) {
+    return 'Your camera is already in use by another app. Close it and try again.';
+  }
+
+  if (name === 'OverconstrainedError' || name === 'ConstraintNotSatisfiedError' || message.includes('overconstrained') || message.includes('constraint')) {
+    return 'This browser/device is rejecting the camera mode requested by the app. Please use a normal browser tab, allow camera access, and retry. Your permission is already enabled.';
+  }
+
+  if (name === 'NotSupportedError' || message.includes('secure context')) {
+    return 'This page must be loaded with a secure connection or localhost for camera access.';
+  }
+
+  if (message) {
+    return `Camera access failed: ${error.message}`;
+  }
+
+  return 'Camera is unavailable right now. Check your device permissions and try again.';
+}
+
+async function startQrScanner() {
+  if (typeof Html5Qrcode === 'undefined') {
+    showCameraError('The QR scanner library failed to load. Refresh the page and try again.');
+    return;
+  }
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showCameraError('This browser does not support camera access. Please use a modern browser with camera permissions enabled.');
+    return;
+  }
+
+  const cameraConfigs = [
+    // Html5Qrcode.start() accepts MediaTrackConstraints directly and wraps
+    // them in its own `video` constraint. Passing `{ video: ... }` here nests
+    // the constraint and makes browsers reject camera initialization.
+    {},
+    { facingMode: { ideal: 'environment' } },
+    { facingMode: 'user' }
+  ];
+
+  let lastError = null;
+
+  for (const config of cameraConfigs) {
+    const qrInstance = new Html5Qrcode('reader');
+
+    try {
+      await qrInstance.start(
+        config,
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        (decodedText) => {
+          if (scanning) return;
+          if (decodedText === lastScanned) return;
+          lastScanned = decodedText;
+          startCooldown();
+          processQR(decodedText);
+        },
+        () => {}
+      );
+      return;
+    } catch (error) {
+      lastError = error;
+      console.warn('Camera start attempt failed:', config, error);
+      try {
+        await qrInstance.stop();
+      } catch (e) {
+        // ignore stop errors while retrying
+      }
+    }
+  }
+
+  console.error('Html5Qrcode failed to start:', lastError);
+  showCameraError(getCameraErrorMessage(lastError));
+}
+
+startQrScanner();
 
 // ── Manual input ─────────────────────────────────────────────────────────────
 function processManual() {
@@ -1474,9 +1559,13 @@ function processQR(qrData) {
     },
     body: 'qr_data=' + encodeURIComponent(qrData)
   })
-  .then(r => r.json())
+  .then(async r => {
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok && !data.message) data.message = `Attendance could not be saved (HTTP ${r.status}).`;
+    return data;
+  })
   .then(data => showResult(data))
-  .catch(() => showResult({ success: false, message: 'Server error. Try again.' }));
+  .catch(error => showResult({ success: false, message: error.message || 'Connection error. Attendance was not saved.' }));
 }
 
 // ── Manual entry panel ──────────────────────────────────────────────────────

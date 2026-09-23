@@ -258,7 +258,7 @@ class MemberController extends Controller
             'last_name'       => 'required|string|max:255',
             'email'           => 'required|email|unique:members,email,' . $member->id,
             'membership_type' => 'required',
-            'status'          => 'required',
+            'status'          => 'required|in:Active,Inactive,Suspended',
             'fee'             => 'required|numeric',
         ]);
 

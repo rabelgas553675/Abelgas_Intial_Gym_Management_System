@@ -556,7 +556,7 @@
                         <div class="form-group">
                             <label class="form-label">Status</label>
                             <select name="status" class="form-control">
-                                @foreach(['Active', 'Expired', 'Inactive'] as $s)
+                                @foreach(['Active', 'Inactive', 'Suspended'] as $s)
                                     <option value="{{ $s }}" {{ old('status', $member->status) == $s ? 'selected' : '' }}>{{ $s }}</option>
                                 @endforeach
                             </select>

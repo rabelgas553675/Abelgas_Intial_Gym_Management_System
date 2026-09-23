@@ -1,5 +1,5 @@
 @extends('layouts.guest')
-@section('title', 'Login – IRONFORGE')
+@section('title', 'Login – APEX')
 
 @section('content')
 <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -10,7 +10,7 @@
     {{-- Logo --}}
     <div style="text-align:center;margin-bottom:32px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--accent);
-                  letter-spacing:4px;line-height:1;">IRONFORGE</div>
+                  letter-spacing:4px;line-height:1;">APEX</div>
       <div style="font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;
                   margin-top:4px;">Gym Management System</div>
     </div>

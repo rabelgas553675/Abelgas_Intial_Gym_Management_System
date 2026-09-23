@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'QR Codes – IRONFORGE')
+@section('title', 'QR Codes – APEX')
 
 @section('content')
 <style>
@@ -131,7 +131,7 @@
             <div style="margin-bottom:15px;">
                 @if($item->qr_code_path)
                     <img src="{{ asset('storage/' . $item->qr_code_path) }}?v={{ time() }}"
-                         alt="QR" style="width:100%; max-width:180px; height:auto; display:block; margin:0 auto;">
+                         alt="QR" style="width:100%; max-width:180px; height:auto; display:block; margin:0 auto; background:#fff; padding:8px; border-radius:8px;">
                 @else
                     <div style="width:180px; height:180px; background:#f9f9f9; margin:0 auto; display:flex; align-items:center; justify-content:center; color:#aaa; border-radius:10px; font-size:12px; border:2px dashed #ddd;">
                         No QR Code

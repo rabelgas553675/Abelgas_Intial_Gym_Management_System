@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Generate QR Tokens – IRONFORGE')
+@section('title', 'Generate QR Tokens – APEX')
 @section('active', 'attendance')
 
 @section('content')

@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Attendance Log – IRONFORGE')
+@section('title', 'Attendance Log – APEX')
 @section('active', 'attendance')
 
 @section('content')

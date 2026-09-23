@@ -157,8 +157,9 @@ class AttendanceController extends Controller
                 }
             }
 
-            // FORMAT 2 — Staff / Admin / Instructor QR  (IRONFORGE|ROLE|user_id|token)
-            elseif (preg_match('/^IRONFORGE\|([A-Z]+)\|(\d+)\|([A-Z0-9\-]+)$/i', $raw, $parts)) {
+            // FORMAT 2 — Staff / Admin / Instructor QR (APEX|ROLE|user_id|token).
+            // Accept the former brand prefix too so already printed cards work.
+            elseif (preg_match('/^(?:APEX|IRONFORGE)\|([A-Z]+)\|(\d+)\|([A-Z0-9\-]+)$/i', $raw, $parts)) {
                 $type  = strtoupper($parts[1]);
                 $id    = (int) $parts[2];
                 $token = $parts[3];
@@ -201,6 +202,11 @@ class AttendanceController extends Controller
                 if (!$member) {
                     return response()->json(['success' => false, 'message' => 'No member found with that ID.', 'status' => 'invalid']);
                 }
+            }
+            // Older staff cards contain only the token. Continue accepting
+            // them while newly generated cards use the explicit format above.
+            elseif ($raw !== '' && ($qrRecord = UserQrToken::with('user')->where('qr_token', $raw)->first())) {
+                $staffUser = $qrRecord;
             }
             else {
                 return response()->json([
@@ -297,7 +303,7 @@ class AttendanceController extends Controller
                         'end_date'   => $member->end_date
                                             ? Carbon::parse($member->end_date)->format('M d, Y')
                                             : '—',
-                        'message'    => 'Time In recorded! Welcome to IRONFORGE!',
+                        'message'    => 'Time In recorded! Welcome to APEX!',
                     ]);
                 }
             }
@@ -378,11 +384,12 @@ class AttendanceController extends Controller
                 'message' => 'Could not process QR. Try again.',
             ]);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
             return response()->json([
                 'success' => false,
-                'message' => 'Server Error: ' . $e->getMessage(),
-            ]);
+                'message' => 'The attendance scan could not be saved. Please try again or use manual entry.',
+            ], 500);
         }
     }
 

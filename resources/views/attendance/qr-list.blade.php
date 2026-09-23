@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'QR Codes – IRONFORGE')
+@section('title', 'QR Codes – APEX')
 
 @section('content')
 <style>
@@ -690,7 +690,7 @@
             <div class="qr-card">
                 <div class="qr-image-wrapper">
                     @if($item->qr_code_path)
-                        <img src="{{ asset('storage/' . $item->qr_code_path) }}" alt="QR Code for {{ $name }}" loading="lazy"/>
+                        <img src="{{ asset('storage/' . $item->qr_code_path) }}" alt="QR Code for {{ $name }}" loading="lazy" style="background:#fff;padding:10px;border-radius:8px"/>
                     @else
                         <div style="color:#aaa; font-size:12px; text-align:center; padding:10px;">
                             No QR<br>Generated

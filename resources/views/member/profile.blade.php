@@ -1,5 +1,5 @@
 @extends('layouts.member')
-@section('title', 'My Profile – IRONFORGE')
+@section('title', 'My Profile – APEX')
 @section('page_title', 'My Profile')
 @section('active_nav', 'member.profile')
 

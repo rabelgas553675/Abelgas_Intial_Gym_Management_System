@@ -1,5 +1,5 @@
 @extends('layouts.staff')
-@section('title', 'Staff Dashboard – IRONFORGE')
+@section('title', 'Staff Dashboard – APEX')
 
 @section('content')
 

@@ -1,5 +1,5 @@
 @extends(auth()->user()->isAdmin() ? 'layouts.admin' : 'layouts.staff')
-@section('title', 'Add Member – IRONFORGE')
+@section('title', 'Add Member – APEX')
 @section('page_title', 'Add New Member')
 @section('active_nav', 'members')
 

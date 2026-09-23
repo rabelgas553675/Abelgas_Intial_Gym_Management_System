@@ -1,5 +1,5 @@
 @extends('layouts.instructor')
-@section('title', 'Coach Requests – IRONFORGE')
+@section('title', 'Coach Requests – APEX')
 @section('active', 'requests')
 
 @section('content')

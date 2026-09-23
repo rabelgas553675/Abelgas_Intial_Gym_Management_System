@@ -1,5 +1,5 @@
 @extends('layouts.member')
-@section('title', 'Receipt – IRONFORGE')
+@section('title', 'Receipt – APEX')
 @section('page_title', 'Payment Receipt')
 
 @section('topbar_actions')
@@ -727,7 +727,7 @@
             <div class="receipt-header">
                 <div class="brand">
                     <div class="brand-left">
-                        <div class="name">IRONFORGE</div>
+                        <div class="name">APEX</div>
                         <div class="sub">Official Receipt</div>
                     </div>
                     <div class="brand-right">
@@ -873,8 +873,8 @@
 
                 {{-- Footer --}}
                 <div class="receipt-footer">
-                    <div class="thanks">Thank you for choosing IRONFORGE! Keep this receipt for your records.</div>
-                    <div class="brand">IRONFORGE GMS</div>
+                    <div class="thanks">Thank you for choosing APEX! Keep this receipt for your records.</div>
+                    <div class="brand">APEX GMS</div>
                 </div>
             </div>
         </div>

@@ -25,7 +25,7 @@ class Member extends Model
         'start_date',
         'end_date',
         'fee',
-        // 'status' intentionally excluded — computed dynamically via accessor
+        'status',
         'photo',
         'qr_id',
         'qr_code_path',
@@ -60,6 +60,13 @@ class Member extends Model
     {
         return Attribute::make(
             get: function () {
+                // These are staff controlled account states. Subscription
+                // dates determine the ordinary Active/Expired states.
+                $storedStatus = $this->attributes['status'] ?? null;
+                if (in_array($storedStatus, ['Suspended', 'Inactive'], true)) {
+                    return $storedStatus;
+                }
+
                 if (!$this->end_date) {
                     return 'No Plan';
                 }
@@ -97,6 +104,8 @@ class Member extends Model
 
         QrCode::format('svg')
             ->size(300)
+            ->backgroundColor(255, 255, 255)
+            ->color(0, 0, 0)
             ->errorCorrection('H')
             ->generate($qrId, storage_path('app/public/' . $path));
 

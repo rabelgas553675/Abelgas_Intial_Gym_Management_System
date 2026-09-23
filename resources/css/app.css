@@ -1,3 +1,124 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f0eb;
+  --surface: #fffdf9;
+  --surface2: #f5f1eb;
+  --surface3: #ebe5dc;
+  --border: #ded6ca;
+  --text: #292722;
+  --muted: #6e685f;
+  --success: #25734d;
+  --danger: #b93e48;
+  --warning: #8c641c;
+  --info: #356b91;
+}
+
+:root[data-theme="light"] body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.theme-toggle {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1000;
+  padding: 10px 14px;
+  border: 1px solid var(--border, #444);
+  border-radius: 999px;
+  background: var(--surface, #171717);
+  color: var(--text, #f0f0f0);
+  box-shadow: 0 4px 18px rgb(0 0 0 / 18%);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .form-card,
+:root[data-theme="light"] .stat-card,
+:root[data-theme="light"] .navbar,
+:root[data-theme="light"] .page-topbar,
+:root[data-theme="light"] .topnav,
+:root[data-theme="light"] .sidebar {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:root[data-theme="light"] .nav-item,
+:root[data-theme="light"] .nav-link,
+:root[data-theme="light"] .page-title,
+:root[data-theme="light"] .section-title {
+  color: var(--text);
+}
+
+:root[data-theme="light"] .nav-item.active,
+:root[data-theme="light"] .nav-link.active {
+  color: #b72f3b;
+}
+
+/* Keep the scanner controls calm and readable in light mode as well. */
+:root[data-theme="light"] .scanner-panel {
+  background: linear-gradient(145deg, #fffdf9, #f3eee6);
+  color: #292722;
+  box-shadow: 0 8px 28px rgb(65 48 29 / 10%);
+}
+
+:root[data-theme="light"] .scanner-panel .live-clock-time,
+:root[data-theme="light"] .scanner-panel .counter-value.white {
+  color: #292722;
+}
+
+:root[data-theme="light"] .scanner-panel .live-clock-date,
+:root[data-theme="light"] .scanner-panel .scanner-hint,
+:root[data-theme="light"] .scanner-panel .manual-hint,
+:root[data-theme="light"] .scanner-panel .counter-label,
+:root[data-theme="light"] .scanner-panel .manual-entry-panel .panel-label {
+  color: #6e685f;
+}
+
+:root[data-theme="light"] .scanner-panel .reader-wrapper {
+  background: #fff;
+  border-color: #d3c9ba;
+}
+
+:root[data-theme="light"] .scanner-panel .manual-input-group input,
+:root[data-theme="light"] .scanner-panel .manual-entry-panel select {
+  background: #fffdf9;
+  color: #292722;
+  border-color: #d5cbbd;
+}
+
+:root[data-theme="light"] .scanner-panel .manual-entry-panel select option,
+:root[data-theme="light"] .scanner-panel .manual-entry-panel select optgroup {
+  background: #fffdf9;
+  color: #292722;
+}
+
+:root[data-theme="light"] .scanner-panel .manual-entry-panel {
+  background: rgb(255 255 255 / 58%);
+  border-color: #ded6ca;
+}
+
+:root[data-theme="light"] .scanner-panel .scanner-counters {
+  border-color: #ded6ca;
+}
+
+:root[data-theme="light"] .table-section {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea {
+  color-scheme: light;
+}

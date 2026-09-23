@@ -1,5 +1,5 @@
 @extends('layouts.member')
-@section('title', 'Payment History – IRONFORGE')
+@section('title', 'Payment History – APEX')
 @section('active', 'payments')
 
 @section('content')

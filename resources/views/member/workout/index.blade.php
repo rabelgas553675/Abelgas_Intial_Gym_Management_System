@@ -1,5 +1,5 @@
 @extends('layouts.member')
-@section('title', 'My Schedule – IRONFORGE')
+@section('title', 'My Schedule – APEX')
 @section('active', 'schedule')
 
 @section('content')

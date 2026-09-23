@@ -45,11 +45,19 @@ class UserQrToken extends Model
         }
         $path = 'qrcodes/staff/' . $fileName;
 
-        // Just encode the token — role/id can be looked up server-side after scan
-        $qrContent = $record->qr_token;
+        // Include the format expected by the scanner. The server still checks
+        // the stored token before recording attendance.
+        $qrContent = sprintf(
+            'APEX|%s|%d|%s',
+            strtoupper($record->role),
+            $record->user_id,
+            $record->qr_token
+        );
 
         QrCode::format('svg')
             ->size(300)
+            ->backgroundColor(255, 255, 255)
+            ->color(0, 0, 0)
             ->errorCorrection('M') // was 'H' — 'M' still recovers ~15% damage, much smaller QR
             ->generate($qrContent, storage_path('app/public/' . $path));
 

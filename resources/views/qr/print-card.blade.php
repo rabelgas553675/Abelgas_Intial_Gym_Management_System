@@ -180,7 +180,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
             </div>
-            <div class="brand-name">IRONFORGE</div>
+            <div class="brand-name">APEX</div>
           </div>
           <span class="role-badge role-{{ strtolower($staff->role) }}">{{ $staff->role }}</span>
         </div>
@@ -195,7 +195,7 @@
           {{-- QR Code Section --}}
           <div class="qr-section">
             @if($staff->qr_code_path)
-                <img src="{{ asset('storage/' . $staff->qr_code_path) }}" alt="QR Code">
+                <img src="{{ asset('storage/' . $staff->qr_code_path) }}" alt="QR Code" style="background:#fff;padding:8px;border-radius:6px">
             @else
                 <div class="no-qr">No QR Generated</div>
             @endif
@@ -205,7 +205,7 @@
 
         {{-- Footer --}}
         <div class="card-footer">
-          <span class="footer-text">IRONFORGE STAFF</span>
+          <span class="footer-text">APEX STAFF</span>
           <div class="footer-dot"></div>
           <span class="footer-text">{{ now()->format('Y') }}</span>
         </div>
