@@ -2,13 +2,30 @@
 
 namespace App\Models;
 
+use App\Exceptions\MemberHasHistoryException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class Member extends Model
 {
+    /**
+     * Relations that hold a member's history. If ANY of these has rows the member
+     * can never be permanently deleted — deactivate / suspend them instead.
+     *
+     *   relation name => label used in the error message
+     */
+    private const HISTORY_RELATIONS = [
+        'payments'       => 'payment',
+        'instructorFees' => 'coach fee',
+        'attendances'    => 'attendance',
+        'workoutPlans'   => 'workout plan',
+        'coachRequests'  => 'coach request',
+    ];
+
     protected $fillable = [
         'user_id',
         'instructor_id',
@@ -45,6 +62,23 @@ class Member extends Model
     protected $appends = ['status'];
 
     // ─────────────────────────────────────────
+    //  Model Events
+    // ─────────────────────────────────────────
+
+    protected static function booted(): void
+    {
+        // Safety net: no matter where a delete comes from (controller, tinker,
+        // another service), a member with history can not be deleted.
+        static::deleting(function (Member $member) {
+            $blockers = $member->deletionBlockers();
+
+            if ($blockers !== []) {
+                throw new MemberHasHistoryException($blockers);
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────
     //  Dynamic Status Accessor
     // ─────────────────────────────────────────
 
@@ -78,7 +112,7 @@ class Member extends Model
                 // now() → end_date: days remaining (always positive for future dates)
                 $daysLeft = now()->diffInDays($this->end_date);
 
-                if ($daysLeft <= config('gym.expiry_warning_days', 7)) {
+                if ($daysLeft <= 7) {
                     return 'Expiring Soon';
                 }
 
@@ -86,7 +120,7 @@ class Member extends Model
             }
         );
     }
-
+    
     // ─────────────────────────────────────────
     //  QR Code Generation
     // ─────────────────────────────────────────
@@ -151,6 +185,61 @@ class Member extends Model
     public function workoutPlans()
     {
         return $this->hasMany(WorkoutPlan::class);
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function coachRequests(): HasMany
+    {
+        return $this->hasMany(CoachRequest::class);
+    }
+
+    public function instructorFees(): HasMany
+    {
+        return $this->hasMany(InstructorFee::class);
+    }
+
+    // ─────────────────────────────────────────
+    //  Delete Protection
+    // ─────────────────────────────────────────
+
+    /**
+     * Which history records block deletion?
+     *
+     * @return array<string,int>  label => number of rows, only for relations that have rows
+     *                            e.g. ['payment' => 3, 'attendance' => 12]
+     */
+    public function deletionBlockers(): array
+    {
+        $blockers = [];
+
+        foreach (self::HISTORY_RELATIONS as $relation => $label) {
+            $query = $this->{$relation}();
+
+            // Skip tables/columns that don't exist in this database (older schemas).
+            if (!Schema::hasColumn($query->getRelated()->getTable(), 'member_id')) {
+                continue;
+            }
+
+            $count = $query->count();
+
+            if ($count > 0) {
+                $blockers[$label] = $count;
+            }
+        }
+
+        return $blockers;
+    }
+
+    /**
+     * True only when the member has no payment / transaction / attendance / other history.
+     */
+    public function canBeDeleted(): bool
+    {
+        return $this->deletionBlockers() === [];
     }
 
     // ─────────────────────────────────────────

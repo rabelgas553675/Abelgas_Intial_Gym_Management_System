@@ -2,13 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================================
+   GLOBAL THEME TOKENS
+   Single source of truth for color across every role dashboard
+   (admin / staff / instructor / member) and the public auth pages.
+
+   Strategy: class-based dark mode.
+     - `:root`       => Light Mode values (the default, no class needed)
+     - `html.dark`   => Dark Mode values (applied when <html> has class="dark")
+
+   Do not redefine these tokens inside individual layouts/components.
+   ========================================================================= */
+:root {
+  color-scheme: light;
+
+  --bg-page: #F7F8FA;
+  --bg-card: #FFFFFF;
+  --bg-card-secondary: #F3F4F6;
+  --border: #D9DEE5;
+
+  --text-primary: #111111;
+  --text-secondary: #626871;
+  --text-muted: #8A9098;
+
+  --nav-bg: #F5F6F8;
+  --table-header: #F1F2F4;
+  --table-hover: #F8F9FA;
+
+  --input-bg: #FFFFFF;
+  --input-border: #D9DEE5;
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --bg-page: #111315;
+  --bg-card: #17191C;
+  --bg-card-secondary: #1C1F22;
+  --border: #303338;
+
+  --text-primary: #F5F5F5;
+  --text-secondary: #92969D;
+  --text-muted: #6F747B;
+
+  --nav-bg: #111315;
+  --table-header: #202327;
+  --table-hover: #202327;
+
+  --input-bg: #17191C;
+  --input-border: #303338;
+}
+
+/* =========================================================================
+   GLOBAL BODY CONNECTION
+   Wires the whole document to the theme tokens above so every page starts
+   from a themeable base, regardless of which role layout renders it.
+   The transition keeps the light/dark swap smooth without being flashy.
+   No hard-coded white/black here — everything derives from the variables,
+   so flipping the `dark` class on <html> is enough to repaint the page.
+   ========================================================================= */
+html,
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+body {
+  min-height: 100vh;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+/* =========================================================================
+   LEGACY THEME RULES (pre-existing, attribute-based)
+   Kept as-is for backward compatibility with layouts/components that still
+   reference the older --bg / --surface / --text / --muted token names via
+   [data-theme="light"]. These will be migrated to the tokens above in a
+   follow-up pass; left untouched here to avoid changing current behavior.
+   ========================================================================= */
+
 :root[data-theme="light"] {
   color-scheme: light;
   --bg: #f3f0eb;
   --surface: #fffdf9;
   --surface2: #f5f1eb;
   --surface3: #ebe5dc;
-  --border: #ded6ca;
+  /* --border intentionally not redefined here: it is a global theme token (see top of file). */
   --text: #292722;
   --muted: #6e685f;
   --success: #25734d;

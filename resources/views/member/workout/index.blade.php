@@ -5,684 +5,151 @@
 @section('content')
 
 <style>
-    /* ===== RESPONSIVE STYLES ===== */
-    .schedule-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 16px;
-    }
+    /* Colors come from layouts/member.blade.php (charcoal & gold) */
+    .schedule-container { max-width:1200px; margin:0 auto; padding:0 16px; }
 
-    .page-header {
-        margin-bottom: 28px;
-    }
-
-    .page-header h1 {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 4px;
-    }
-
-    .page-header p {
-        color: var(--muted);
-        font-size: 14px;
-    }
+    .page-header { margin-bottom:28px; }
+    .page-header h1 { font-size:28px; font-weight:700; margin-bottom:4px; }
+    .page-header p { color:var(--muted); font-size:14px; }
 
     /* Navigation */
-    .nav-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-        gap: 12px;
+    .nav-wrapper { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+    .nav-center { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center; flex:1; }
+    .nav-month { font-size:20px; font-weight:700; min-width:160px; text-align:center; color:var(--accent); }
+
+    .btn { padding:8px 16px; border:none; border-radius:8px; font-weight:700; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:13px; min-height:40px; text-decoration:none; font-family:'DM Sans',sans-serif; }
+    .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+    .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+    .btn-sm { padding:6px 14px; font-size:12px; min-height:36px; }
+
+    /* Empty state */
+    .empty-state { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:64px; text-align:center; }
+    .empty-state .icon { font-size:48px; margin-bottom:16px; }
+    .empty-state .title { font-size:18px; font-weight:700; margin-bottom:8px; }
+    .empty-state .sub { color:var(--muted); font-size:14px; }
+
+    /* Stats */
+    .stats-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:28px; }
+    .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px 24px; transition:transform .2s, box-shadow .2s, border-color .3s; }
+    .stat-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.15); border-color:rgba(224,169,59,0.5); }
+    .stat-card .label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:8px; }
+    .stat-card .value { font-size:32px; font-weight:800; }
+    .stat-card .sub { font-size:12px; color:var(--muted); margin-top:4px; }
+    .stat-card.accent-border { border-left:3px solid var(--accent); }
+    .stat-card .value.accent { color:var(--accent); }
+    .stat-card .value.success { color:var(--success); }
+    .stat-card .value.info { color:var(--info); }
+
+    /* Date header */
+    .date-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+    .date-box { width:44px; height:44px; border-radius:12px; background:var(--surface2); display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
+    .date-box.today { background:linear-gradient(135deg, var(--accent-2), var(--accent-dark)); }
+    .date-box .day-name { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+    .date-box.today .day-name { color:#1a1a1a; }
+    .date-box .day-number { font-size:16px; font-weight:800; color:var(--text); line-height:1; }
+    .date-box.today .day-number { color:#1a1a1a; }
+    .date-info .date-label { font-weight:700; font-size:15px; color:var(--text); }
+    .date-info .date-label.today { color:var(--accent); }
+    .date-info .date-label.past { color:var(--muted); }
+    .date-info .date-sub { font-size:12px; color:var(--muted); }
+    .today-badge { background:var(--accent-soft); color:var(--accent); border:1px solid rgba(224,169,59,0.3); padding:3px 10px; border-radius:100px; font-size:11px; font-weight:700; white-space:nowrap; }
+
+    /* Plan cards */
+    .plan-card { border-radius:12px; padding:20px 24px; margin-bottom:10px; margin-left:56px; transition:all .2s; }
+    .plan-card:hover { transform:translateX(4px); }
+    .plan-card.past { opacity:.6; }
+    .plan-card .plan-header { display:flex; align-items:start; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
+    .plan-card .plan-title { font-size:16px; font-weight:700; margin-bottom:4px; }
+    .plan-card .plan-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .plan-card .plan-meta .tag { font-size:11px; font-weight:600; padding:2px 10px; border-radius:40px; display:inline-block; }
+    .plan-card .plan-meta .tag-category { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+    .plan-card .plan-right { font-size:12px; color:var(--muted); text-align:right; flex-shrink:0; }
+    .plan-card .plan-right .completed { color:var(--success); font-weight:600; }
+    .plan-card .plan-description { font-size:13px; color:var(--muted); margin-bottom:12px; line-height:1.6; }
+    .plan-card .exercises-section { border-top:1px solid var(--border); padding-top:12px; }
+    .plan-card .exercises-section .exercises-label { font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; font-weight:700; }
+    .plan-card .exercise-item { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; }
+    .plan-card .exercise-item:last-child { border-bottom:none; }
+    .plan-card .exercise-item .num { width:20px; height:20px; border-radius:50%; background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+
+    /* Responsive */
+    @media (max-width:1024px) {
+        .schedule-container { padding:0 12px; }
+        .stats-grid { gap:10px; }
+        .stat-card .value { font-size:28px; }
     }
-
-    .nav-center {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        justify-content: center;
-        flex: 1;
+    @media (max-width:768px) {
+        .page-header h1 { font-size:24px; }
+        .page-header p { font-size:13px; }
+        .nav-wrapper { flex-direction:column; align-items:stretch; }
+        .nav-center { gap:8px; }
+        .nav-month { font-size:18px; min-width:120px; }
+        .nav-wrapper .btn-sm { font-size:11px; padding:5px 12px; min-height:32px; }
+        .stats-grid { gap:8px; }
+        .stat-card { padding:14px 16px; border-radius:10px; }
+        .stat-card .value { font-size:24px; }
+        .stat-card .label { font-size:9px; }
+        .stat-card .sub { font-size:10px; }
+        .empty-state { padding:40px 20px; border-radius:12px; }
+        .empty-state .icon { font-size:36px; }
+        .empty-state .title { font-size:16px; }
+        .empty-state .sub { font-size:13px; }
+        .date-box { width:38px; height:38px; }
+        .date-box .day-number { font-size:14px; }
+        .date-info .date-label { font-size:14px; }
+        .plan-card { padding:16px 18px; margin-left:48px; }
+        .plan-card .plan-title { font-size:15px; }
+        .plan-card .plan-meta .tag { font-size:10px; padding:1px 8px; }
+        .plan-card .plan-description { font-size:12px; }
+        .plan-card .exercise-item { font-size:12px; padding:4px 0; }
+        .plan-card .exercise-item .num { width:18px; height:18px; font-size:9px; }
+        .plan-card .plan-right { font-size:11px; }
     }
-
-    .nav-month {
-        font-size: 20px;
-        font-weight: 700;
-        min-width: 160px;
-        text-align: center;
+    @media (max-width:480px) {
+        .schedule-container { padding:0 8px; }
+        .page-header h1 { font-size:20px; }
+        .page-header p { font-size:12px; }
+        .nav-month { font-size:16px; min-width:100px; }
+        .nav-center { gap:6px; }
+        .nav-wrapper .btn-sm { font-size:10px; padding:4px 10px; min-height:28px; }
+        .stats-grid { grid-template-columns:1fr 1fr; gap:6px; }
+        .stat-card { padding:12px 14px; }
+        .stat-card .value { font-size:20px; }
+        .stat-card .label { font-size:8px; letter-spacing:1px; }
+        .stat-card .sub { font-size:9px; }
+        .empty-state { padding:32px 16px; border-radius:10px; }
+        .empty-state .icon { font-size:32px; }
+        .empty-state .title { font-size:15px; }
+        .empty-state .sub { font-size:12px; }
+        .date-header { gap:8px; }
+        .date-box { width:34px; height:34px; }
+        .date-box .day-name { font-size:8px; }
+        .date-box .day-number { font-size:12px; }
+        .date-info .date-label { font-size:13px; }
+        .date-info .date-sub { font-size:11px; }
+        .today-badge { font-size:9px; padding:2px 8px; }
+        .plan-card { padding:14px 12px; margin-left:0; border-radius:10px; }
+        .plan-card .plan-header { flex-direction:column; align-items:flex-start; }
+        .plan-card .plan-title { font-size:14px; }
+        .plan-card .plan-meta .tag { font-size:9px; padding:1px 6px; }
+        .plan-card .plan-right { text-align:left; width:100%; }
+        .plan-card .plan-description { font-size:12px; }
+        .plan-card .exercise-item { font-size:12px; padding:4px 0; }
+        .plan-card .exercise-item .num { width:16px; height:16px; font-size:8px; }
+        .plan-card .exercises-section .exercises-label { font-size:9px; }
+        .date-header-wrapper { margin-bottom:10px; }
     }
-
-    /* Buttons */
-    .btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        font-size: 13px;
-        min-height: 40px;
-        text-decoration: none;
-        font-family: 'DM Sans', sans-serif;
+    @media (max-width:360px) {
+        .stats-grid { gap:4px; }
+        .stat-card { padding:10px; border-radius:8px; }
+        .stat-card .value { font-size:18px; }
+        .plan-card { padding:10px; }
+        .plan-card .plan-title { font-size:13px; }
+        .date-box { width:30px; height:30px; }
+        .date-box .day-number { font-size:11px; }
+        .date-info .date-label { font-size:12px; }
     }
-
-    .btn-secondary {
-        background: var(--surface2);
-        color: var(--text);
-        border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-        background: var(--border);
-    }
-
-    .btn-sm {
-        padding: 6px 14px;
-        font-size: 12px;
-        min-height: 36px;
-    }
-
-    /* Empty State */
-    .empty-state {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 64px;
-        text-align: center;
-    }
-
-    .empty-state .icon {
-        font-size: 48px;
-        margin-bottom: 16px;
-    }
-
-    .empty-state .title {
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 8px;
-    }
-
-    .empty-state .sub {
-        color: var(--muted);
-        font-size: 14px;
-    }
-
-    /* Stats Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 14px;
-        margin-bottom: 28px;
-    }
-
-    .stat-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 20px 24px;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    }
-
-    .stat-card .label {
-        font-size: 10px;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 8px;
-    }
-
-    .stat-card .value {
-        font-size: 32px;
-        font-weight: 800;
-    }
-
-    .stat-card .sub {
-        font-size: 12px;
-        color: var(--muted);
-        margin-top: 4px;
-    }
-
-    .stat-card.accent-border {
-        border-left: 3px solid var(--accent);
-    }
-
-    .stat-card .value.accent {
-        color: var(--accent);
-    }
-
-    .stat-card .value.success {
-        color: var(--success);
-    }
-
-    .stat-card .value.info {
-        color: var(--info);
-    }
-
-    /* Date Header */
-    .date-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 12px;
-        flex-wrap: wrap;
-    }
-
-    .date-box {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        background: var(--surface2);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .date-box.today {
-        background: var(--accent);
-    }
-
-    .date-box .day-name {
-        font-size: 9px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--muted);
-    }
-
-    .date-box.today .day-name {
-        color: #111;
-    }
-
-    .date-box .day-number {
-        font-size: 16px;
-        font-weight: 800;
-        color: var(--text);
-        line-height: 1;
-    }
-
-    .date-box.today .day-number {
-        color: #111;
-    }
-
-    .date-info .date-label {
-        font-weight: 700;
-        font-size: 15px;
-        color: var(--text);
-    }
-
-    .date-info .date-label.today {
-        color: var(--accent);
-    }
-
-    .date-info .date-label.past {
-        color: var(--muted);
-    }
-
-    .date-info .date-sub {
-        font-size: 12px;
-        color: var(--muted);
-    }
-
-    .today-badge {
-        background: rgba(200, 255, 0, 0.15);
-        color: var(--accent);
-        border: 1px solid rgba(200, 255, 0, 0.3);
-        padding: 3px 10px;
-        border-radius: 100px;
-        font-size: 11px;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-
-    /* Plan Cards */
-    .plan-card {
-        border-radius: 12px;
-        padding: 20px 24px;
-        margin-bottom: 10px;
-        margin-left: 56px;
-        transition: all 0.2s;
-    }
-
-    .plan-card:hover {
-        transform: translateX(4px);
-    }
-
-    .plan-card.past {
-        opacity: 0.6;
-    }
-
-    .plan-card .plan-header {
-        display: flex;
-        align-items: start;
-        justify-content: space-between;
-        margin-bottom: 12px;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-
-    .plan-card .plan-title {
-        font-size: 16px;
-        font-weight: 700;
-        margin-bottom: 4px;
-    }
-
-    .plan-card .plan-meta {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .plan-card .plan-meta .tag {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 5px;
-        display: inline-block;
-    }
-
-    .plan-card .plan-meta .tag-category {
-        background: var(--surface2);
-        color: var(--muted);
-        border: 1px solid var(--border);
-    }
-
-    .plan-card .plan-right {
-        font-size: 12px;
-        color: var(--muted);
-        text-align: right;
-        flex-shrink: 0;
-    }
-
-    .plan-card .plan-right .completed {
-        color: var(--success);
-        font-weight: 600;
-    }
-
-    .plan-card .plan-description {
-        font-size: 13px;
-        color: var(--muted);
-        margin-bottom: 12px;
-        line-height: 1.6;
-    }
-
-    .plan-card .exercises-section {
-        border-top: 1px solid var(--border);
-        padding-top: 12px;
-    }
-
-    .plan-card .exercises-section .exercises-label {
-        font-size: 11px;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 8px;
-        font-weight: 700;
-    }
-
-    .plan-card .exercise-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 0;
-        border-bottom: 1px solid var(--border);
-        font-size: 13px;
-    }
-
-    .plan-card .exercise-item:last-child {
-        border-bottom: none;
-    }
-
-    .plan-card .exercise-item .num {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: var(--surface2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 10px;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-
-    /* ===== RESPONSIVE BREAKPOINTS ===== */
-
-    @media (max-width: 1024px) {
-        .schedule-container {
-            padding: 0 12px;
-        }
-
-        .stats-grid {
-            gap: 10px;
-        }
-
-        .stat-card .value {
-            font-size: 28px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .schedule-container {
-            padding: 0 12px;
-        }
-
-        .page-header h1 {
-            font-size: 24px;
-        }
-
-        .page-header p {
-            font-size: 13px;
-        }
-
-        .nav-wrapper {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .nav-center {
-            gap: 8px;
-        }
-
-        .nav-month {
-            font-size: 18px;
-            min-width: 120px;
-        }
-
-        .nav-wrapper .btn-sm {
-            font-size: 11px;
-            padding: 5px 12px;
-            min-height: 32px;
-        }
-
-        .stats-grid {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-
-        .stat-card {
-            padding: 14px 16px;
-            border-radius: 10px;
-        }
-
-        .stat-card .value {
-            font-size: 24px;
-        }
-
-        .stat-card .label {
-            font-size: 9px;
-        }
-
-        .stat-card .sub {
-            font-size: 10px;
-        }
-
-        .empty-state {
-            padding: 40px 20px;
-            border-radius: 12px;
-        }
-
-        .empty-state .icon {
-            font-size: 36px;
-        }
-
-        .empty-state .title {
-            font-size: 16px;
-        }
-
-        .empty-state .sub {
-            font-size: 13px;
-        }
-
-        .date-box {
-            width: 38px;
-            height: 38px;
-        }
-
-        .date-box .day-number {
-            font-size: 14px;
-        }
-
-        .date-info .date-label {
-            font-size: 14px;
-        }
-
-        .plan-card {
-            padding: 16px 18px;
-            margin-left: 48px;
-        }
-
-        .plan-card .plan-title {
-            font-size: 15px;
-        }
-
-        .plan-card .plan-meta .tag {
-            font-size: 10px;
-            padding: 1px 6px;
-        }
-
-        .plan-card .plan-description {
-            font-size: 12px;
-        }
-
-        .plan-card .exercise-item {
-            font-size: 12px;
-            padding: 4px 0;
-        }
-
-        .plan-card .exercise-item .num {
-            width: 18px;
-            height: 18px;
-            font-size: 9px;
-        }
-
-        .plan-card .plan-right {
-            font-size: 11px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .schedule-container {
-            padding: 0 8px;
-        }
-
-        .page-header h1 {
-            font-size: 20px;
-        }
-
-        .page-header p {
-            font-size: 12px;
-        }
-
-        .nav-month {
-            font-size: 16px;
-            min-width: 100px;
-        }
-
-        .nav-center {
-            gap: 6px;
-        }
-
-        .nav-wrapper .btn-sm {
-            font-size: 10px;
-            padding: 4px 10px;
-            min-height: 28px;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-
-        .stat-card {
-            padding: 12px 14px;
-        }
-
-        .stat-card .value {
-            font-size: 20px;
-        }
-
-        .stat-card .label {
-            font-size: 8px;
-            letter-spacing: 1px;
-        }
-
-        .stat-card .sub {
-            font-size: 9px;
-        }
-
-        .empty-state {
-            padding: 32px 16px;
-            border-radius: 10px;
-        }
-
-        .empty-state .icon {
-            font-size: 32px;
-        }
-
-        .empty-state .title {
-            font-size: 15px;
-        }
-
-        .empty-state .sub {
-            font-size: 12px;
-        }
-
-        .date-header {
-            gap: 8px;
-        }
-
-        .date-box {
-            width: 34px;
-            height: 34px;
-        }
-
-        .date-box .day-name {
-            font-size: 8px;
-        }
-
-        .date-box .day-number {
-            font-size: 12px;
-        }
-
-        .date-info .date-label {
-            font-size: 13px;
-        }
-
-        .date-info .date-sub {
-            font-size: 11px;
-        }
-
-        .today-badge {
-            font-size: 9px;
-            padding: 2px 8px;
-        }
-
-        .plan-card {
-            padding: 14px 12px;
-            margin-left: 0;
-            border-radius: 10px;
-        }
-
-        .plan-card .plan-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .plan-card .plan-title {
-            font-size: 14px;
-        }
-
-        .plan-card .plan-meta .tag {
-            font-size: 9px;
-            padding: 1px 5px;
-        }
-
-        .plan-card .plan-right {
-            text-align: left;
-            width: 100%;
-        }
-
-        .plan-card .plan-description {
-            font-size: 12px;
-        }
-
-        .plan-card .exercise-item {
-            font-size: 12px;
-            padding: 4px 0;
-        }
-
-        .plan-card .exercise-item .num {
-            width: 16px;
-            height: 16px;
-            font-size: 8px;
-        }
-
-        .plan-card .exercises-section .exercises-label {
-            font-size: 10px;
-        }
-
-        .date-header-wrapper {
-            margin-bottom: 10px;
-        }
-    }
-
-    @media (max-width: 360px) {
-        .stats-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 4px;
-        }
-
-        .stat-card {
-            padding: 10px 10px;
-            border-radius: 8px;
-        }
-
-        .stat-card .value {
-            font-size: 18px;
-        }
-
-        .plan-card {
-            padding: 10px 10px;
-        }
-
-        .plan-card .plan-title {
-            font-size: 13px;
-        }
-
-        .date-box {
-            width: 30px;
-            height: 30px;
-        }
-
-        .date-box .day-number {
-            font-size: 11px;
-        }
-
-        .date-info .date-label {
-            font-size: 12px;
-        }
-    }
-
-    /* Reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-        * {
-            animation-duration: 0.01ms !important;
-            transition-duration: 0.01ms !important;
-        }
-    }
+    @media (prefers-reduced-motion:reduce) { * { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 </style>
 
 <div class="schedule-container">

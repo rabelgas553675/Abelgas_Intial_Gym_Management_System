@@ -1208,8 +1208,8 @@
                         </optgroup>
                         <optgroup label="Staff / Instructors / Admin">
                             @forelse($allStaff ?? [] as $s)
-                                <option value="staff-{{ $s->id }}">
-                                    {{ $s->name }} ({{ ucfirst($s->role) }})
+                                <option value="staff-{{ data_get($s, 'id', '') }}">
+                                    {{ data_get($s, 'name', '') }} ({{ ucfirst(data_get($s, 'role', '')) }})
                                 </option>
                             @empty
                                 <option disabled>No Staff Records Found</option>

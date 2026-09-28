@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\MemberHasHistoryException;
 use App\Models\Member;
 use App\Models\User;
 use App\Models\Payment;
@@ -9,12 +10,14 @@ use App\Models\CoachRequest;
 use App\Services\Algorithms\BinarySearch;
 use App\Services\Algorithms\MergeSort;
 use App\Services\Algorithms\GreedyScheduler;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class MemberController extends Controller
@@ -35,7 +38,7 @@ class MemberController extends Controller
 
         // ── Staff / Instructor filter path ────────────────────────────────────
         if ($roleFilter && in_array($roleFilter, ['staff', 'instructor'])) {
-            $users = User::where('role', $roleFilter)->get()->toArray();
+            $users = User::where('role', '=', $roleFilter, 'and')->get()->toArray();
 
             // 1. MergeSort by name ascending (replaces ->latest())
             $sorted = MergeSort::sortBy($users, 'name', 'asc');
@@ -87,14 +90,33 @@ class MemberController extends Controller
 
         // ── Regular member filter path ─────────────────────────────────────────
 
-        // Build base DB query (filters only — no ordering, no LIKE search)
+        // Build base DB query (plan filter only — status is computed, see below)
         $query = Member::with('user');
 
-        if ($request->filled('plan'))   { $query->where('membership_type', $request->plan); }
-        if ($request->filled('status')) { $query->where('status', $request->status); }
+        if ($request->filled('plan')) {
+            // "Annual" and "Annually" are both used in the data — match either.
+            if (in_array($request->plan, ['Annual', 'Annually'], true)) {
+                $query->whereIn('membership_type', ['Annual', 'Annually']);
+            } else {
+                $query->where('membership_type', $request->plan);
+            }
+        }
+
+        $collection = $query->get();
+
+        // The Status shown in the table is COMPUTED from end_date (see Member::status()),
+        // so it must be filtered in memory — the stored DB column would miss expired members.
+        if ($request->filled('status')) {
+            $wanted     = $request->status;
+            $collection = $collection->filter(function (Member $m) use ($wanted) {
+                return $wanted === 'Active'
+                    ? in_array($m->status, ['Active', 'Expiring Soon'], true)
+                    : $m->status === $wanted;
+            })->values();
+        }
 
         // Load all matching members into memory
-        $allMembers = $query->get()->map(function (Member $m) {
+        $allMembers = $collection->map(function (Member $m) {
             if (!$m->photo && $m->user && $m->user->photo) {
                 $m->photo = $m->user->photo;
             }
@@ -143,10 +165,11 @@ class MemberController extends Controller
 
     public function create()
     {
-        if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isStaff())) {
             abort(403);
         }
-        $instructors = User::where('role', 'instructor')->get();
+        $instructors = User::where('role', '=', 'instructor', 'and')->get();
         return view('members.create', compact('instructors'));
     }
 
@@ -158,7 +181,8 @@ class MemberController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
+        $user = Auth::user();
+        if (!$user || (!$user->isAdmin() && !$user->isStaff())) {
             abort(403);
         }
 
@@ -239,57 +263,207 @@ class MemberController extends Controller
         return view('members.show', compact('member'));
     }
 
-    public function edit(Member $member)
+    public function edit(Request $request, Member $member)
     {
-        if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
+        $user = $request->user();
+        if (!$user || (!$user->isAdmin() && !$user->isStaff())) {
             abort(403);
         }
         return view('members.edit', compact('member'));
     }
 
+    /**
+     * Update a member and (re)activate their subscription.
+     *
+     * - Plan or start date changed  → end_date is recalculated (GreedyScheduler).
+     * - Status "Active" on a member with no / past end_date → renewed from today.
+     * - Inactive / Suspended are stored as staff-controlled states.
+     */
     public function update(Request $request, Member $member)
     {
-        if (!auth()->user()->isAdmin() && !auth()->user()->isStaff()) {
+        $user = $request->user();
+        if (!$user || (!$user->isAdmin() && !$user->isStaff())) {
             abort(403);
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'first_name'      => 'required|string|max:255',
             'last_name'       => 'required|string|max:255',
-            'email'           => 'required|email|unique:members,email,' . $member->id,
-            'membership_type' => 'required',
-            'status'          => 'required|in:Active,Inactive,Suspended',
-            'fee'             => 'required|numeric',
+            'email'           => [
+                'required', 'email:rfc', 'max:255',
+                Rule::unique('members', 'email')->ignore($member->id),
+                Rule::unique('users', 'email')->ignore($member->user_id),
+            ],
+            'phone'           => 'nullable|string|max:20',
+            'membership_type' => ['required', Rule::in(['Monthly', 'Quarterly', 'Semi-Annual', 'Annual', 'Annually'])],
+            'status'          => ['required', Rule::in(['Active', 'Inactive', 'Suspended'])],
+            'start_date'      => 'required|date',
+            'fee'             => 'required|numeric|min:0',
+            'photo'           => 'nullable|image|max:3072',
         ]);
 
-        // Never allow direct instructor_id update — must go through approval
-        $data = $request->except('instructor_id');
-        $member->update($data);
+        DB::beginTransaction();
+        try {
+            // Legacy rows may store "Annual"; the app's canonical name is "Annually".
+            $plan  = $validated['membership_type'] === 'Annual' ? 'Annually' : $validated['membership_type'];
+            $start = Carbon::parse($validated['start_date'])->startOfDay();
+            $end   = $member->end_date ? Carbon::parse($member->end_date) : null;
 
-        // Sync the name on the linked user account as well
-        if ($member->user) {
-            $member->user->update([
-                'name'  => $request->first_name . ' ' . $request->last_name,
-                'email' => $request->email,
-                'phone' => $request->phone,
-            ]);
+            // Plan / start date changed (or never set) → recalculate expiry
+            $needsRecalc = !$end
+                || !$member->start_date
+                || $plan !== ($member->membership_type === 'Annual' ? 'Annually' : $member->membership_type)
+                || !$start->isSameDay($member->start_date);
+
+            if ($needsRecalc) {
+                $end = Carbon::parse(GreedyScheduler::computeEndDate($start->copy(), $plan));
+            }
+
+            // Activating a lapsed / brand-new membership → renew from today
+            if ($validated['status'] === 'Active' && $end->isPast()) {
+                $start = now()->startOfDay();
+                $end   = Carbon::parse(GreedyScheduler::computeEndDate($start->copy(), $plan));
+            }
+
+            $data = [
+                'name'            => trim($validated['first_name'] . ' ' . $validated['last_name']),
+                'first_name'      => $validated['first_name'],
+                'last_name'       => $validated['last_name'],
+                'email'           => $validated['email'],
+                'phone'           => $validated['phone'] ?? null,
+                'membership_type' => $plan,
+                'status'          => $validated['status'],
+                'start_date'      => $start,
+                'end_date'        => $end,
+                'fee'             => $validated['fee'],
+            ];
+
+            // ── Photo (member + linked user share the same file) ──
+            $oldPhotos = [];
+            if ($request->hasFile('photo')) {
+                $newPhoto = $request->file('photo')->store('members', 'public');
+                $data['photo'] = $newPhoto;
+                $oldPhotos[] = $member->photo;
+                if ($member->user) {
+                    $oldPhotos[] = $member->user->photo;
+                }
+            }
+
+            // instructor_id is never updated here — it must go through coach approval
+            $member->update($data);
+
+            // Sync the linked portal account
+            if ($member->user) {
+                $userData = [
+                    'name'  => $data['name'],
+                    'email' => $data['email'],
+                    'phone' => $data['phone'],
+                ];
+                if (isset($newPhoto)) {
+                    $userData['photo'] = $newPhoto;
+                }
+                $member->user->update($userData);
+            }
+
+            DB::commit();
+
+            foreach (array_unique(array_filter($oldPhotos)) as $old) {
+                Storage::disk('public')->delete($old);
+            }
+
+            return redirect()->route('members.index')->with('success', 'Member updated successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            if (isset($newPhoto)) {
+                Storage::disk('public')->delete($newPhoto);
+            }
+            return back()->withInput()->with('error', 'Failed to update member: ' . $e->getMessage());
         }
-
-        return redirect()->route('members.index')->with('success', 'Member updated successfully.');
     }
 
-    public function destroy(Member $member)
+    /**
+     * Permanently delete a member — ONLY if they have no history.
+     *
+     * Protection layers (any one of them is enough to stop the delete):
+     *   1. Role check            → only admin / staff (blocks direct requests from other roles).
+     *   2. Member::deleting()    → throws MemberHasHistoryException when payments, coach fees,
+     *                              attendance, workout plans or coach requests exist.
+     *   3. DB foreign keys       → ON DELETE RESTRICT on those tables (see migration
+     *                              2026_09_29_000100_restrict_member_deletes_on_history_tables).
+     *
+     * Nothing related is ever modified or deleted. Files (photo / QR) are removed only
+     * after the database delete has succeeded.
+     *
+     * Web requests get a redirect with a flash message; JSON/API requests get a
+     * JSON body (409 Conflict when blocked).
+     */
+    public function destroy(Request $request, Member $member)
     {
-        if ($member->photo)        Storage::disk('public')->delete($member->photo);
-        if ($member->qr_code_path) Storage::disk('public')->delete($member->qr_code_path);
-        $member->delete();
-        return redirect()->route('members.index')->with('success', 'Member deleted.');
+        $user = $request->user();
+        if (!$user || (!$user->isAdmin() && !$user->isStaff())) {
+            abort(403);
+        }
+
+        $photo  = $member->photo;
+        $qrPath = $member->qr_code_path;
+
+        try {
+            DB::transaction(function () use ($member) {
+                // Lock the row so a payment / attendance can't slip in between the check and the delete.
+                $locked = Member::whereKey($member->getKey())->lockForUpdate()->firstOrFail();
+
+                // Member::deleting() throws MemberHasHistoryException if any history exists.
+                $locked->delete();
+            });
+        } catch (MemberHasHistoryException $e) {
+            return $this->deleteBlocked($request, $e->getMessage(), $e->blockers());
+        } catch (QueryException $e) {
+            // Database-level RESTRICT foreign key (SQLSTATE 23000) — last line of defence.
+            if ((string) $e->getCode() === '23000') {
+                return $this->deleteBlocked($request, MemberHasHistoryException::buildMessage());
+            }
+
+            report($e);
+            return $this->deleteFailed($request);
+        } catch (\Throwable $e) {
+            report($e);
+            return $this->deleteFailed($request);
+        }
+
+        // Delete succeeded → now it is safe to remove the files.
+        if ($photo)  Storage::disk('public')->delete($photo);
+        if ($qrPath) Storage::disk('public')->delete($qrPath);
+
+        $message = 'Member deleted.';
+
+        return $request->expectsJson()
+            ? response()->json(['success' => true, 'message' => $message])
+            : redirect()->route('members.index')->with('success', $message);
+    }
+
+    /** Response used when the delete is refused because the member has history. */
+    private function deleteBlocked(Request $request, string $message, array $blockers = [])
+    {
+        return $request->expectsJson()
+            ? response()->json(['success' => false, 'message' => $message, 'blockers' => $blockers], 409)
+            : redirect()->route('members.index')->with('error', $message);
+    }
+
+    /** Response used for unexpected failures (details are logged, not shown to the user). */
+    private function deleteFailed(Request $request)
+    {
+        $message = 'Failed to delete the member. Please try again.';
+
+        return $request->expectsJson()
+            ? response()->json(['success' => false, 'message' => $message], 500)
+            : redirect()->route('members.index')->with('error', $message);
     }
 
     public function selectPlan()
     {
         $member      = Auth::user()->member;
-        $instructors = User::where('role', 'instructor')->get();
+        $instructors = User::where('role', '=', 'instructor', 'and')->get();
         return view('member.select-plan', compact('member', 'instructors'));
     }
 
@@ -338,7 +512,9 @@ class MemberController extends Controller
             ]);
 
             if ($request->filled('instructor_id')) {
-                CoachRequest::where('member_id', $member->id)->where('status', 'pending')->update(['status' => 'rejected']);
+                CoachRequest::where('member_id', '=', $member->id, 'and')
+                    ->where('status', '=', 'pending', 'and')
+                    ->update(['status' => 'rejected']);
                 CoachRequest::create([
                     'member_id'     => $member->id,
                     'instructor_id' => $request->instructor_id,
@@ -377,12 +553,12 @@ class MemberController extends Controller
     public function paymentHistory()
     {
         $member      = Auth::user()->member;
-        $rawPayments = Payment::where('member_id', $member->id)->get()->toArray();
+        $rawPayments = Payment::where('member_id', '=', $member->id, 'and')->get()->toArray();
 
         // MergeSort by payment_date descending (replaces ->latest('payment_date'))
         $payments = MergeSort::sortBy($rawPayments, 'payment_date', 'desc');
 
-        return view('member.payments', compact('payments', 'member'));
+        return view('member.payment-history', compact('payments', 'member'));
     }
 
     public function receipt(Payment $payment)

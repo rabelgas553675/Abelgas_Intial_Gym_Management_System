@@ -5,11 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>@yield('title', 'APEX FITNESS GYM GMS')</title>
 <link rel="icon" type="image/png" href="{{ asset('favicon.svg') }}">
-<link rel="stylesheet" href="{{ asset('css/ironforge.css') }}">
+
+{{-- Global theme bootstrap: runs before CSS/JS paint to avoid a flash of the wrong theme.
+     Uses the same localStorage key and default as resources/js/app.js (single global theme). --}}
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem('apex-color-theme');
+    if (t !== 'light' && t !== 'dark') t = 'dark';
+    var r = document.documentElement;
+    r.classList.toggle('dark', t === 'dark');
+    r.setAttribute('data-theme', t);
+  } catch (e) {
+    document.documentElement.classList.add('dark');
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+</script>
+
+@vite(['resources/css/app.css', 'resources/js/app.js'])
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
-@vite(['resources/css/app.css', 'resources/js/app.js'])
+
 <style>
+
 :root{
   --bg:#0a0a0a;--surface:#111111;--surface2:#181818;--surface3:#202020;
   --border:#222222;--accent:#ff2b3d;--accent2:#ff6b35;--text:#f0f0f0;

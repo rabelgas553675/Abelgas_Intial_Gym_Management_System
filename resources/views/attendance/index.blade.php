@@ -1,54 +1,41 @@
-@extends('layouts.admin')
+{{-- Staff users get the staff layout (charcoal & gold nav + tokens); everyone else keeps the admin layout. --}}
+@extends(auth()->user()?->role === 'staff' ? 'layouts.staff' : 'layouts.admin')
 @section('title', 'Attendance Log – APEX')
+@section('page_title', 'Attendance Log')
 @section('active', 'attendance')
 
 @section('content')
 
-{{-- Custom Dropdown & Date Styling --}}
 <style>
-  .form-select-custom {
-    appearance: none !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.5)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
-    background-repeat: no-repeat !important;
-    background-position: right 12px center !important;
-    background-size: 14px !important;
-    padding-right: 36px !important;
-    cursor: pointer;
+  /* ===== CHARCOAL & GOLD THEME =====
+     Uses the same variables as the staff dashboard
+     (--accent, --accent-2, --accent-dark, --accent-soft, --surface, --surface2,
+      --surface3, --border, --text, --text-soft, --muted, --success, --warning,
+      --danger, --info) defined in layouts/staff.blade.php.
+     No hardcoded text/background colours, so dark and light mode both work. */
+
+  @if(auth()->user()?->role !== 'staff')
+  /* Admin layout fallback: force the gold palette for this page's content (dark mode only) */
+  html:not([data-theme="light"]) .attendance-container {
+    --accent: #e0a93b;
+    --accent-2: #f3c866;
+    --accent-dark: #b8862a;
+    --accent-soft: rgba(224,169,59,0.12);
+    --text-soft: #d2d3d8;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --info: #60a5fa;
   }
-  .form-select-custom:hover { border-color: var(--accent) !important; }
+  @endif
 
-  /* Hide native browser calendar & clock icons */
-  input[type="date"]::-webkit-calendar-picker-indicator,
-  input[type="time"]::-webkit-calendar-picker-indicator { opacity:0;width:0;padding:0;margin:0; }
-  input[type="date"],
-  input[type="time"] { color-scheme: dark; }
-
-  .date-picker-wrap,
-  .time-picker-wrap { position:relative;display:flex; }
-  .date-picker-wrap { width:160px; }
-  .date-picker-wrap input[type="date"],
-  .time-picker-wrap input[type="time"] { flex:1;padding-right:44px; }
-  .date-picker-btn,
-  .time-picker-btn {
-    position:absolute;right:0;top:0;bottom:0;width:40px;
-    background:rgba(200,255,0,0.10);
-    border:none;border-left:1px solid var(--border);
-    border-radius:0 8px 8px 0;
-    cursor:pointer;display:flex;align-items:center;justify-content:center;
-    transition:background .15s;
-  }
-  .date-picker-btn:hover,
-  .time-picker-btn:hover { background:rgba(200,255,0,0.22); }
-
-  /* ===== RESPONSIVE STYLES ===== */
   .attendance-container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 16px;
   }
 
+  /* ===== HEADER ===== */
   .attendance-header {
     display: flex;
     align-items: center;
@@ -62,7 +49,10 @@
     font-size: 28px;
     font-weight: 700;
     margin-bottom: 4px;
+    color: var(--text);
   }
+
+  .attendance-header-left h1 span { color: var(--accent); }
 
   .attendance-header-left p {
     color: var(--muted);
@@ -75,43 +65,131 @@
     flex-wrap: wrap;
   }
 
-  /* Stat Cards Grid */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-    margin-bottom: 24px;
+  /* ===== BUTTONS (scoped so they don't collide with the layout) ===== */
+  .attendance-container .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    white-space: nowrap;
   }
 
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 18px;
-    text-align: center;
-    min-width: 0;
+  .attendance-container .btn-sm {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 8px;
+    min-height: 34px;
   }
 
-  .stat-card-label {
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-bottom: 8px;
-  }
-
-  .stat-card-value {
-    font-size: 28px;
+  /* Gold gradient — same as the dashboard's "View Full Profile" */
+  .attendance-container .btn-primary {
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+    color: #1a1a1a;
     font-weight: 800;
   }
 
-  /* Filters */
+  .attendance-container .btn-primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(224,169,59,0.25);
+  }
+
+  /* Near-black button → fixed light text so it stays visible in light mode */
+  .attendance-container .btn-secondary {
+    background: #0e0e10;
+    color: #ffffff;
+    border-color: var(--border);
+    font-weight: 600;
+  }
+
+  .attendance-container .btn-secondary:hover {
+    color: var(--accent-2);
+    border-color: rgba(224,169,59,0.45);
+  }
+
+  html:root[data-theme="light"] .attendance-container .btn-secondary {
+    background: #111111;
+    color: #ffffff;
+    border-color: #111111;
+  }
+
+  html:root[data-theme="light"] .attendance-container .btn-secondary:hover {
+    color: var(--accent-2);
+    border-color: var(--accent-2);
+  }
+
+  .attendance-container .btn-danger {
+    background: color-mix(in srgb, var(--danger) 10%, transparent);
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 25%, transparent);
+    font-weight: 600;
+  }
+
+  .attendance-container .btn-danger:hover {
+    background: color-mix(in srgb, var(--danger) 20%, transparent);
+  }
+
+  /* ===== STAT CARDS (same glow language as the dashboard) ===== */
+  .att-stats {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .att-stat {
+    --glow: 224,169,59;
+    background: linear-gradient(145deg, rgba(var(--glow),0.10), rgba(26,27,31,0.95) 70%);
+    border: 1px solid rgba(var(--glow),0.45);
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    min-width: 0;
+    box-shadow: 0 0 22px rgba(var(--glow),0.16), inset 0 0 18px rgba(var(--glow),0.04);
+  }
+
+  .att-stat.green { --glow: 74,222,128; }
+  .att-stat.blue  { --glow: 96,165,250; }
+  .att-stat.amber { --glow: 245,158,11; }
+  .att-stat.gold  { --glow: 224,169,59; }
+
+  html:root[data-theme="light"] .att-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card, none);
+  }
+
+  .att-stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .att-stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  /* ===== FILTERS ===== */
   .filters-container {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 16px;
+    padding: 22px 24px;
     margin-bottom: 20px;
+    box-shadow: var(--shadow-card, none);
   }
 
   .filters-form {
@@ -121,18 +199,16 @@
     align-items: flex-end;
   }
 
-  .filter-group {
-    flex: 0 0 auto;
-  }
+  .filter-group { flex: 0 0 auto; }
 
   .filter-group label {
     display: block;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
   }
 
   .filter-group .form-control {
@@ -140,9 +216,7 @@
     min-width: 120px;
   }
 
-  .filter-group .form-control[type="text"] {
-    min-width: 140px;
-  }
+  .filter-group .form-control[type="text"] { min-width: 140px; }
 
   .filter-actions {
     display: flex;
@@ -151,7 +225,55 @@
     align-items: center;
   }
 
-  /* Role Summary Pills */
+  /* Custom dropdown arrow (gold) */
+  .form-select-custom {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e0a93b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 14px !important;
+    padding-right: 36px !important;
+    cursor: pointer;
+  }
+
+  .form-select-custom:hover { border-color: var(--accent) !important; }
+
+  /* Hide native browser calendar & clock icons */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator { opacity:0; width:0; padding:0; margin:0; }
+  input[type="date"],
+  input[type="time"] { color-scheme: dark; }
+  html:root[data-theme="light"] input[type="date"],
+  html:root[data-theme="light"] input[type="time"] { color-scheme: light !important; }
+
+  .date-picker-wrap,
+  .time-picker-wrap { position: relative; display: flex; }
+  .date-picker-wrap { width: 160px; }
+  .date-picker-wrap input[type="date"],
+  .time-picker-wrap input[type="time"] { flex: 1; padding-right: 44px; }
+
+  .date-picker-btn,
+  .time-picker-btn {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 40px;
+    background: var(--accent-soft);
+    border: none;
+    border-left: 1px solid var(--border);
+    border-radius: 0 8px 8px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+  }
+
+  .date-picker-btn:hover,
+  .time-picker-btn:hover { background: rgba(224,169,59,0.25); }
+
+  /* ===== ROLE SUMMARY PILLS ===== */
   .role-pills {
     display: flex;
     gap: 10px;
@@ -167,6 +289,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 100px;
+    color: var(--text);
   }
 
   .role-pill-dot {
@@ -176,14 +299,15 @@
     display: inline-block;
   }
 
-  /* Table Responsive */
+  /* ===== TABLE ===== */
   .table-wrapper {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 16px;
     overflow: hidden;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    box-shadow: var(--shadow-card, none);
   }
 
   .attendance-table {
@@ -193,7 +317,7 @@
   }
 
   .attendance-table th {
-    padding: 12px 18px;
+    padding: 14px 18px;
     text-align: left;
     font-size: 10px;
     font-weight: 700;
@@ -208,11 +332,10 @@
     padding: 13px 18px;
     border-top: 1px solid var(--border);
     vertical-align: middle;
+    color: var(--text-soft);
   }
 
-  .attendance-table tr:first-child td {
-    border-top: none;
-  }
+  .attendance-table tr:first-child td { border-top: none; }
 
   .user-cell {
     display: flex;
@@ -220,15 +343,16 @@
     gap: 10px;
   }
 
-  .user-avatar {
+  .att-avatar {
     width: 34px;
     height: 34px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
+    border: 1px solid rgba(224,169,59,0.3);
   }
 
-  .user-avatar-placeholder {
+  .att-avatar-ph {
     width: 34px;
     height: 34px;
     border-radius: 50%;
@@ -243,7 +367,7 @@
   .user-name {
     font-size: 13px;
     font-weight: 600;
-    color: #fff;
+    color: var(--text);
   }
 
   .user-sub {
@@ -255,11 +379,14 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 40px;
+    font-size: 10px;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
     white-space: nowrap;
+    border: 1px solid transparent;
   }
 
   .role-badge-dot {
@@ -269,42 +396,39 @@
     display: inline-block;
   }
 
-  .status-badge {
+  .status-badge,
+  .method-badge {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
     font-size: 11px;
     font-weight: 700;
     white-space: nowrap;
+    border: 1px solid transparent;
   }
 
   .status-inside {
-    background: rgba(74, 222, 128, 0.15);
-    color: #4ade80;
+    background: color-mix(in srgb, var(--success) 15%, transparent);
+    color: var(--success);
+    border-color: color-mix(in srgb, var(--success) 25%, transparent);
   }
 
   .status-done {
     background: var(--surface2);
     color: var(--muted);
-  }
-
-  .method-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    white-space: nowrap;
+    border-color: var(--border);
   }
 
   .method-manual {
-    background: rgba(251, 191, 36, 0.15);
-    color: #fbbf24;
+    background: color-mix(in srgb, var(--warning) 15%, transparent);
+    color: var(--warning);
+    border-color: color-mix(in srgb, var(--warning) 25%, transparent);
   }
 
   .method-qr {
     background: var(--surface2);
     color: var(--muted);
+    border-color: var(--border);
   }
 
   .action-buttons {
@@ -313,51 +437,7 @@
     flex-wrap: wrap;
   }
 
-  .btn-sm {
-    padding: 6px 12px;
-    font-size: 11px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.2s;
-    white-space: nowrap;
-    min-height: 32px;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: #111;
-  }
-
-  .btn-primary:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-  }
-
-  .btn-secondary {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-
-  .btn-secondary:hover {
-    background: var(--border);
-  }
-
-  .btn-danger {
-    background: rgba(248, 113, 113, 0.1);
-    color: #f87171;
-    border: 1px solid rgba(248, 113, 113, 0.2);
-  }
-
-  .btn-danger:hover {
-    background: rgba(248, 113, 113, 0.2);
-  }
-
-  .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 6px; }
-
-  /* Modal */
+  /* ===== MODAL ===== */
   .modal-overlay {
     display: none;
     position: fixed;
@@ -369,9 +449,7 @@
     padding: 20px;
   }
 
-  .modal-overlay.active {
-    display: flex;
-  }
+  .modal-overlay.active { display: flex; }
 
   .modal-content {
     background: var(--surface);
@@ -383,6 +461,8 @@
     position: relative;
     max-height: 90vh;
     overflow-y: auto;
+    color: var(--text);
+    background-image: linear-gradient(135deg, rgba(224,169,59,0.08), transparent 120px);
   }
 
   .modal-close {
@@ -394,12 +474,16 @@
     color: var(--muted);
     font-size: 20px;
     cursor: pointer;
+    transition: color 0.2s;
   }
+
+  .modal-close:hover { color: var(--accent); }
 
   .modal-title {
     font-size: 18px;
     font-weight: 700;
     margin-bottom: 4px;
+    color: var(--accent);
   }
 
   .modal-subtitle {
@@ -409,267 +493,94 @@
   }
 
   /* Pagination */
-  .pagination-wrapper {
-    margin-top: 16px;
-  }
-
-  .pagination-wrapper .pagination {
-    flex-wrap: wrap;
-  }
+  .pagination-wrapper { margin-top: 16px; }
+  .pagination-wrapper .pagination { flex-wrap: wrap; }
 
   /* ===== RESPONSIVE BREAKPOINTS ===== */
 
-  /* Tablets and small laptops */
   @media (max-width: 1024px) {
-    .stats-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    .att-stats { grid-template-columns: repeat(3, 1fr); }
   }
 
-  /* Mobile */
   @media (max-width: 768px) {
-    .attendance-container {
-      padding: 0 12px;
-    }
+    .attendance-container { padding: 0 12px; }
 
-    .attendance-header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
+    .attendance-header { flex-direction: column; align-items: flex-start; }
+    .attendance-header-left h1 { font-size: 24px; }
+    .attendance-header-left p { font-size: 13px; }
+    .attendance-header-actions { width: 100%; }
+    .attendance-header-actions .btn { flex: 1; min-width: 80px; }
 
-    .attendance-header-left h1 {
-      font-size: 24px;
-    }
+    .att-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .att-stat { padding: 12px; }
+    .att-stat-value { font-size: 22px; }
+    .att-stat-label { font-size: 9px; }
 
-    .attendance-header-left p {
-      font-size: 13px;
-    }
+    .filters-container { padding: 16px; border-radius: 12px; }
+    .filters-form { flex-direction: column; align-items: stretch; gap: 10px; }
+    .filter-group { width: 100%; }
+    .filter-group .form-control { width: 100%; min-width: unset; }
+    .date-picker-wrap { width: 100%; }
+    .filter-actions { width: 100%; }
+    .filter-actions .btn { flex: 1; }
 
-    .attendance-header-actions {
-      width: 100%;
-    }
+    .role-pills { gap: 6px; }
+    .role-pill { padding: 6px 12px; font-size: 12px; }
 
-    .attendance-header-actions .btn {
-      flex: 1;
-      justify-content: center;
-      min-width: 80px;
-    }
-
-    .stats-grid {
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .stat-card {
-      padding: 12px;
-    }
-
-    .stat-card-value {
-      font-size: 22px;
-    }
-
-    .stat-card-label {
-      font-size: 9px;
-    }
-
-    .filters-container {
-      padding: 16px;
-    }
-
-    .filters-form {
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .filter-group {
-      width: 100%;
-    }
-
-    .filter-group .form-control {
-      width: 100%;
-      min-width: unset;
-    }
-
-    .date-picker-wrap {
-      width: 100%;
-    }
-
-    .filter-actions {
-      width: 100%;
-    }
-
-    .filter-actions .btn {
-      flex: 1;
-      justify-content: center;
-    }
-
-    .role-pills {
-      gap: 6px;
-    }
-
-    .role-pill {
-      padding: 6px 12px;
-      font-size: 12px;
-    }
-
-    .table-wrapper {
-      border-radius: 10px;
-    }
-
+    .table-wrapper { border-radius: 12px; }
     .attendance-table th,
-    .attendance-table td {
-      padding: 10px 12px;
-      font-size: 12px;
-    }
+    .attendance-table td { padding: 10px 12px; font-size: 12px; }
 
-    .user-avatar,
-    .user-avatar-placeholder {
-      width: 28px;
-      height: 28px;
-      font-size: 10px;
-    }
+    .att-avatar,
+    .att-avatar-ph { width: 28px; height: 28px; font-size: 10px; }
+    .user-name { font-size: 12px; }
+    .user-sub { font-size: 10px; }
 
-    .user-name {
-      font-size: 12px;
-    }
-
-    .user-sub {
-      font-size: 10px;
-    }
-
-    .modal-content {
-      padding: 24px 16px;
-      margin: 12px;
-    }
-
-    .modal-content form .form-control {
-      width: 100%;
-    }
-
-    .time-picker-wrap {
-      width: 100%;
-    }
-
-    .btn-sm {
-      padding: 5px 10px;
-      font-size: 10px;
-      min-height: 28px;
-    }
+    .modal-content { padding: 24px 16px; margin: 12px; }
+    .modal-content form .form-control { width: 100%; }
+    .time-picker-wrap { width: 100%; }
+    .attendance-container .btn-sm { padding: 5px 10px; font-size: 11px; min-height: 30px; }
   }
 
-  /* Small phones */
   @media (max-width: 480px) {
-    .attendance-container {
-      padding: 0 8px;
-    }
+    .attendance-container { padding: 0 8px; }
+    .attendance-header-left h1 { font-size: 20px; }
 
-    .attendance-header-left h1 {
-      font-size: 20px;
-    }
+    .att-stats { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+    .att-stat { padding: 10px 8px; border-radius: 10px; }
+    .att-stat-value { font-size: 18px; }
+    .att-stat-label { font-size: 8px; letter-spacing: 1px; margin-bottom: 4px; }
 
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-    }
+    .filters-container { padding: 12px; border-radius: 10px; }
 
-    .stat-card {
-      padding: 10px 8px;
-      border-radius: 8px;
-    }
-
-    .stat-card-value {
-      font-size: 18px;
-    }
-
-    .stat-card-label {
-      font-size: 8px;
-      letter-spacing: 1px;
-      margin-bottom: 4px;
-    }
-
-    .filters-container {
-      padding: 12px;
-      border-radius: 8px;
-    }
-
+    .attendance-table { min-width: 750px; }
     .attendance-table th,
-    .attendance-table td {
-      padding: 8px 10px;
-      font-size: 11px;
-    }
+    .attendance-table td { padding: 8px 10px; font-size: 11px; }
 
-    .attendance-table {
-      min-width: 750px;
-    }
+    .action-buttons { flex-direction: column; gap: 4px; }
+    .action-buttons .btn-sm { width: 100%; }
 
-    .action-buttons {
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .action-buttons .btn-sm {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .role-badge {
-      font-size: 10px;
-      padding: 3px 8px;
-    }
-
+    .role-badge { font-size: 9px; padding: 3px 8px; }
     .status-badge,
-    .method-badge {
-      font-size: 10px;
-      padding: 2px 6px;
-    }
+    .method-badge { font-size: 10px; padding: 2px 6px; }
 
-    .modal-content {
-      padding: 20px 12px;
-    }
-
-    .modal-title {
-      font-size: 16px;
-    }
-
-    .modal-subtitle {
-      font-size: 12px;
-    }
+    .modal-content { padding: 20px 12px; }
+    .modal-title { font-size: 16px; }
+    .modal-subtitle { font-size: 12px; }
   }
 
-  /* Extra small phones */
   @media (max-width: 360px) {
-    .stats-grid {
-      grid-template-columns: 1fr 1fr;
-      gap: 4px;
-    }
+    .att-stats { gap: 4px; }
+    .att-stat { padding: 8px 4px; }
+    .att-stat-value { font-size: 16px; }
 
-    .stat-card {
-      padding: 8px 4px;
-    }
-
-    .stat-card-value {
-      font-size: 16px;
-    }
-
-    .attendance-table {
-      min-width: 650px;
-    }
-
+    .attendance-table { min-width: 650px; }
     .attendance-table th,
-    .attendance-table td {
-      padding: 6px 8px;
-      font-size: 10px;
-    }
+    .attendance-table td { padding: 6px 8px; font-size: 10px; }
 
-    .user-avatar,
-    .user-avatar-placeholder {
-      width: 24px;
-      height: 24px;
-    }
-
-    .user-name {
-      font-size: 11px;
-    }
+    .att-avatar,
+    .att-avatar-ph { width: 24px; height: 24px; }
+    .user-name { font-size: 11px; }
   }
 </style>
 
@@ -677,7 +588,7 @@
   {{-- Header --}}
   <div class="attendance-header">
     <div class="attendance-header-left">
-      <h1>Attendance Log</h1>
+      <h1>Attendance <span>Log</span></h1>
       <p>Full attendance records with filters</p>
     </div>
     <div class="attendance-header-actions">
@@ -689,18 +600,18 @@
   </div>
 
   {{-- Stat Cards --}}
-  <div class="stats-grid">
+  <div class="att-stats">
     @foreach([
-      ['Total Visits',  $stats->total_visits ?? 0,  'var(--accent)'],
-      ['Inside Now',    $stats->inside_now ?? 0,     '#4ade80'],
-      ['Completed',     $stats->completed ?? 0,      '#60a5fa'],
-      ['Avg Duration',  ($stats->avg_duration ?? 0).'m', '#fbbf24'],
-      ['QR Scans',      $stats->qr_count ?? 0,       'var(--accent)'],
-      ['Manual',        $stats->manual_count ?? 0,   '#f87171'],
-    ] as [$label, $val, $color])
-    <div class="stat-card">
-      <div class="stat-card-label">{{ $label }}</div>
-      <div class="stat-card-value" style="color:{{ $color }};">{{ $val }}</div>
+      ['Total Visits',  $stats->total_visits ?? 0,       'var(--accent)',   'gold'],
+      ['Inside Now',    $stats->inside_now ?? 0,          'var(--success)',  'green'],
+      ['Completed',     $stats->completed ?? 0,           'var(--info)',     'blue'],
+      ['Avg Duration',  ($stats->avg_duration ?? 0).'m',  'var(--warning)',  'amber'],
+      ['QR Scans',      $stats->qr_count ?? 0,            'var(--accent)',   'gold'],
+      ['Manual',        $stats->manual_count ?? 0,        'var(--accent-2)', 'gold'],
+    ] as [$label, $val, $color, $glow])
+    <div class="att-stat {{ $glow }}">
+      <div class="att-stat-label">{{ $label }}</div>
+      <div class="att-stat-value" style="color:{{ $color }};">{{ $val }}</div>
     </div>
     @endforeach
   </div>
@@ -783,12 +694,12 @@
       $staffCount  = $logs->getCollection()->whereNull('member_id')->count();
     @endphp
     <div class="role-pill">
-      <span class="role-pill-dot" style="background:#4ade80;"></span>
+      <span class="role-pill-dot" style="background:var(--success);"></span>
       <span style="font-size:13px;font-weight:600;">Members:</span>
       <span style="font-size:13px;color:var(--accent);font-weight:700;">{{ $memberCount }}</span>
     </div>
     <div class="role-pill">
-      <span class="role-pill-dot" style="background:#fbbf24;"></span>
+      <span class="role-pill-dot" style="background:var(--warning);"></span>
       <span style="font-size:13px;font-weight:600;">Staff / Instructors:</span>
       <span style="font-size:13px;color:var(--accent);font-weight:700;">{{ $staffCount }}</span>
     </div>
@@ -816,8 +727,7 @@
           $isStaff = !$log->member_id && $log->staff_user_id;
 
           $rowRole      = 'Member';
-          $rowRoleColor = '#4ade80';
-          $rowRoleBg    = 'rgba(74,222,128,0.15)';
+          $rowRoleColor = 'var(--success)';
           $displayName  = $log->member?->name;
           $displayPhoto = $log->member?->user?->photo ?? $log->member?->photo ?? null;
           $subText      = $log->member?->email ?? $log->member?->membership_type ?? '—';
@@ -828,13 +738,17 @@
             $displayPhoto = $log->user->photo;
             $subText      = $log->user->email ?? 'Staff User';
 
+            // Theme variables so the colours adapt to dark / light mode
             $roleColorMap = [
-              'admin'      => ['#c8ff00', 'rgba(200,255,0,0.12)'],
-              'staff'      => ['#fbbf24', 'rgba(251,191,36,0.12)'],
-              'instructor' => ['#ff6b35', 'rgba(255,107,53,0.12)'],
+              'admin'      => 'var(--accent)',
+              'staff'      => 'var(--warning)',
+              'instructor' => 'var(--info)',
             ];
-            [$rowRoleColor, $rowRoleBg] = $roleColorMap[strtolower($log->user->role)] ?? ['#60a5fa','rgba(96,165,250,0.12)'];
+            $rowRoleColor = $roleColorMap[strtolower($log->user->role)] ?? 'var(--info)';
           }
+
+          $rowRoleBg     = 'color-mix(in srgb, '.$rowRoleColor.' 15%, transparent)';
+          $rowRoleBorder = 'color-mix(in srgb, '.$rowRoleColor.' 35%, transparent)';
 
           $displayName = $displayName ?? 'Unknown';
         @endphp
@@ -842,9 +756,9 @@
           <td>
             <div class="user-cell">
               @if($displayPhoto)
-                <img src="{{ asset('storage/'.$displayPhoto) }}" class="user-avatar" alt=""/>
+                <img src="{{ asset('storage/'.$displayPhoto) }}" class="att-avatar" alt=""/>
               @else
-                <div class="user-avatar-placeholder" style="background:{{ $rowRoleBg }};border:1px solid {{ $rowRoleColor }}44;color:{{ $rowRoleColor }};">
+                <div class="att-avatar-ph" style="background:{{ $rowRoleBg }};border:1px solid {{ $rowRoleBorder }};color:{{ $rowRoleColor }};">
                   {{ strtoupper(substr($displayName,0,2)) }}
                 </div>
               @endif
@@ -856,7 +770,7 @@
           </td>
 
           <td>
-            <span class="role-badge" style="background:{{ $rowRoleBg }};color:{{ $rowRoleColor }};">
+            <span class="role-badge" style="background:{{ $rowRoleBg }};color:{{ $rowRoleColor }};border-color:{{ $rowRoleBorder }};">
               <span class="role-badge-dot" style="background:{{ $rowRoleColor }};"></span>
               {{ $rowRole }}
             </span>
@@ -968,7 +882,7 @@
           </div>
         </div>
         <div style="display:flex;gap:10px;">
-          <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">
+          <button type="submit" class="btn btn-primary" style="flex:1;">
             Save Entry
           </button>
           <button type="button" class="btn btn-secondary"

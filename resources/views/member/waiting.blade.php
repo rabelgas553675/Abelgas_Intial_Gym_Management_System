@@ -9,127 +9,71 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
   <style>
     /* ── reset & base ── */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #0f0f0f;
-      color: #f0f0f0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px 16px;
+      font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background:#0d0d0d;
+      color:#f0f0f0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px 16px;
     }
-    .wrapper {
-      max-width: 520px;
-      width: 100%;
-      margin: 0 auto;
-    }
+    .wrapper { max-width:520px; width:100%; margin:0 auto; }
+
+    /* Charcoal & gold — keep in sync with layouts/member.blade.php */
     :root {
-      --accent: #c8ff00;
-      --surface: #1a1a1a;
-      --border: #2e2e2e;
-      --muted: #888;
-      --radius: 14px;
+      --accent:#e0a93b;
+      --accent-2:#f0c060;
+      --accent-dark:#b8862a;
+      --accent-soft:rgba(224,169,59,0.12);
+      --surface:#151515;
+      --border:#2a2a2a;
+      --muted:#888;
+      --radius:14px;
     }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px 20px;
-    }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px 20px; }
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--accent);
-      color: #111;
-      font-weight: 700;
-      font-size: 1rem;
-      padding: 14px 24px;
-      border-radius: 12px;
-      border: none;
-      text-decoration: none;
-      transition: background 0.2s, transform 0.1s;
-      cursor: pointer;
-      width: 100%;
+      display:inline-flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg, var(--accent-2), var(--accent-dark)); color:#1a1a1a;
+      font-weight:700; font-size:1rem; padding:14px 24px; border-radius:12px; border:none;
+      text-decoration:none; transition:box-shadow .2s, transform .1s; cursor:pointer; width:100%;
     }
-    .btn:hover { background: #b8e600; transform: scale(1.01); }
-    .btn-primary { background: var(--accent); color: #111; }
+    .btn:hover { box-shadow:0 6px 20px rgba(224,169,59,0.3); transform:scale(1.01); }
+    .btn-primary { background:linear-gradient(135deg, var(--accent-2), var(--accent-dark)); color:#1a1a1a; }
 
     /* ── status icon ── */
-    .status-icon-wrap {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 28px;
-    }
-    .status-pulse {
-      animation: pulse 2s infinite;
-      background: rgba(200,255,0,0.06);
-      border: 2px solid rgba(200,255,0,0.25);
-    }
-    .status-rejected {
-      background: rgba(248,113,113,0.08);
-      border: 2px solid rgba(248,113,113,0.3);
-    }
+    .status-icon-wrap { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 28px; }
+    .status-pulse { animation:pulse 2s infinite; background:rgba(224,169,59,0.08); border:2px solid rgba(224,169,59,0.3); }
+    .status-rejected { background:rgba(248,113,113,0.08); border:2px solid rgba(248,113,113,0.3); }
     @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(200,255,0,0.2); }
-      50%       { box-shadow: 0 0 0 14px rgba(200,255,0,0); }
+      0%, 100% { box-shadow:0 0 0 0 rgba(224,169,59,0.25); }
+      50%      { box-shadow:0 0 0 14px rgba(224,169,59,0); }
     }
 
     /* ── badge ── */
-    .badge {
-      display: inline-block;
-      padding: 8px 20px;
-      border-radius: 30px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-    .badge-pending {
-      background: rgba(200,255,0,0.07);
-      color: var(--accent);
-      border: 1px solid rgba(200,255,0,0.25);
-    }
-    .badge-rejected {
-      background: rgba(248,113,113,0.08);
-      color: #f87171;
-      border: 1px solid rgba(248,113,113,0.25);
-    }
+    .badge { display:inline-block; padding:8px 20px; border-radius:30px; font-size:0.7rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+    .badge-pending { background:var(--accent-soft); color:var(--accent); border:1px solid rgba(224,169,59,0.3); }
+    .badge-rejected { background:rgba(248,113,113,0.08); color:#f87171; border:1px solid rgba(248,113,113,0.25); }
 
     /* ── detail rows ── */
-    .detail-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-    }
-    .detail-row:last-of-type { border-bottom: none; }
-    .detail-label { color: var(--muted); }
-    .detail-value { font-weight: 600; color: #fff; }
-    .detail-value.accent { color: var(--accent); }
+    .detail-row { display:flex; justify-content:space-between; font-size:0.85rem; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .detail-row:last-of-type { border-bottom:none; }
+    .detail-label { color:var(--muted); }
+    .detail-value { font-weight:600; color:#fff; }
+    .detail-value.accent { color:var(--accent); }
 
-    .polling-status {
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-top: 10px;
-      text-align: center;
-    }
+    .polling-status { font-size:0.7rem; color:var(--muted); margin-top:10px; text-align:center; }
 
     /* ── responsive fine-tune ── */
-    @media (max-width: 420px) {
-      .wrapper { padding: 0 4px; }
-      .card { padding: 18px 14px; }
-      .status-icon-wrap { width: 68px; height: 68px; }
-      .status-icon-wrap svg { width: 30px; height: 30px; }
-      h1 { font-size: 1.3rem; }
-      .badge { font-size: 0.6rem; padding: 6px 16px; }
+    @media (max-width:420px) {
+      .wrapper { padding:0 4px; }
+      .card { padding:18px 14px; }
+      .status-icon-wrap { width:68px; height:68px; }
+      .status-icon-wrap svg { width:30px; height:30px; }
+      h1 { font-size:1.3rem; }
+      .badge { font-size:0.6rem; padding:6px 16px; }
     }
   </style>
 </head>
@@ -140,7 +84,7 @@
   <div style="text-align:center;">
     <!-- pending state (default) -->
     <div id="status-icon-wrap" class="status-icon-wrap status-pulse">
-      <svg width="36" height="36" fill="none" stroke="#c8ff00" stroke-width="1.5" viewBox="0 0 24 24">
+      <svg width="36" height="36" fill="none" stroke="#e0a93b" stroke-width="1.5" viewBox="0 0 24 24">
         <circle cx="12" cy="12" r="10"/>
         <polyline points="12 6 12 12 16 14"/>
       </svg>
@@ -164,7 +108,7 @@
 
   <!-- ─── SUBSCRIPTION DETAILS ─── -->
   <div class="card" style="margin-bottom:24px;">
-    <div style="font-size:0.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:16px;">
+    <div style="font-size:0.65rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:2px; margin-bottom:16px;">
       Your Subscription Details
     </div>
     <div>
@@ -244,7 +188,7 @@
         `;
       } else {
         iconWrap.innerHTML = `
-          <svg width="36" height="36" fill="none" stroke="#c8ff00" stroke-width="1.5" viewBox="0 0 24 24">
+          <svg width="36" height="36" fill="none" stroke="#e0a93b" stroke-width="1.5" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10"/>
             <polyline points="12 6 12 12 16 14"/>
           </svg>

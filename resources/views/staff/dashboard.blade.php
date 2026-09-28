@@ -1,10 +1,11 @@
 @extends('layouts.staff')
 @section('title', 'Staff Dashboard – APEX')
+@section('page_title', 'Dashboard')
 
 @section('content')
 
 {{-- Page Header --}}
-<div style="margin-bottom:32px;">
+<div style="margin-bottom:28px;">
   <h1 style="font-size:28px;font-weight:700;margin-bottom:4px;">
     Welcome, <span style="color:var(--accent);">{{ explode(' ', auth()->user()->name)[0] }}</span>
   </h1>
@@ -14,42 +15,42 @@
 {{-- Stat Cards --}}
 <div class="stat-grid">
 
-  <div class="stat-card">
+  <div class="stat-card green">
     <div class="stat-card-left">
       <div class="stat-label">Total Members</div>
       <div class="stat-value">{{ $stats['total'] }}</div>
       <div class="stat-sub stat-up">All time registrations</div>
     </div>
-    <div class="stat-icon icon-red">
+    <div class="stat-icon icon-green">
       <svg viewBox="0 0 24 24" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
       </svg>
     </div>
   </div>
 
-  <div class="stat-card">
+  <div class="stat-card orange">
     <div class="stat-card-left">
       <div class="stat-label">Active Members</div>
       <div class="stat-value">{{ $stats['active'] }}</div>
       <div class="stat-sub">Currently enrolled</div>
     </div>
-    <div class="stat-icon icon-red-dark">
+    <div class="stat-icon icon-orange">
       <svg viewBox="0 0 24 24" stroke-width="1.5">
-        <circle cx="12" cy="12" r="8" stroke="var(--success)" fill="none"/>
-        <circle cx="12" cy="12" r="3" fill="var(--success)" stroke="none"/>
+        <circle cx="12" cy="12" r="8" stroke="currentColor" fill="none"/>
+        <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
       </svg>
     </div>
   </div>
 
-  <div class="stat-card">
+  <div class="stat-card blue">
     <div class="stat-card-left">
       <div class="stat-label">This Month</div>
-      <div class="stat-value" style="font-size:28px;color:var(--accent);">
+      <div class="stat-value" style="font-size:28px;">
         ₱{{ number_format($thisMonth ?? 0, 0) }}
       </div>
       <div class="stat-sub">Monthly revenue</div>
     </div>
-    <div class="stat-icon icon-red-bright">
+    <div class="stat-icon icon-blue">
       <svg viewBox="0 0 24 24" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round"
               d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0
@@ -59,15 +60,15 @@
     </div>
   </div>
 
-  <div class="stat-card">
+  <div class="stat-card gold">
     <div class="stat-card-left">
       <div class="stat-label">Total Collected</div>
-      <div class="stat-value" style="font-size:28px;color:var(--accent);">
+      <div class="stat-value" style="font-size:28px;color:var(--accent-2);">
         ₱{{ number_format($totalCollected ?? 0, 0) }}
       </div>
       <div class="stat-sub">All time revenue</div>
     </div>
-    <div class="stat-icon" style="background:rgba(255,0,0,0.15);color:var(--accent);">
+    <div class="stat-icon icon-yellow">
       <svg viewBox="0 0 24 24" stroke-width="1.5">
         <path stroke-linecap="round" stroke-linejoin="round"
               d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0
@@ -175,7 +176,7 @@
           <div class="contact-item">
             <div class="contact-icon email-icon">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                   stroke="#ff4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8
                          M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
               </svg>
@@ -189,7 +190,7 @@
           <div class="contact-item">
             <div class="contact-icon phone-icon">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                   stroke="#ff4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493
                          a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516
                          l1.13-2.257a1 1 0 011.21-.502l4.493 1.498
@@ -231,12 +232,10 @@
           </div>
         </div>
 
-        <a id="detailsViewBtn" href="#" class="view-profile-btn"
-           onmouseover="this.style.background='#cc0000'"
-           onmouseout="this.style.background='var(--accent)'">
+        <a id="detailsViewBtn" href="#" class="view-profile-btn">
           View Full Profile
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-               stroke="#111" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17 8l4 4m0 0l-4 4m4-4H3"/>
           </svg>
         </a>
@@ -257,12 +256,15 @@
       $statusLabel = $isExpired  ? 'Expired'
                    : ($isExpiring ? 'Expiring Soon'
                    : 'Active');
-      $statusColor = $isExpired  ? '#ff3333'
-                   : ($isExpiring ? '#ff6b35'
-                   : '#ff4444');
-      $statusBg    = $isExpired  ? 'rgba(255,51,51,0.15)'
-                   : ($isExpiring ? 'rgba(255,107,53,0.15)'
-                   : 'rgba(255,68,68,0.15)');
+
+      // Theme-aware: these resolve to the same #f87171 / #fbbf24 / #4ade80 in dark mode,
+      // and to the readable light-theme colours in light mode.
+      $statusColor = $isExpired  ? 'var(--danger)'
+                   : ($isExpiring ? 'var(--warning)'
+                   : 'var(--success)');
+      $statusBg    = $isExpired  ? 'color-mix(in srgb, var(--danger) 15%, transparent)'
+                   : ($isExpiring ? 'color-mix(in srgb, var(--warning) 15%, transparent)'
+                   : 'color-mix(in srgb, var(--success) 15%, transparent)');
       $barColor    = $statusColor;
 
       $daysRemaining = $isExpired ? 0 : (int) now()->diffInDays($end);
@@ -371,106 +373,19 @@
 </div>
 
 <style>
-  /* ===== BLACK & RED THEME ===== */
-  
-  /* Base styles */
-  :root {
-    --accent: #ff2222;
-    --accent-hover: #cc0000;
-    --accent-glow: rgba(255,0,0,0.3);
-    --muted: #888888;
-    --border: #2a2a2a;
-    --surface: #0a0a0a;
-    --surface2: #141414;
-    --success: #ff4444;
-    --warning: #ff6b35;
-    --danger: #ff0000;
-    --text-primary: #ffffff;
-    --text-secondary: #cccccc;
-  }
-
-  body {
-    background: #000000;
-    color: var(--text-primary);
-  }
+  /* ===== CHARCOAL & GOLD THEME =====
+     Colours come from the CSS variables defined in layouts/staff.blade.php
+     (--accent, --accent-2, --accent-dark, --surface, --surface2, --border,
+      --text, --text-soft, --muted, --success, --warning, --danger, --info).
+     Change them there to re-theme this page. */
 
   /* Stat Grid */
   .stat-grid {
-    display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
   }
-
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 18px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.3s ease;
-  }
-
-  .stat-card:hover {
-    border-color: var(--accent);
-    box-shadow: 0 0 20px rgba(255,0,0,0.1);
-  }
-
-  .stat-card-left {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .stat-label {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--muted);
-  }
-
-  .stat-value {
-    font-size: 30px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: var(--text-primary);
-  }
-
-  .stat-sub {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-
-  .stat-up { color: var(--accent); }
-
-  .stat-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .stat-icon svg {
-    width: 24px;
-    height: 24px;
-    stroke: currentColor;
-    fill: none;
-  }
-
-  .icon-red { background: rgba(255,0,0,0.12); color: var(--accent); }
-  .icon-red-dark { background: rgba(200,0,0,0.15); color: #ff3333; }
-  .icon-red-bright { background: rgba(255,50,50,0.15); color: #ff4444; }
 
   /* Split Panel */
   .split-panel {
-    display: grid;
     grid-template-columns: 1fr 1.2fr;
     gap: 24px;
     margin-bottom: 28px;
@@ -501,6 +416,7 @@
     font-weight: 700;
     font-size: 16px;
     color: var(--accent);
+    margin-bottom: 0;
   }
 
   .members-search {
@@ -513,9 +429,12 @@
     gap: 6px;
     flex: 1 1 180px;
     min-width: 120px;
+    position: relative;
   }
 
   .members-search svg {
+    position: static;
+    transform: none;
     width: 16px;
     height: 16px;
     stroke: var(--muted);
@@ -527,40 +446,35 @@
     border: none;
     padding: 8px 0;
     font-size: 13px;
-    color: var(--text-primary);
+    color: var(--text);
     width: 100%;
     outline: none;
   }
 
   .members-search input::placeholder { color: var(--muted); }
-  .members-search input:focus { color: var(--accent); }
+  .members-search:focus-within { border-color: var(--accent); }
 
   .members-list {
     flex: 1;
     overflow-y: auto;
     padding: 8px 0;
+    max-height: none;
   }
 
-  .members-list::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .members-list::-webkit-scrollbar-track {
-    background: var(--surface);
-  }
-
-  .members-list::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: 3px;
-  }
+  .members-list::-webkit-scrollbar { width: 6px; }
+  .members-list::-webkit-scrollbar-track { background: var(--surface); }
+  .members-list::-webkit-scrollbar-thumb { background: var(--accent-dark); border-radius: 3px; }
 
   .member-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 20px;
+    margin-bottom: 0;
+    border-radius: 0;
     cursor: pointer;
     transition: all 0.2s ease;
+    border: none;
     border-left: 3px solid transparent;
     gap: 10px;
   }
@@ -571,7 +485,7 @@
   }
 
   .member-item.active-item {
-    background: rgba(255,0,0,0.08);
+    background: var(--accent-soft);
     border-left-color: var(--accent);
   }
 
@@ -596,8 +510,8 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(255,0,0,0.15);
-    border: 1px solid rgba(255,0,0,0.3);
+    background: var(--accent-soft);
+    border: 1px solid rgba(224,169,59,0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -617,7 +531,7 @@
   .member-item-name {
     font-weight: 600;
     font-size: 14px;
-    color: var(--text-primary);
+    color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -642,9 +556,9 @@
     flex-shrink: 0;
   }
 
-  .pill-active { background: rgba(255,68,68,0.2); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); }
-  .pill-expiring { background: rgba(255,107,53,0.2); color: #ff6b35; border: 1px solid rgba(255,107,53,0.3); }
-  .pill-expired { background: rgba(255,0,0,0.2); color: #ff0000; border: 1px solid rgba(255,0,0,0.3); }
+  .pill-active   { background: rgba(74,222,128,0.15);  color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
+  .pill-expiring { background: rgba(251,191,36,0.15);  color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
+  .pill-expired  { background: rgba(248,113,113,0.15); color: var(--danger);  border: 1px solid rgba(248,113,113,0.3); }
 
   /* Details Panel */
   .details-panel {
@@ -670,18 +584,13 @@
   .details-empty svg {
     width: 48px;
     height: 48px;
-    stroke: var(--border);
+    stroke: var(--muted);
+    opacity: 0.4;
     margin-bottom: 8px;
   }
 
-  .details-content {
-    display: none;
-    flex-direction: column;
-  }
-
-  .details-content.visible {
-    display: flex;
-  }
+  .details-content { display: none; flex-direction: column; }
+  .details-content.visible { display: flex; }
 
   .details-hero {
     padding: 28px 28px 20px;
@@ -690,7 +599,7 @@
     align-items: center;
     gap: 20px;
     flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(255,0,0,0.05), transparent);
+    background: linear-gradient(135deg, rgba(224,169,59,0.08), transparent);
   }
 
   .details-avatar {
@@ -698,13 +607,14 @@
     height: 72px;
     border-radius: 50%;
     flex-shrink: 0;
-    background: rgba(255,0,0,0.12);
+    background: var(--accent-soft);
     border: 2px solid var(--accent);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 26px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
     color: var(--accent);
     overflow: hidden;
   }
@@ -713,12 +623,10 @@
     font-size: 22px;
     font-weight: 800;
     margin-bottom: 8px;
-    color: var(--text-primary);
+    color: var(--text);
   }
 
-  .details-body {
-    padding: 22px 28px;
-  }
+  .details-body { padding: 22px 28px; }
 
   .section-label {
     font-size: 10px;
@@ -729,11 +637,7 @@
     margin-bottom: 12px;
   }
 
-  .contact-grid {
-    display: grid;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
+  .contact-grid { display: grid; gap: 10px; margin-bottom: 20px; }
 
   .contact-item {
     display: flex;
@@ -747,9 +651,7 @@
     transition: border-color 0.3s ease;
   }
 
-  .contact-item:hover {
-    border-color: var(--accent);
-  }
+  .contact-item:hover { border-color: rgba(224,169,59,0.5); }
 
   .contact-icon {
     width: 32px;
@@ -759,10 +661,10 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    color: var(--accent);
   }
 
-  .email-icon { background: rgba(255,68,68,0.15); }
-  .phone-icon { background: rgba(255,68,68,0.15); }
+  .email-icon, .phone-icon { background: var(--accent-soft); }
 
   .contact-label {
     font-size: 10px;
@@ -775,7 +677,7 @@
   .contact-value {
     font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text);
     word-break: break-word;
   }
 
@@ -794,13 +696,8 @@
     transition: border-color 0.3s ease;
   }
 
-  .subscription-item:hover {
-    border-color: var(--accent);
-  }
-
-  .subscription-item.full-width {
-    grid-column: span 2;
-  }
+  .subscription-item:hover { border-color: rgba(224,169,59,0.5); }
+  .subscription-item.full-width { grid-column: span 2; }
 
   .subscription-label {
     font-size: 10px;
@@ -810,15 +707,8 @@
     margin-bottom: 5px;
   }
 
-  .subscription-value {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text-primary);
-  }
-
-  .subscription-value.accent {
-    color: var(--accent);
-  }
+  .subscription-value { font-size: 14px; font-weight: 700; color: var(--text); }
+  .subscription-value.accent { color: var(--accent); }
 
   .days-remaining-container {
     padding: 14px;
@@ -844,14 +734,10 @@
     letter-spacing: 1px;
   }
 
-  .days-remaining-value {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--accent);
-  }
+  .days-remaining-value { font-size: 13px; font-weight: 700; color: var(--accent); }
 
   .progress-bar {
-    background: var(--border);
+    background: var(--surface3);
     border-radius: 999px;
     height: 6px;
     overflow: hidden;
@@ -872,8 +758,8 @@
     gap: 8px;
     width: 100%;
     padding: 13px;
-    background: var(--accent);
-    color: #000000;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+    color: #1a1a1a;
     font-size: 14px;
     font-weight: 800;
     border-radius: 10px;
@@ -883,9 +769,9 @@
   }
 
   .view-profile-btn:hover {
-    background: var(--accent-hover);
+    filter: brightness(1.08);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255,0,0,0.3);
+    box-shadow: 0 8px 25px rgba(224,169,59,0.25);
   }
 
   /* Payments */
@@ -906,76 +792,44 @@
     gap: 8px;
   }
 
-  .payments-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--accent);
-  }
+  .payments-title { font-size: 16px; font-weight: 700; color: var(--accent); }
 
   .view-all-btn {
     font-size: 12px;
-    color: var(--accent);
+    color: var(--text);
     text-decoration: none;
     font-weight: 600;
     padding: 5px 13px;
-    border: 1px solid rgba(255,0,0,0.3);
+    background: #0e0e10;
+    border: 1px solid var(--border);
     border-radius: 6px;
     transition: all 0.3s ease;
   }
 
-  .view-all-btn:hover {
-    background: var(--accent);
-    color: #000000;
-    border-color: var(--accent);
-  }
+  .view-all-btn:hover { color: var(--accent); border-color: rgba(224,169,59,0.45); }
 
-  .table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    min-width: 700px;
-  }
+  table { font-size: 13px; min-width: 700px; }
 
   th {
-    text-align: left;
     padding: 14px 16px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--accent);
-    border-bottom: 2px solid var(--accent);
-    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
   }
 
   td {
     padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
     vertical-align: middle;
-    color: var(--text-secondary);
+    color: var(--text-soft);
   }
 
-  tr:hover td {
-    background: rgba(255,0,0,0.03);
-  }
+  tr:hover td { background: rgba(255,255,255,0.02); }
 
-  tr:last-child td { border-bottom: none; }
+  .transaction-id { font-family: monospace; font-size: 11px; color: var(--muted); }
 
-  .transaction-id {
-    font-family: monospace;
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  .member-cell {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .member-cell { display: flex; align-items: center; gap: 10px; }
 
   .payment-avatar {
     width: 32px;
@@ -983,15 +837,15 @@
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 1px solid rgba(255,0,0,0.3);
+    border: 1px solid rgba(224,169,59,0.3);
   }
 
   .payment-avatar-placeholder {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(255,0,0,0.15);
-    border: 1px solid rgba(255,0,0,0.3);
+    background: var(--accent-soft);
+    border: 1px solid rgba(224,169,59,0.3);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1001,33 +855,11 @@
     flex-shrink: 0;
   }
 
-  .payment-member-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .payment-member-email {
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  .payment-plan {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-  }
-
-  .payment-amount {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--accent);
-  }
-
-  .payment-date {
-    font-size: 13px;
-    color: var(--muted);
-  }
+  .payment-member-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .payment-member-email { font-size: 11px; color: var(--muted); }
+  .payment-plan { font-size: 13px; font-weight: 600; color: var(--text-soft); }
+  .payment-amount { font-size: 14px; font-weight: 700; color: var(--accent-2); }
+  .payment-date { font-size: 13px; color: var(--muted); }
 
   .payment-status {
     display: inline-flex;
@@ -1037,16 +869,16 @@
     border-radius: 6px;
     font-size: 11px;
     font-weight: 700;
-    background: rgba(255,68,68,0.15);
-    color: var(--accent);
-    border: 1px solid rgba(255,68,68,0.2);
+    background: rgba(74,222,128,0.15);
+    color: var(--success);
+    border: 1px solid rgba(74,222,128,0.25);
   }
 
   .status-dot {
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: var(--accent);
+    background: var(--success);
     display: inline-block;
     animation: pulse-dot 1.5s infinite;
   }
@@ -1058,151 +890,44 @@
 
   /* ===== RESPONSIVE BREAKPOINTS ===== */
 
-  /* Tablets & small desktops */
   @media (max-width: 1024px) {
-    .stat-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .split-panel {
-      grid-template-columns: 1fr;
-    }
-
-    .members-panel {
-      max-height: 420px;
-    }
-
-    .details-panel {
-      min-height: 320px;
-    }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .split-panel { grid-template-columns: 1fr; }
+    .members-panel { max-height: 420px; }
+    .details-panel { min-height: 320px; }
   }
 
-  /* Mobile phones */
   @media (max-width: 640px) {
-    .stat-grid {
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .stat-card {
-      padding: 14px;
-    }
-
-    .stat-value {
-      font-size: 24px;
-    }
-
-    .stat-icon {
-      width: 36px;
-      height: 36px;
-    }
-
-    .stat-icon svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .split-panel {
-      gap: 16px;
-    }
-
-    .members-panel-header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 8px;
-    }
-
-    .members-search {
-      flex: 1;
-    }
-
-    .member-item {
-      padding: 10px 14px;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .member-item-left {
-      flex: 1;
-      min-width: 120px;
-    }
-
-    .status-pill {
-      font-size: 9px;
-      padding: 3px 10px;
-    }
-
-    .details-hero {
-      padding: 16px !important;
-      gap: 12px;
-    }
-
-    .details-avatar {
-      width: 56px;
-      height: 56px;
-      font-size: 20px;
-    }
-
-    .details-name {
-      font-size: 18px;
-    }
-
-    .details-body {
-      padding: 16px !important;
-    }
-
-    .subscription-grid {
-      grid-template-columns: 1fr !important;
-    }
-
-    .subscription-item.full-width {
-      grid-column: span 1 !important;
-    }
-
-    .contact-item {
-      flex-wrap: wrap;
-    }
-
-    .payments-header {
-      padding: 14px 16px;
-    }
-
-    table {
-      min-width: 600px;
-      font-size: 12px;
-    }
-
-    th, td {
-      padding: 10px 12px;
-      white-space: nowrap;
-    }
-
-    .payment-amount {
-      font-size: 13px;
-    }
+    .stat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { padding: 14px; }
+    .stat-value { font-size: 24px; }
+    .stat-icon { width: 36px; height: 36px; }
+    .stat-icon svg { width: 20px; height: 20px; }
+    .split-panel { gap: 16px; }
+    .members-panel-header { flex-direction: column; align-items: stretch; gap: 8px; }
+    .members-search { flex: 1; }
+    .member-item { padding: 10px 14px; flex-wrap: wrap; gap: 6px; }
+    .member-item-left { flex: 1; min-width: 120px; }
+    .status-pill { font-size: 9px; padding: 3px 10px; }
+    .details-hero { padding: 16px !important; gap: 12px; }
+    .details-avatar { width: 56px; height: 56px; font-size: 20px; }
+    .details-name { font-size: 18px; }
+    .details-body { padding: 16px !important; }
+    .subscription-grid { grid-template-columns: 1fr !important; }
+    .subscription-item.full-width { grid-column: span 1 !important; }
+    .contact-item { flex-wrap: wrap; }
+    .payments-header { padding: 14px 16px; }
+    table { min-width: 600px; font-size: 12px; }
+    th, td { padding: 10px 12px; white-space: nowrap; }
+    .payment-amount { font-size: 13px; }
   }
 
-  /* Small phones */
   @media (max-width: 400px) {
-    .stat-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .stat-card {
-      padding: 12px;
-    }
-
-    .stat-value {
-      font-size: 22px;
-    }
-
-    .member-item-name {
-      font-size: 13px;
-    }
-
-    .member-item-email {
-      font-size: 10px;
-    }
+    .stat-grid { grid-template-columns: 1fr; }
+    .stat-card { padding: 12px; }
+    .stat-value { font-size: 22px; }
+    .member-item-name { font-size: 13px; }
+    .member-item-email { font-size: 10px; }
   }
 </style>
 
@@ -1226,7 +951,7 @@ function showMemberDetail(id, el) {
     `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;
                   border-radius:100px;font-size:12px;font-weight:700;
                   background:${md.dataset.statusBg};color:${md.dataset.statusColor};
-                  border:1px solid ${md.dataset.statusColor}44;">
+                  border:1px solid color-mix(in srgb, ${md.dataset.statusColor} 27%, transparent);">
        <span style="width:6px;height:6px;border-radius:50%;
                     background:${md.dataset.statusColor};display:inline-block;"></span>
        ${md.dataset.status}
