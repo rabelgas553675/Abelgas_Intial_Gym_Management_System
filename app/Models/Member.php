@@ -39,6 +39,8 @@ class Member extends Model
         'address',
         'membership_type',
         'fitness_plan',
+        'coach_membership_type',
+        'coach_status',
         'start_date',
         'end_date',
         'fee',

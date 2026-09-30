@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use App\Models\Payment;
+use App\Models\User;
 use App\Services\Algorithms\MergeSort;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -124,12 +125,19 @@ class StaffController extends Controller
         $totalCollected = Payment::sum('amount');
         $totalCount     = Payment::count();
 
+        $instructors = User::where('role', 'instructor')->get();
+        $gymRates = Payment::gymRates();
+        $coachRates = Payment::coachRates();
+
         return view('staff.payments', compact(
             'members',
             'payments',
             'thisMonth',
             'totalCollected',
-            'totalCount'
+            'totalCount',
+            'instructors',
+            'gymRates',
+            'coachRates'
         ));
     }
 

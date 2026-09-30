@@ -12,51 +12,44 @@
   <p style="color:var(--muted);font-size:14px;">Manage and monitor your assigned members</p>
 </div>
 
-{{-- Stat Cards --}}
-<div class="stat-grid">
-
-  <div class="stat-card green">
-    <div class="stat-card-left">
-      <div class="stat-label">Total Members</div>
-      <div class="stat-value">{{ count($members) }}</div>
-      <div class="stat-sub stat-up">Assigned to you</div>
+    {{-- Stat Cards --}}
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="stat-card-left">
+                <div class="stat-label">Total Members</div>
+                <div class="stat-value">{{ count($members) }}</div>
+            </div>
+            <div class="stat-icon icon-green">
+                <svg viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-left">
+                <div class="stat-label">Active</div>
+                <div class="stat-value">{{ $active }}</div>
+            </div>
+            <div class="stat-icon icon-orange">
+                <svg viewBox="0 0 24 24" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="8" stroke="var(--success)"/>
+                    <circle cx="12" cy="12" r="3" fill="var(--success)" stroke="none"/>
+                </svg>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-left">
+                <div class="stat-label">Expiring Soon</div>
+                <div class="stat-value" style="color:var(--warning);">{{ $nearDue }}</div>
+            </div>
+            <div class="stat-icon icon-yellow">
+                <svg viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                </svg>
+            </div>
+        </div>
     </div>
-    <div class="stat-icon icon-green">
-      <svg viewBox="0 0 24 24" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-      </svg>
-    </div>
-  </div>
-
-  <div class="stat-card blue">
-    <div class="stat-card-left">
-      <div class="stat-label">Active</div>
-      <div class="stat-value">{{ $active }}</div>
-      <div class="stat-sub">Currently enrolled</div>
-    </div>
-    <div class="stat-icon icon-blue">
-      <svg viewBox="0 0 24 24" stroke-width="1.5">
-        <circle cx="12" cy="12" r="8" stroke="currentColor" fill="none"/>
-        <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>
-      </svg>
-    </div>
-  </div>
-
-  <div class="stat-card orange">
-    <div class="stat-card-left">
-      <div class="stat-label">Expiring Soon</div>
-      <div class="stat-value">{{ $nearDue }}</div>
-      <div class="stat-sub">Within 7 days</div>
-    </div>
-    <div class="stat-icon icon-orange">
-      <svg viewBox="0 0 24 24" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-      </svg>
-    </div>
-  </div>
-
-</div>
 
 {{-- Split Panel --}}
 <div class="split-panel">

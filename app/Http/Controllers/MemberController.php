@@ -489,9 +489,10 @@ class MemberController extends Controller
 
         // ── GreedyScheduler: compute fees ─────────────────────────────────────
         $coachPlan   = $request->filled('instructor_id') ? $request->coach_membership_type : null;
+        $instructorId = $request->filled('instructor_id') ? (int) $request->instructor_id : null;
         $gymAmount   = GreedyScheduler::computeGymFee($request->membership_type);
-        $coachAmount = GreedyScheduler::computeCoachFee($coachPlan);
-        $totalAmount = GreedyScheduler::computeTotalFee($request->membership_type, $coachPlan);
+        $coachAmount = GreedyScheduler::computeCoachFee($coachPlan, $instructorId);
+        $totalAmount = GreedyScheduler::computeTotalFee($request->membership_type, $coachPlan, $instructorId);
 
         // ── GreedyScheduler: compute end date ─────────────────────────────────
         $start = Carbon::now();

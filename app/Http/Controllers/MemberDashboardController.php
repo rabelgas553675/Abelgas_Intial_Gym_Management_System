@@ -66,8 +66,9 @@ class MemberDashboardController extends Controller
             return redirect()->route('member.select-plan');
         }
 
-        // If already approved or no coach involved, go straight to dashboard
-        if (in_array($member->coach_status, ['approved', 'none', null])) {
+        // Pending or rejected coach requests should return to the member home page
+        // instead of leaving them stuck on the waiting screen.
+        if (in_array($member->coach_status, ['approved', 'none', null, 'pending', 'rejected'])) {
             return redirect()->route('member.dashboard');
         }
 
@@ -125,8 +126,9 @@ class MemberDashboardController extends Controller
 
         // ── GreedyScheduler: compute fees ────────────────────────────────────
         $coachPlan   = $request->filled('instructor_id') ? $request->coach_membership_type : null;
+        $instructorId = $request->filled('instructor_id') ? (int) $request->instructor_id : null;
         $gymAmount   = GreedyScheduler::computeGymFee($request->membership_type);
-        $coachAmount = GreedyScheduler::computeCoachFee($coachPlan);
+        $coachAmount = GreedyScheduler::computeCoachFee($coachPlan, $instructorId);
 
         // ── GreedyScheduler: compute end date ────────────────────────────────
         $start = Carbon::now();
@@ -206,8 +208,8 @@ class MemberDashboardController extends Controller
             DB::commit();
 
             if ($request->filled('instructor_id')) {
-                return redirect()->route('member.waiting')
-                                 ->with('success', 'Subscription submitted! Waiting for coach approval.');
+                return redirect()->route('member.dashboard')
+                                 ->with('success', 'Subscription submitted successfully.');
             }
 
             return redirect()->route('member.receipt', $gymPayment->id)

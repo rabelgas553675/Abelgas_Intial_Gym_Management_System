@@ -223,6 +223,13 @@
                 @php
                     $selectedInst = old('instructor_id') ?? ($member?->instructor_id ?? '');
                     $noInstSelected = ($selectedInst === '' || $selectedInst === null);
+                    $instructorRateMap = [];
+                    foreach ($instructors ?? [] as $inst) {
+                        $instructorRateMap[(string) $inst->id] = \App\Models\Payment::rateSettings((int) $inst->id)['coach'];
+                    }
+                    $selectedInstructorRates = $selectedInst && isset($instructorRateMap[(string) $selectedInst])
+                        ? $instructorRateMap[(string) $selectedInst]
+                        : \App\Models\Payment::defaultCoachRates();
                 @endphp
 
                 <div class="grid-3" style="margin-bottom: 20px;">
@@ -266,7 +273,7 @@
                         Coach Subscription Duration
                     </h3>
                     @php
-                        $coachRates = \App\Models\Payment::coachRates();
+                        $coachRates = $selectedInstructorRates ?? \App\Models\Payment::defaultCoachRates();
                         $coachDurations = [
                             ['type'=>'Monthly', 'price'=>(string)($coachRates['Monthly'] ?? 300), 'display'=>'₱'.number_format($coachRates['Monthly'] ?? 300, 0), 'label'=>'₱'.number_format($coachRates['Monthly'] ?? 300, 0).' / Month', 'days'=>'30 days'],
                             ['type'=>'Quarterly', 'price'=>(string)($coachRates['Quarterly'] ?? 1200), 'display'=>'₱'.number_format($coachRates['Quarterly'] ?? 1200, 0), 'label'=>'₱'.number_format($coachRates['Quarterly'] ?? 1200, 0).' / Quarter', 'days'=>'90 days'],
@@ -330,6 +337,36 @@
         (function() {
             document.addEventListener('DOMContentLoaded', function() {
                 const coachContainer = document.getElementById('coach-duration-container');
+                const defaultCoachRates = @json(\App\Models\Payment::defaultCoachRates());
+                const instructorCoachRates = @json($instructorRateMap ?? []);
+
+                function applyInstructorCoachRates() {
+                    const instructorRadio = document.querySelector('.instructor-radio:checked');
+                    const selectedInstructorId = instructorRadio ? instructorRadio.value : '';
+                    const rates = selectedInstructorId && instructorCoachRates[selectedInstructorId]
+                        ? instructorCoachRates[selectedInstructorId]
+                        : defaultCoachRates;
+
+                    document.querySelectorAll('.coach-radio').forEach(function(radio) {
+                        const card = radio.closest('label')?.querySelector('.card');
+                        const price = rates[radio.value] ?? 0;
+                        if (card) {
+                            const priceEl = card.querySelector('.card-price');
+                            const descEl = card.querySelector('.card-desc');
+                            if (priceEl) priceEl.textContent = '₱' + Number(price).toLocaleString('en-PH');
+                            if (descEl) {
+                                const labels = {
+                                    Monthly: '₱' + Number(price).toLocaleString('en-PH') + ' / Month',
+                                    Quarterly: '₱' + Number(price).toLocaleString('en-PH') + ' / Quarter',
+                                    'Semi-Annual': '₱' + Number(price).toLocaleString('en-PH') + ' / 6 Months',
+                                    Annually: '₱' + Number(price).toLocaleString('en-PH') + ' / Year',
+                                };
+                                descEl.textContent = labels[radio.value] || descEl.textContent;
+                            }
+                            radio.dataset.price = String(price);
+                        }
+                    });
+                }
 
                 function updateSummary() {
                     const planRadio = document.querySelector('.plan-radio:checked');
@@ -407,7 +444,15 @@
                 wireRadios('.instructor-radio', 'instructor-card');
                 wireRadios('.coach-radio', 'coach-card');
 
+                document.querySelectorAll('.instructor-radio').forEach(function(radio) {
+                    radio.addEventListener('change', function() {
+                        applyInstructorCoachRates();
+                        updateSummary();
+                    });
+                });
+
                 // run once
+                applyInstructorCoachRates();
                 updateSummary();
             });
         })();

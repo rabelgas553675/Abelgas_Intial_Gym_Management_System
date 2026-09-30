@@ -66,11 +66,11 @@ class ReportController extends Controller
     private function allowedTypesForUser(User $user): array
     {
         if ($user->isAdmin()) {
-            return ['payment', 'attendance', 'workout'];
+            return ['payment', 'attendance', 'workout', 'member'];
         }
 
         if ($user->isStaff()) {
-            return ['payment', 'attendance'];
+            return ['payment', 'attendance', 'member'];
         }
 
         if ($user->isInstructor()) {
@@ -127,8 +127,74 @@ class ReportController extends Controller
             'payment' => $this->paymentReport($window, $user),
             'attendance' => $this->attendanceReport($window, $user),
             'workout' => $this->workoutReport($window, $user),
+            'member' => $this->memberReport($window, $user),
             default => $this->attendanceReport($window, $user),
         };
+    }
+
+    private function buildChartData(string $type, array $window, User $user): array
+    {
+        $start = Carbon::parse($window[0]);
+        $end = Carbon::parse($window[1]);
+        $labels = [];
+        $values = [];
+
+        $cursor = $start->copy();
+        while ($cursor->lte($end)) {
+            $labels[] = $cursor->format($start->diffInDays($end) > 12 ? 'M d' : 'M d');
+            $cursor->addDay();
+        }
+
+        if ($type === 'payment') {
+            $query = Payment::query()->whereBetween('payment_date', $window);
+            if ($user->isInstructor()) {
+                $query->where('payment_type', 'coach_fee')->where('instructor_id', $user->id);
+            }
+
+            $totals = $query->get()->groupBy(fn ($payment) => $payment->payment_date->format('Y-m-d'))
+                ->map(fn ($rows) => (float) $rows->sum('amount'));
+
+            foreach ($start->daysUntil($end->copy()->addDay()) as $date) {
+                $values[] = (float) ($totals[$date->format('Y-m-d')] ?? 0);
+            }
+        } elseif ($type === 'attendance') {
+            $query = Attendance::query()->whereBetween('date', $window);
+            if ($user->isInstructor()) {
+                $memberIds = Member::where('instructor_id', $user->id)->pluck('id');
+                $query->whereIn('member_id', $memberIds);
+            }
+
+            $totals = $query->get()->groupBy(fn ($record) => $record->date->format('Y-m-d'))
+                ->map(fn ($rows) => $rows->count());
+
+            foreach ($start->daysUntil($end->copy()->addDay()) as $date) {
+                $values[] = (float) ($totals[$date->format('Y-m-d')] ?? 0);
+            }
+        } elseif ($type === 'workout') {
+            $query = WorkoutPlan::query()->whereBetween('scheduled_date', $window);
+            if ($user->isInstructor()) {
+                $query->where('instructor_id', $user->id);
+            }
+
+            $totals = $query->get()->groupBy(fn ($plan) => $plan->scheduled_date->format('Y-m-d'))
+                ->map(fn ($rows) => $rows->count());
+
+            foreach ($start->daysUntil($end->copy()->addDay()) as $date) {
+                $values[] = (float) ($totals[$date->format('Y-m-d')] ?? 0);
+            }
+        } else {
+            $totals = Member::query()->whereBetween('created_at', $window)->get()->groupBy(fn ($member) => $member->created_at->format('Y-m-d'))
+                ->map(fn ($rows) => $rows->count());
+
+            foreach ($start->daysUntil($end->copy()->addDay()) as $date) {
+                $values[] = (float) ($totals[$date->format('Y-m-d')] ?? 0);
+            }
+        }
+
+        return [
+            'labels' => $labels,
+            'values' => $values,
+        ];
     }
 
     private function paymentReport(array $window, User $user): array
@@ -176,7 +242,58 @@ class ReportController extends Controller
             'subtitle' => 'Generated for the selected time frame.',
             'stats' => $stats,
             'rows' => $rows,
+            'chart' => $this->buildChartData('payment', $window, $user),
             'empty' => $payments->isEmpty(),
+        ];
+    }
+
+    private function memberReport(array $window, User $user): array
+    {
+        $allMembers = Member::query()->get();
+        $newMembers = Member::query()
+            ->whereBetween('created_at', $window)
+            ->orderByDesc('created_at')
+            ->get();
+
+        if ($newMembers->isEmpty() && !$allMembers->isEmpty()) {
+            $newMembers = $allMembers->sortByDesc('created_at')->take(10);
+        }
+
+        $stats = [
+            [
+                'label' => 'Total Members',
+                'value' => (string) $allMembers->count(),
+                'tone' => 'green',
+            ],
+            [
+                'label' => 'New This Period',
+                'value' => (string) $newMembers->count(),
+                'tone' => 'blue',
+            ],
+            [
+                'label' => 'Active Members',
+                'value' => (string) $allMembers->where('status', 'Active')->count(),
+                'tone' => 'orange',
+            ],
+        ];
+
+        $rows = $newMembers->map(function ($member) {
+            return [
+                'name' => $member->name ?? 'Unnamed member',
+                'email' => $member->email ?? '—',
+                'status' => $member->status ?? 'Active',
+                'plan' => $member->fitness_plan ?? '—',
+                'date' => $member->created_at ? $member->created_at->format('M d, Y') : '—',
+            ];
+        })->all();
+
+        return [
+            'title' => 'Member report',
+            'subtitle' => 'Current membership totals and new member sign-ups.',
+            'stats' => $stats,
+            'rows' => $rows,
+            'chart' => $this->buildChartData('member', $window, $user),
+            'empty' => $allMembers->isEmpty() && $newMembers->isEmpty(),
         ];
     }
 
@@ -230,6 +347,7 @@ class ReportController extends Controller
             'subtitle' => 'Daily attendance and session records.',
             'stats' => $stats,
             'rows' => $rows,
+            'chart' => $this->buildChartData('attendance', $window, $user),
             'empty' => $records->isEmpty(),
         ];
     }
@@ -278,6 +396,7 @@ class ReportController extends Controller
             'subtitle' => 'Exercise schedules and completion status.',
             'stats' => $stats,
             'rows' => $rows,
+            'chart' => $this->buildChartData('workout', $window, $user),
             'empty' => $plans->isEmpty(),
         ];
     }
@@ -288,6 +407,7 @@ class ReportController extends Controller
             'payment' => ['Member', 'Type', 'Date', 'Method', 'Amount'],
             'attendance' => ['Name', 'Role', 'Date', 'Time In', 'Time Out', 'Duration'],
             'workout' => ['Member', 'Session', 'Date', 'Status', 'Instructor'],
+            'member' => ['Name', 'Email', 'Date Joined', 'Plan', 'Status'],
             default => ['Name', 'Details'],
         };
 
@@ -302,6 +422,11 @@ class ReportController extends Controller
 
             if ($type === 'attendance') {
                 fputcsv($buffer, [$row['name'], $row['role'], $row['date'], $row['time_in'], $row['time_out'], $row['duration']]);
+                continue;
+            }
+
+            if ($type === 'member') {
+                fputcsv($buffer, [$row['name'], $row['email'], $row['date'], $row['plan'], $row['status']]);
                 continue;
             }
 

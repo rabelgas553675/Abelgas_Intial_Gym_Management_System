@@ -37,6 +37,38 @@
             min-width: 150px;
             background: #f9fafb;
         }
+        .chart-box {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #f9fafb;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .chart-bars {
+            display: flex;
+            align-items: end;
+            gap: 8px;
+            height: 180px;
+            margin-top: 12px;
+        }
+        .chart-bar-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            height: 100%;
+            color: #6b7280;
+            font-size: 10px;
+            text-align: center;
+        }
+        .chart-bar {
+            width: 100%;
+            max-width: 34px;
+            min-height: 8px;
+            border-radius: 6px 6px 0 0;
+            background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+        }
         .label {
             display: block;
             font-size: 11px;
@@ -86,6 +118,27 @@
         @endforeach
     </div>
 
+    @if(!empty($report['chart']['labels'] ?? []))
+        <div class="chart-box">
+            <strong>Analytics</strong>
+            <div class="chart-bars">
+                @php
+                    $chart = $report['chart'] ?? ['labels' => [], 'values' => []];
+                    $values = $chart['values'] ?? [];
+                    $labels = $chart['labels'] ?? [];
+                    $max = max(max($values), 1);
+                @endphp
+                @foreach($values as $index => $value)
+                    @php $height = max(10, ($value / $max) * 100); @endphp
+                    <div class="chart-bar-wrap">
+                        <div class="chart-bar" style="height: {{ $height }}%;"></div>
+                        <span>{{ $labels[$index] ?? '' }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     @if($report['empty'])
         <p>No data available for this period.</p>
     @else
@@ -105,6 +158,12 @@
                         <th>Time In</th>
                         <th>Time Out</th>
                         <th>Duration</th>
+                    @elseif($type === 'member')
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Date Joined</th>
+                        <th>Plan</th>
+                        <th>Status</th>
                     @else
                         <th>Member</th>
                         <th>Session</th>
@@ -130,6 +189,12 @@
                             <td>{{ $row['time_in'] }}</td>
                             <td>{{ $row['time_out'] }}</td>
                             <td>{{ $row['duration'] }}</td>
+                        @elseif($type === 'member')
+                            <td>{{ $row['name'] }}</td>
+                            <td>{{ $row['email'] }}</td>
+                            <td>{{ $row['date'] }}</td>
+                            <td>{{ $row['plan'] }}</td>
+                            <td>{{ $row['status'] }}</td>
                         @else
                             <td>{{ $row['name'] }}</td>
                             <td>{{ $row['title'] }}</td>
