@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use App\Models\Payment;
+use App\Models\PaymentSetting;
 use App\Models\User;
 use App\Services\Algorithms\MergeSort;
 use App\Services\Algorithms\BinarySearch;
@@ -121,13 +122,55 @@ class PaymentController extends Controller
         // MergeSort: alphabetical sort — no DB ordering involved
         $members = MergeSort::sortBy($membersRaw, 'name', 'asc');
 
+        $rates = Payment::rateSettings();
+
         return view('admin.payments', compact(
             'totalCount', 'thisMonth', 'totalCollected',
             'totalCoachFees', 'thisMonthCoachFees', 'instructorsPaidCount',
             'instructorLeaderboard',
             'payments', 'coachFeePayments',
-            'members'
+            'members', 'rates'
         ));
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $request->validate([
+            'gym_monthly' => 'required|integer|min:1',
+            'gym_quarterly' => 'required|integer|min:1',
+            'gym_semi_annual' => 'required|integer|min:1',
+            'gym_annually' => 'required|integer|min:1',
+            'coach_monthly' => 'required|integer|min:1',
+            'coach_quarterly' => 'required|integer|min:1',
+            'coach_semi_annual' => 'required|integer|min:1',
+            'coach_annually' => 'required|integer|min:1',
+        ]);
+
+        $factors = [
+            'gym' => [
+                'Monthly' => $request->gym_monthly,
+                'Quarterly' => $request->gym_quarterly,
+                'Semi-Annual' => $request->gym_semi_annual,
+                'Annually' => $request->gym_annually,
+            ],
+            'coach' => [
+                'Monthly' => $request->coach_monthly,
+                'Quarterly' => $request->coach_quarterly,
+                'Semi-Annual' => $request->coach_semi_annual,
+                'Annually' => $request->coach_annually,
+            ],
+        ];
+
+        foreach ($factors as $group => $plans) {
+            foreach ($plans as $plan => $amount) {
+                PaymentSetting::updateOrCreate(
+                    ['key' => $group . '_' . $plan],
+                    ['value' => (string) $amount]
+                );
+            }
+        }
+
+        return back()->with('success', 'Subscription rates updated successfully.');
     }
 
     /**
@@ -137,23 +180,34 @@ class PaymentController extends Controller
     {
         $request->validate([
             'member_id'    => 'required|exists:members,id',
-            'amount'       => 'required|numeric|min:0',
+            'record_type'  => 'required|in:gym,coach',
+            'subscription_type' => 'nullable|in:Monthly,Quarterly,Semi-Annual,Annually',
+            'amount'       => 'nullable|required_without:subscription_type|numeric|min:0',
             'payment_date' => 'required|date',
             'method'       => 'required|in:Cash,GCash,Bank Transfer,Card',
             'notes'        => 'nullable|string|max:500',
+            'instructor_id' => 'nullable|exists:users,id',
         ]);
+
+        $amount = $request->filled('subscription_type')
+            ? ($request->record_type === 'gym'
+                ? Payment::gymRate($request->subscription_type)
+                : Payment::coachRate($request->subscription_type))
+            : (float) $request->amount;
 
         Payment::create([
             'member_id'      => $request->member_id,
-            'payment_type'   => 'gym_fee',
-            'instructor_id'  => null,
-            'platform_fee'   => $request->amount,
+            'payment_type'   => $request->record_type === 'gym' ? 'gym_fee' : 'coach_fee',
+            'instructor_id'  => $request->record_type === 'coach' ? ($request->instructor_id ?? auth()->id()) : null,
+            'platform_fee'   => $amount,
             'receipt_number' => Payment::generateReceiptNumber(),
-            'amount'         => $request->amount,
+            'amount'         => $amount,
+            'membership_type' => $request->subscription_type ?? 'Monthly',
+            'fitness_plan'   => $request->fitness_plan ?? 'Custom',
             'payment_date'   => $request->payment_date,
             'method'         => $request->input('method'),
             'status'         => 'Paid',
-            'notes'          => $request->notes,
+            'notes'          => $request->notes ?? ($request->record_type === 'gym' ? 'Gym subscription payment' : 'Instructor subscription payment'),
             'processed_by'   => auth()->id(),
         ]);
 

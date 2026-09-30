@@ -11,6 +11,7 @@ use App\Http\Controllers\WorkoutPlanController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\CoachRequestController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 // Landing page (public)
@@ -36,6 +37,10 @@ Route::middleware(['auth'])->group(function () {
 
     // ── Plans (public view) ─────────────────────────────────────
     Route::get('/plans', fn() => view('plans'))->name('plans');
+
+    // ── Reports ─────────────────────────────────────────────────
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
     // ── QR CODE MANAGEMENT ──────────────────────────────────────
     Route::get('/users/{user}/qr/print',       [QrCodeController::class, 'printCard'])->name('qr.print');
@@ -128,9 +133,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/members/{member}/receipt', [MemberController::class, 'receipt'])->name('members.receipt');
 
         // Admin Payment Routes
-        Route::get('/payments',                 [PaymentController::class, 'index'])  ->name('payments.index');
-        Route::post('/payments',                [PaymentController::class, 'store'])  ->name('payments.store');
-        Route::delete('/payments/{payment}',    [PaymentController::class, 'destroy'])->name('payments.destroy');
+        Route::get('/payments',                 [PaymentController::class, 'index'])           ->name('payments.index');
+        Route::post('/payments',                [PaymentController::class, 'store'])           ->name('payments.store');
+        Route::post('/payments/settings',       [PaymentController::class, 'updateSettings'])  ->name('payments.settings');
+        Route::delete('/payments/{payment}',    [PaymentController::class, 'destroy'])         ->name('payments.destroy');
 
         // User Management
         Route::get('/users',                          [UserController::class, 'index'])         ->name('users.index');

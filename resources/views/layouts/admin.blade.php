@@ -301,6 +301,14 @@
         </svg>
         Payments
       </a>
+      <a href="{{ route('reports.index') }}"
+         class="nav-item {{ $activeNav === 'reports' ? 'active' : '' }}">
+        <svg viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h8l5 5v13a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5M9 13h6M9 17h6"/>
+        </svg>
+        Reports
+      </a>
       <a href="{{ route('staff.profile') }}"
          class="nav-item {{ $activeNav === 'staff.profile' ? 'active' : '' }}">
         <svg viewBox="0 0 24 24" stroke-width="2">
@@ -348,6 +356,14 @@
           <line x1="1" y1="10" x2="23" y2="10"/>
         </svg>
         Payments
+      </a>
+      <a href="{{ route('reports.index') }}"
+         class="nav-item {{ $activeNav === 'reports' ? 'active' : '' }}">
+        <svg viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7 3h8l5 5v13a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v5h5M9 13h6M9 17h6"/>
+        </svg>
+        Reports
       </a>
       <a href="{{ route('users.index') }}"
          class="nav-item {{ $activeNav === 'users' ? 'active' : '' }}">

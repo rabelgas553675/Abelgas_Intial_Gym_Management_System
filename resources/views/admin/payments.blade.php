@@ -991,6 +991,14 @@
                     @csrf
 
                     <div class="form-group">
+                        <label class="form-label">Payment Type</label>
+                        <select name="record_type" class="form-control" required>
+                            <option value="gym" {{ old('record_type', 'gym') == 'gym' ? 'selected' : '' }}>Gym Subscription</option>
+                            <option value="coach" {{ old('record_type') == 'coach' ? 'selected' : '' }}>Instructor Payment</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label">Member</label>
                         <select name="member_id" class="form-control" required>
                             <option value="" disabled selected>— Select Member —</option>
@@ -1004,9 +1012,21 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="form-label">Subscription Period</label>
+                        <select name="subscription_type" class="form-control">
+                            <option value="">— Custom Amount —</option>
+                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                                <option value="{{ $period }}" {{ old('subscription_type') == $period ? 'selected' : '' }}>
+                                    {{ $period }} (₱{{ number_format($rates['gym'][$period] ?? $rates['coach'][$period] ?? 0, 0) }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label">Amount (₱)</label>
                         <input type="number" name="amount" class="form-control" step="0.01" min="0"
-                               placeholder="0.00" value="{{ old('amount') }}" required/>
+                               placeholder="0.00" value="{{ old('amount') }}"/>
                         @error('amount')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
                     </div>
 
@@ -1042,8 +1062,52 @@
                         @error('method')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Instructor (for coach payments)</label>
+                        <select name="instructor_id" class="form-control">
+                            <option value="">— Not required for gym fees —</option>
+                            @foreach($instructorLeaderboard as $row)
+                                @if(!empty($row['instructor']))
+                                    <option value="{{ $row['instructor_id'] }}" {{ old('instructor_id') == $row['instructor_id'] ? 'selected' : '' }}>
+                                        {{ $row['instructor']['name'] }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+
                     <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
                         ✓ Record Payment
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ route('payments.settings') }}" class="mt-4" style="margin-top:22px; border-top:1px solid var(--border); padding-top:18px;">
+                    @csrf
+                    <div class="card-title" style="margin-bottom:14px; font-size:14px;">⚙ Subscription Rates</div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:700;">Gym</div>
+                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                                <div class="form-group" style="margin-bottom:10px;">
+                                    <label class="form-label">{{ $period }}</label>
+                                    <input type="number" name="gym_{{ strtolower(str_replace('-', '_', $period)) }}" class="form-control" min="0" value="{{ $rates['gym'][$period] ?? 0 }}" required>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:700;">Instructor</div>
+                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                                <div class="form-group" style="margin-bottom:10px;">
+                                    <label class="form-label">{{ $period }}</label>
+                                    <input type="number" name="coach_{{ strtolower(str_replace('-', '_', $period)) }}" class="form-control" min="0" value="{{ $rates['coach'][$period] ?? 0 }}" required>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-secondary" style="width:100%;justify-content:center;">
+                        Update Rates
                     </button>
                 </form>
             </div>
