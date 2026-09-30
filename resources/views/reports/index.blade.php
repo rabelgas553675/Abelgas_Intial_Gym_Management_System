@@ -51,6 +51,31 @@
             color: var(--text);
             font: inherit;
         }
+
+        /* Dropdown icon for select fields */
+        select.report-value {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            padding-right: 38px;
+            background-color: var(--surface2);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            transition: border-color .15s ease;
+        }
+        select.report-value:hover,
+        select.report-value:focus {
+            border-color: #d4a843; /* match your gold accent */
+            outline: none;
+        }
+        select.report-value option {
+            background: #1a1b1f;
+            color: #fff;
+        }
+
         .report-actions {
             display: flex;
             gap: 10px;
