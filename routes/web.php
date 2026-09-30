@@ -123,6 +123,9 @@ Route::middleware(['auth'])->group(function () {
     // ── USER PROFILE (shared — any authenticated user can view) ─
     Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
 
+    // Payment recording is available to admin and staff; deletion remains admin-only.
+    Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+
     // ── ADMIN AREA (Admin Only) ─────────────────────────────────
     Route::middleware('admin')->group(function () {
         Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
@@ -134,7 +137,6 @@ Route::middleware(['auth'])->group(function () {
 
         // Admin Payment Routes
         Route::get('/payments',                 [PaymentController::class, 'index'])           ->name('payments.index');
-        Route::post('/payments',                [PaymentController::class, 'store'])           ->name('payments.store');
         Route::post('/payments/settings',       [PaymentController::class, 'updateSettings'])  ->name('payments.settings');
         Route::delete('/payments/{payment}',    [PaymentController::class, 'destroy'])         ->name('payments.destroy');
 

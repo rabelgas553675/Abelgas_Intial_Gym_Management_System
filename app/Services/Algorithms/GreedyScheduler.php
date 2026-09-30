@@ -110,13 +110,13 @@ class GreedyScheduler
      * @param  string|null $membershipType  'Monthly' | 'Quarterly' | 'Semi-Annual' | 'Annually' | null
      * @return int                          Amount in PHP pesos
      */
-    public static function computeCoachFee(?string $membershipType): int
+    public static function computeCoachFee(?string $membershipType, ?int $instructorId = null): int
     {
         if ($membershipType === null) {
             return 0;
         }
 
-        return Payment::coachRate($membershipType);
+        return Payment::coachRate($membershipType, $instructorId);
     }
 
     /**
@@ -135,9 +135,10 @@ class GreedyScheduler
      */
     public static function computeTotalFee(
         string $gymMembershipType,
-        ?string $coachMembershipType = null
+        ?string $coachMembershipType = null,
+        ?int $instructorId = null
     ): int {
         return self::computeGymFee($gymMembershipType)
-             + self::computeCoachFee($coachMembershipType);
+             + self::computeCoachFee($coachMembershipType, $instructorId);
     }
 }

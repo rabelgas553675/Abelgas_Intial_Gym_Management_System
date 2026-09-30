@@ -55,6 +55,12 @@ class InstructorController extends Controller
                            ->take(10)
                            ->get();
 
+        // 9. Current coaching rate and latest rate-change notifications
+        $currentCoachRates = Payment::coachRates($instructorId);
+        $rateNotifications = \Illuminate\Support\Facades\Schema::hasTable('notifications')
+            ? $instructor->notifications()->latest('created_at')->limit(5)->get()
+            : collect();
+
         return view('instructor.dashboard', compact(
             'instructor',
             'members',
@@ -63,7 +69,9 @@ class InstructorController extends Controller
             'nearDue',
             'pendingCount',
             'graphDegree',
-            'payments'
+            'payments',
+            'currentCoachRates',
+            'rateNotifications'
         ));
     }
 

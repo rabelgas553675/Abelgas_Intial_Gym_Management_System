@@ -987,16 +987,8 @@
                     <div class="alert alert-danger">✕ {{ session('error') }}</div>
                 @endif
 
-                <form method="POST" action="{{ route('payments.store') }}">
+                <form method="POST" action="{{ route('payments.store') }}" id="admin-payment-form">
                     @csrf
-
-                    <div class="form-group">
-                        <label class="form-label">Payment Type</label>
-                        <select name="record_type" class="form-control" required>
-                            <option value="gym" {{ old('record_type', 'gym') == 'gym' ? 'selected' : '' }}>Gym Subscription</option>
-                            <option value="coach" {{ old('record_type') == 'coach' ? 'selected' : '' }}>Instructor Payment</option>
-                        </select>
-                    </div>
 
                     <div class="form-group">
                         <label class="form-label">Member</label>
@@ -1012,22 +1004,58 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Subscription Period</label>
-                        <select name="subscription_type" class="form-control">
-                            <option value="">— Custom Amount —</option>
+                        <label class="form-label">Fitness Plan</label>
+                        <select name="fitness_plan" class="form-control" required>
+                            <option value="" disabled selected>— Select Plan —</option>
+                            @foreach(['Calisthenics','Bodybuilding','Plyometrics','Powerlifting','Endurance','Functional Training','Hybrid Training'] as $plan)
+                                <option value="{{ $plan }}" {{ old('fitness_plan') == $plan ? 'selected' : '' }}>{{ $plan }}</option>
+                            @endforeach
+                        </select>
+                        @error('fitness_plan')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Gym Subscription</label>
+                        <select name="membership_type" id="membership_type" class="form-control" required>
+                            <option value="" disabled selected>— Select subscription —</option>
                             @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
-                                <option value="{{ $period }}" {{ old('subscription_type') == $period ? 'selected' : '' }}>
-                                    {{ $period }} (₱{{ number_format($rates['gym'][$period] ?? $rates['coach'][$period] ?? 0, 0) }})
+                                <option value="{{ $period }}" {{ old('membership_type') == $period ? 'selected' : '' }}>
+                                    {{ $period }} · ₱{{ number_format($rates['gym'][$period] ?? 0, 0) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('membership_type')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Personal Coaching</label>
+                        <select name="instructor_id" id="instructor_id" class="form-control">
+                            <option value="">— No personal coaching —</option>
+                            @foreach($instructorOptions as $instructor)
+                                <option value="{{ $instructor->id }}" {{ old('instructor_id') == $instructor->id ? 'selected' : '' }}>
+                                    {{ $instructor->name }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Amount (₱)</label>
-                        <input type="number" name="amount" class="form-control" step="0.01" min="0"
-                               placeholder="0.00" value="{{ old('amount') }}"/>
-                        @error('amount')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
+                        <label class="form-label">Coach Package</label>
+                        <select name="coach_membership_type" id="coach_membership_type" class="form-control">
+                            <option value="">— No coaching package —</option>
+                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                                <option value="{{ $period }}" {{ old('coach_membership_type') == $period ? 'selected' : '' }}>
+                                    {{ $period }} · ₱{{ number_format($rates['coach'][$period] ?? 0, 0) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('coach_membership_type')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
+                    </div>
+
+                    <div class="form-group" style="margin-top:18px;">
+                        <label class="form-label">Amount Due</label>
+                        <input type="text" id="admin_total_amount" class="form-control" value="₱0" readonly style="font-weight:700;color:var(--accent);background:rgba(255,255,255,.03);" />
+                        <input type="hidden" name="amount" id="admin_amount_hidden" value="0">
                     </div>
 
                     <div class="form-group">
@@ -1063,17 +1091,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Instructor (for coach payments)</label>
-                        <select name="instructor_id" class="form-control">
-                            <option value="">— Not required for gym fees —</option>
-                            @foreach($instructorLeaderboard as $row)
-                                @if(!empty($row['instructor']))
-                                    <option value="{{ $row['instructor_id'] }}" {{ old('instructor_id') == $row['instructor_id'] ? 'selected' : '' }}>
-                                        {{ $row['instructor']['name'] }}
-                                    </option>
-                                @endif
-                            @endforeach
-                        </select>
+                        <label class="form-label">Notes (optional)</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Add subscription notes...">{{ old('notes') }}</textarea>
                     </div>
 
                     <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
@@ -1081,9 +1100,27 @@
                     </button>
                 </form>
 
+                @php
+                    $instructorRateMap = [];
+                    foreach (\App\Models\User::where('role', 'instructor')->get() as $instructor) {
+                        $instructorRateMap[$instructor->id] = \App\Models\Payment::rateSettings((int) $instructor->id)['coach'];
+                    }
+                @endphp
                 <form method="POST" action="{{ route('payments.settings') }}" class="mt-4" style="margin-top:22px; border-top:1px solid var(--border); padding-top:18px;">
                     @csrf
                     <div class="card-title" style="margin-bottom:14px; font-size:14px;">⚙ Subscription Rates</div>
+
+                    <div class="form-group">
+                        <label class="form-label">Instructor Rate Override</label>
+                        <select name="instructor_id" class="form-control" id="instructor-rate-select">
+                            <option value="" {{ empty($selectedInstructorId) ? 'selected' : '' }}>— Default instructor rate —</option>
+                            @foreach(\App\Models\User::where('role', 'instructor')->get() as $instructor)
+                                <option value="{{ $instructor->id }}" {{ (string) $selectedInstructorId === (string) $instructor->id ? 'selected' : '' }}>
+                                    {{ $instructor->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div>
@@ -1112,6 +1149,38 @@
                 </form>
             </div>
 
+            <script>
+                const defaultCoachRates = @json(\App\Models\Payment::defaultCoachRates());
+                const instructorCoachRates = @json($instructorRateMap);
+                const coachFieldMap = {
+                    Monthly: 'coach_monthly',
+                    Quarterly: 'coach_quarterly',
+                    'Semi-Annual': 'coach_semi_annual',
+                    Annually: 'coach_annually',
+                };
+
+                function applyCoachRatePreview(selectedInstructorId) {
+                    const rates = selectedInstructorId && instructorCoachRates[selectedInstructorId]
+                        ? instructorCoachRates[selectedInstructorId]
+                        : defaultCoachRates;
+
+                    Object.entries(coachFieldMap).forEach(([label, fieldName]) => {
+                        const input = document.querySelector(`input[name="${fieldName}"]`);
+                        if (input) {
+                            input.value = rates?.[label] ?? 0;
+                        }
+                    });
+                }
+
+                const instructorRateSelect = document.getElementById('instructor-rate-select');
+                if (instructorRateSelect) {
+                    instructorRateSelect.addEventListener('change', function () {
+                        applyCoachRatePreview(this.value || '');
+                    });
+                    applyCoachRatePreview(instructorRateSelect.value || '');
+                }
+            </script>
+
             {{-- Admin Transactions Table --}}
             <div>
                 <div class="section-header">
@@ -1129,6 +1198,8 @@
                                     <th>Member</th>
                                     <th>Plan</th>
                                     <th>Duration</th>
+                                    <th>Personal Coaching</th>
+                                    <th>Coach Package</th>
                                     <th>Amount</th>
                                     <th>Date</th>
                                     <th>Method</th>
@@ -1163,7 +1234,9 @@
                                     <td>
                                         <span class="badge-plan">{{ $payment['membership_type'] ?? '—' }}</span>
                                     </td>
-                                    <td class="amount-text">₱{{ number_format($payment['amount'], 0) }}</td>
+                                    <td>{{ $payment['personal_coaching'] ?? '—' }}</td>
+                                    <td>{{ $payment['coach_package'] ?? '—' }}</td>
+                                    <td class="amount-text">₱{{ number_format($payment['amount'] + ($payment['coach_amount'] ?? 0), 0) }}</td>
                                     <td class="text-muted">{{ \Carbon\Carbon::parse($payment['payment_date'])->format('M d, Y') }}</td>
                                     <td>
                                         <span class="badge-method">{{ $payment['method'] ?? 'Cash' }}</span>
@@ -1178,7 +1251,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="empty-state">No gym fee transactions yet.</td>
+                                    <td colspan="10" class="empty-state">No gym fee transactions yet.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -1301,6 +1374,84 @@
         document.getElementById('tab-admin').classList.toggle('active', tab === 'admin');
         document.getElementById('tab-instructor').classList.toggle('active', tab === 'instructor');
     }
+
+    (function () {
+        var defaultGymRates = @json($rates['gym'] ?? []);
+        var defaultCoachRates = @json($rates['coach'] ?? []);
+        var instructorCoachRates = @json($instructorRateMap ?? []);
+        var gymSelect = document.getElementById('membership_type');
+        var coachSelect = document.getElementById('coach_membership_type');
+        var instructorSelect = document.getElementById('instructor_id');
+        var totalBox = document.getElementById('admin_total_amount');
+        var hiddenAmount = document.getElementById('admin_amount_hidden');
+
+        function populateCoachOptions() {
+            if (!coachSelect) return;
+
+            var selectedInstructorId = instructorSelect ? instructorSelect.value : '';
+            var activeRates = selectedInstructorId && instructorCoachRates[selectedInstructorId]
+                ? instructorCoachRates[selectedInstructorId]
+                : defaultCoachRates;
+
+            var currentValue = coachSelect.value || '';
+            coachSelect.innerHTML = '<option value="">— No coaching package —</option>' +
+                ['Monthly','Quarterly','Semi-Annual','Annually'].map(function (period) {
+                    return '<option value="' + period + '" ' + (currentValue === period ? 'selected' : '') + '>' + period + ' · ₱' + Number(activeRates[period] || 0).toLocaleString('en-PH') + '</option>';
+                }).join('');
+
+            if (!selectedInstructorId) {
+                coachSelect.disabled = true;
+                coachSelect.value = '';
+            } else {
+                coachSelect.disabled = false;
+                if (currentValue && activeRates[currentValue]) {
+                    coachSelect.value = currentValue;
+                }
+            }
+        }
+
+        function recalcAmount() {
+            var gymType = gymSelect ? gymSelect.value : '';
+            var coachType = coachSelect ? coachSelect.value : '';
+            var selectedInstructorId = instructorSelect ? instructorSelect.value : '';
+            var activeCoachRates = selectedInstructorId && instructorCoachRates[selectedInstructorId]
+                ? instructorCoachRates[selectedInstructorId]
+                : defaultCoachRates;
+            var gymTotal = gymType && defaultGymRates[gymType] ? Number(defaultGymRates[gymType]) : 0;
+            var coachTotal = coachType && activeCoachRates[coachType] ? Number(activeCoachRates[coachType]) : 0;
+            var total = gymTotal + coachTotal;
+
+            if (totalBox) {
+                totalBox.value = '₱' + total.toLocaleString('en-PH');
+            }
+            if (hiddenAmount) {
+                hiddenAmount.value = total;
+            }
+        }
+
+        [gymSelect, coachSelect].forEach(function (el) {
+            if (el) {
+                el.addEventListener('change', function () {
+                    if (instructorSelect && !instructorSelect.value) {
+                        if (coachSelect) {
+                            coachSelect.value = '';
+                        }
+                    }
+                    recalcAmount();
+                });
+            }
+        });
+
+        if (instructorSelect) {
+            instructorSelect.addEventListener('change', function () {
+                populateCoachOptions();
+                recalcAmount();
+            });
+        }
+
+        populateCoachOptions();
+        recalcAmount();
+    })();
 </script>
 
 @endsection

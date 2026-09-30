@@ -59,17 +59,26 @@ class Payment extends Model
         return self::DEFAULT_COACH_FEES;
     }
 
-    protected static function resolveRateSetting(string $group, string $plan, int $default): int
+    protected static function resolveRateSetting(string $group, string $plan, int $default, ?int $instructorId = null): int
     {
         $settings = PaymentSetting::pluck('value', 'key')->toArray();
-        $candidates = [
+        $keys = [];
+
+        if ($group === 'coach' && $instructorId) {
+            $keys[] = 'coach_instructor_' . $instructorId . '_' . $plan;
+            $keys[] = 'coach_instructor_' . $instructorId . '_' . str_replace(['-', ' '], '_', $plan);
+            $keys[] = 'coach_instructor_' . $instructorId . '_' . strtolower($plan);
+            $keys[] = 'coach_instructor_' . $instructorId . '_' . str_replace(['-', ' '], '_', strtolower($plan));
+        }
+
+        $keys = array_merge($keys, [
             $group . '_' . $plan,
             $group . '_' . str_replace(['-', ' '], '_', $plan),
             $group . '_' . strtolower($plan),
             $group . '_' . str_replace(['-', ' '], '_', strtolower($plan)),
-        ];
+        ]);
 
-        foreach ($candidates as $key) {
+        foreach (array_unique($keys) as $key) {
             if (!array_key_exists($key, $settings)) {
                 continue;
             }
@@ -85,7 +94,7 @@ class Payment extends Model
         return $default;
     }
 
-    public static function rateSettings(): array
+    public static function rateSettings(?int $instructorId = null): array
     {
         return [
             'gym' => array_combine(
@@ -94,7 +103,7 @@ class Payment extends Model
             ),
             'coach' => array_combine(
                 array_keys(self::DEFAULT_COACH_FEES),
-                array_map(fn ($plan, $amount) => self::resolveRateSetting('coach', $plan, (int) $amount), array_keys(self::DEFAULT_COACH_FEES), self::DEFAULT_COACH_FEES)
+                array_map(fn ($plan, $amount) => self::resolveRateSetting('coach', $plan, (int) $amount, $instructorId), array_keys(self::DEFAULT_COACH_FEES), self::DEFAULT_COACH_FEES)
             ),
         ];
     }
@@ -104,9 +113,9 @@ class Payment extends Model
         return self::rateSettings()['gym'];
     }
 
-    public static function coachRates(): array
+    public static function coachRates(?int $instructorId = null): array
     {
-        return self::rateSettings()['coach'];
+        return self::rateSettings($instructorId)['coach'];
     }
 
     public static function gymRate(string $type): int
@@ -114,9 +123,9 @@ class Payment extends Model
         return (int) (self::gymRates()[$type] ?? self::DEFAULT_GYM_FEES[$type] ?? 0);
     }
 
-    public static function coachRate(string $type): int
+    public static function coachRate(string $type, ?int $instructorId = null): int
     {
-        return (int) (self::coachRates()[$type] ?? self::DEFAULT_COACH_FEES[$type] ?? 0);
+        return (int) (self::coachRates($instructorId)[$type] ?? self::DEFAULT_COACH_FEES[$type] ?? 0);
     }
 
     // ── Relationships ─────────────────────────────────────────────────────────

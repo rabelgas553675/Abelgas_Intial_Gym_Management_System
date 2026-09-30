@@ -917,7 +917,7 @@
                     <div class="alert alert-danger">✕ {{ session('error') }}</div>
                 @endif
 
-                <form method="POST" action="{{ route('payments.store') }}">
+                <form method="POST" action="{{ route('payments.store') }}" id="staff-payment-form">
                     @csrf
 
                     <div class="form-group">
@@ -936,13 +936,64 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Amount (₱)</label>
-                        <input type="number" name="amount" class="form-control"
-                               step="0.01" min="0" placeholder="0.00"
-                               value="{{ old('amount') }}" required/>
-                        @error('amount')
+                        <label class="form-label">Fitness Plan</label>
+                        <select name="fitness_plan" class="form-control custom-select" required>
+                            <option value="" disabled selected>— Select Plan —</option>
+                            @foreach(['Calisthenics','Bodybuilding','Plyometrics','Powerlifting','Endurance','Functional Training','Hybrid Training'] as $plan)
+                                <option value="{{ $plan }}" {{ old('fitness_plan') == $plan ? 'selected' : '' }}>{{ $plan }}</option>
+                            @endforeach
+                        </select>
+                        @error('fitness_plan')
                             <div class="error-text">{{ $message }}</div>
                         @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Gym Subscription</label>
+                        <select name="membership_type" id="staff_membership_type" class="form-control custom-select" required>
+                            <option value="" disabled selected>— Select subscription —</option>
+                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                                <option value="{{ $period }}" {{ old('membership_type') == $period ? 'selected' : '' }}>
+                                    {{ $period }} · ₱{{ number_format($gymRates[$period] ?? 0, 0) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('membership_type')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Personal Coaching</label>
+                        <select name="instructor_id" id="staff_instructor_id" class="form-control custom-select">
+                            <option value="">— No personal coaching —</option>
+                            @foreach($instructors ?? [] as $instructor)
+                                <option value="{{ $instructor->id }}" {{ old('instructor_id') == $instructor->id ? 'selected' : '' }}>
+                                    {{ $instructor->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Coach Package</label>
+                        <select name="coach_membership_type" id="staff_coach_membership_type" class="form-control custom-select">
+                            <option value="">— No coaching package —</option>
+                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                                <option value="{{ $period }}" {{ old('coach_membership_type') == $period ? 'selected' : '' }}>
+                                    {{ $period }} · ₱{{ number_format($coachRates[$period] ?? 0, 0) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('coach_membership_type')
+                            <div class="error-text">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Amount Due</label>
+                        <input type="text" id="staff_total_amount" class="form-control" value="₱0" readonly style="font-weight:700;color:var(--accent);background:rgba(255,255,255,0.03);" />
+                        <input type="hidden" name="amount" id="staff_amount_hidden" value="0">
                     </div>
 
                     <div class="form-group">
@@ -1133,6 +1184,58 @@
             window.addEventListener('resize', function () {
                 if (window.innerWidth > 860) closeMenu();
             });
+
+            var gymRates = @json($gymRates ?? []);
+            var coachRates = @json($coachRates ?? []);
+            var gymSelect = document.getElementById('staff_membership_type');
+            var coachSelect = document.getElementById('staff_coach_membership_type');
+            var instructorSelect = document.getElementById('staff_instructor_id');
+            var totalBox = document.getElementById('staff_total_amount');
+            var hiddenInput = document.getElementById('staff_amount_hidden');
+
+            function recalcAmount() {
+                var gymType = gymSelect ? gymSelect.value : '';
+                var coachType = coachSelect ? coachSelect.value : '';
+                var gymTotal = gymType && gymRates[gymType] ? Number(gymRates[gymType]) : 0;
+                var coachTotal = coachType && coachRates[coachType] ? Number(coachRates[coachType]) : 0;
+                var total = gymTotal + coachTotal;
+
+                if (totalBox) {
+                    totalBox.value = '₱' + total.toLocaleString('en-PH');
+                }
+                if (hiddenInput) {
+                    hiddenInput.value = total;
+                }
+            }
+
+            [gymSelect, coachSelect, instructorSelect].forEach(function (el) {
+                if (el) {
+                    el.addEventListener('change', function () {
+                        if (instructorSelect && !instructorSelect.value) {
+                            coachSelect.value = '';
+                        }
+                        recalcAmount();
+                    });
+                }
+            });
+
+            if (instructorSelect) {
+                instructorSelect.addEventListener('change', function () {
+                    var hasInstructor = !!instructorSelect.value;
+                    if (coachSelect) {
+                        coachSelect.disabled = !hasInstructor;
+                        if (!hasInstructor) {
+                            coachSelect.value = '';
+                        }
+                    }
+                    recalcAmount();
+                });
+                if (!instructorSelect.value && coachSelect) {
+                    coachSelect.disabled = true;
+                }
+            }
+
+            recalcAmount();
         })();
     </script>
 

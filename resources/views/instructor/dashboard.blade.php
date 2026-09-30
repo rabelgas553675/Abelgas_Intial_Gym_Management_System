@@ -772,6 +772,38 @@
         </div>
     </div>
 
+    <div class="rate-alert-strip" style="margin: 0 0 22px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px;">
+        <div class="rate-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div style="font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted);">My Coaching Rate</div>
+                <span style="background: rgba(255,0,0,0.12); border:1px solid rgba(255,0,0,0.2); color: var(--accent); padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700;">Live</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;">
+                @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                    <div style="background: var(--surface2); border:1px solid var(--border); border-radius: 10px; padding:10px 12px;">
+                        <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">{{ $period }}</div>
+                        <div style="font-size:1.05rem; font-weight:800; color:var(--text);">₱{{ number_format($currentCoachRates[$period] ?? 0) }}</div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="rate-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px;">
+            <div style="font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">Rate Updates</div>
+            @if($rateNotifications->isEmpty())
+                <div style="color:var(--muted); font-size:13px;">No rate updates yet. Your coach rate will appear here when it changes.</div>
+            @else
+                @foreach($rateNotifications as $notification)
+                    @php $data = $notification->data ?? []; @endphp
+                    <div style="border-left:3px solid var(--accent); background: rgba(255,0,0,0.04); padding:10px 12px; border-radius:8px; margin-bottom:10px;">
+                        <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">{{ $notification->created_at->format('M d, Y') }}</div>
+                        <div style="font-size:13px; color:var(--text); line-height:1.55;">{{ $data['message'] ?? 'Your coaching rate has been updated.' }}</div>
+                    </div>
+                @endforeach
+            @endif
+        </div>
+    </div>
+
     {{-- Split Panel --}}
     <div class="split-panel">
 

@@ -4,6 +4,7 @@
         'payment' => 'Payment',
         'attendance' => 'Attendance',
         'workout' => 'Workout Sessions',
+        'member' => 'Members',
     ];
 @endphp
 
@@ -95,6 +96,39 @@
             border: 1px solid var(--border);
             border-radius: 14px;
             overflow: hidden;
+        }
+        .report-chart {
+            padding: 20px 20px 12px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border);
+        }
+        .chart-bars {
+            display: flex;
+            align-items: end;
+            gap: 10px;
+            height: 220px;
+            padding: 10px 4px 0;
+        }
+        .chart-bar-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: end;
+            align-items: center;
+            gap: 8px;
+            height: 100%;
+            min-width: 24px;
+            color: var(--muted);
+            font-size: 10px;
+            text-align: center;
+        }
+        .chart-bar {
+            width: 100%;
+            max-width: 48px;
+            min-height: 8px;
+            border-radius: 8px 8px 0 0;
+            background: linear-gradient(180deg, #67d5ff 0%, #4c82ff 100%);
+            box-shadow: inset 0 -6px 0 rgba(255,255,255,0.12);
         }
         .report-card-header {
             background: var(--surface2);
@@ -235,6 +269,22 @@
                     }
                 }
 
+                const chartContainer = document.querySelector('.chart-bars[data-chart]');
+                if (chartContainer) {
+                    const chart = JSON.parse(chartContainer.dataset.chart || '{}');
+                    const values = Array.isArray(chart.values) ? chart.values : [];
+                    const labels = Array.isArray(chart.labels) ? chart.labels : [];
+                    if (values.length) {
+                        const max = Math.max(...values, 1);
+                        const bars = values.map(function (value, index) {
+                            const height = Math.max(8, (value / max) * 100);
+                            const label = labels[index] || '';
+                            return '<div class="chart-bar-wrap"><div class="chart-bar" style="height: ' + height + '%;"></div><span>' + label + '</span></div>';
+                        }).join('');
+                        chartContainer.innerHTML = bars;
+                    }
+                }
+
                 rangeSelect.addEventListener('change', applyRangeCalendar);
                 applyRangeCalendar();
 
@@ -258,6 +308,18 @@
                 </div>
             @endforeach
         </div>
+
+        @if(!empty($report['chart']['labels'] ?? []))
+            <div class="report-card">
+                <div class="report-card-header">
+                    <div class="report-card-title">Analytics</div>
+                    <div class="report-status">Trend for the selected period</div>
+                </div>
+                <div class="report-chart">
+                    <div class="chart-bars" data-chart='@json($report['chart'])'></div>
+                </div>
+            </div>
+        @endif
 
         @if($report['empty'])
             <div class="empty-block">
@@ -287,6 +349,12 @@
                                     <th>Time In</th>
                                     <th>Time Out</th>
                                     <th>Duration</th>
+                                @elseif($selectedType === 'member')
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Date Joined</th>
+                                    <th>Plan</th>
+                                    <th>Status</th>
                                 @else
                                     <th>Member</th>
                                     <th>Session</th>
@@ -312,6 +380,12 @@
                                         <td>{{ $row['time_in'] }}</td>
                                         <td>{{ $row['time_out'] }}</td>
                                         <td>{{ $row['duration'] }}</td>
+                                    @elseif($selectedType === 'member')
+                                        <td>{{ $row['name'] }}</td>
+                                        <td>{{ $row['email'] }}</td>
+                                        <td>{{ $row['date'] }}</td>
+                                        <td>{{ $row['plan'] }}</td>
+                                        <td>{{ $row['status'] }}</td>
                                     @else
                                         <td>{{ $row['name'] }}</td>
                                         <td>{{ $row['title'] }}</td>
