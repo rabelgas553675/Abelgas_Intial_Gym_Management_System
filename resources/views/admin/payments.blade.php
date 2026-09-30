@@ -236,28 +236,28 @@
         <div class="record-payment-card">
             <div class="card-title">+ Record Payment</div>
 
-            <form method="POST" action="{{ route('payments.store') }}">
-                @csrf
+                <form method="POST" action="{{ route('payments.store') }}">
+                    @csrf
 
-                <div class="form-group">
-                    <label class="form-label">Member</label>
-                    <select name="member_id" class="form-control" required>
-                        <option value="" disabled selected>— Select Member —</option>
-                        @foreach($members as $member)
-                            <option value="{{ $member['id'] }}" {{ old('member_id') == $member['id'] ? 'selected' : '' }}>
-                                {{ $member['name'] }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('member_id')<div class="field-error">{{ $message }}</div>@enderror
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Member</label>
+                        <select name="member_id" class="form-control" required>
+                            <option value="" disabled selected>— Select Member —</option>
+                            @foreach($members as $member)
+                                <option value="{{ $member['id'] }}" {{ old('member_id') == $member['id'] ? 'selected' : '' }}>
+                                    {{ $member['name'] }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('member_id')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
+                    </div>
 
-                <div class="form-group">
-                    <label class="form-label">Amount (₱)</label>
-                    <input type="number" name="amount" class="form-control" step="0.01" min="0"
-                           placeholder="0.00" value="{{ old('amount') }}" required/>
-                    @error('amount')<div class="field-error">{{ $message }}</div>@enderror
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Amount (₱)</label>
+                        <input type="number" name="amount" class="form-control" step="0.01" min="0"
+                               placeholder="0.00" value="{{ old('amount') }}" required/>
+                        @error('amount')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
+                    </div>
 
                 <div class="form-group">
                     <label class="form-label">Payment Date</label>
@@ -279,22 +279,22 @@
                     @error('payment_date')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Method</label>
-                    <select name="method" class="form-control" required>
-                        <option value="" disabled selected>— Select Method —</option>
-                        @foreach(['Cash','GCash','Bank Transfer','Card'] as $m)
-                            <option value="{{ $m }}" {{ old('method') == $m ? 'selected' : '' }}>{{ $m }}</option>
-                        @endforeach
-                    </select>
-                    @error('method')<div class="field-error">{{ $message }}</div>@enderror
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Method</label>
+                        <select name="method" class="form-control" required>
+                            <option value="" disabled selected>— Select Method —</option>
+                            @foreach(['Cash','GCash','Bank Transfer','Card'] as $m)
+                                <option value="{{ $m }}" {{ old('method') == $m ? 'selected' : '' }}>{{ $m }}</option>
+                            @endforeach
+                        </select>
+                        @error('method')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
+                    </div>
 
-                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
-                    ✓ Record Payment
-                </button>
-            </form>
-        </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+                        ✓ Record Payment
+                    </button>
+                </form>
+            </div>
 
         {{-- Admin Transactions Table --}}
         <div>

@@ -34,20 +34,90 @@ class Payment extends Model
 
     // ── Fee split constants ───────────────────────────────────────────────────
     // Gym membership fees (go to admin / platform)
-    const GYM_FEES = [
+    const DEFAULT_GYM_FEES = [
         'Monthly'     => 800,
         'Quarterly'   => 2100,
-        'Semi-Annual' => 4000,
+        'Semi-Annual' => 4500,
         'Annually'    => 7500,
     ];
 
     // Coach subscription fees (go to instructor)
-    const COACH_FEES = [
+    const DEFAULT_COACH_FEES = [
         'Monthly'     => 300,
         'Quarterly'   => 1200,
-        'Semi-Annual' => 2400,
+        'Semi-Annual' => 1800,
         'Annually'    => 3600,
     ];
+
+    public static function defaultGymRates(): array
+    {
+        return self::DEFAULT_GYM_FEES;
+    }
+
+    public static function defaultCoachRates(): array
+    {
+        return self::DEFAULT_COACH_FEES;
+    }
+
+    protected static function resolveRateSetting(string $group, string $plan, int $default): int
+    {
+        $settings = PaymentSetting::pluck('value', 'key')->toArray();
+        $candidates = [
+            $group . '_' . $plan,
+            $group . '_' . str_replace(['-', ' '], '_', $plan),
+            $group . '_' . strtolower($plan),
+            $group . '_' . str_replace(['-', ' '], '_', strtolower($plan)),
+        ];
+
+        foreach ($candidates as $key) {
+            if (!array_key_exists($key, $settings)) {
+                continue;
+            }
+
+            $value = filter_var($settings[$key], FILTER_VALIDATE_INT);
+            if ($value !== false && $value > 0) {
+                return (int) $value;
+            }
+
+            break;
+        }
+
+        return $default;
+    }
+
+    public static function rateSettings(): array
+    {
+        return [
+            'gym' => array_combine(
+                array_keys(self::DEFAULT_GYM_FEES),
+                array_map(fn ($plan, $amount) => self::resolveRateSetting('gym', $plan, (int) $amount), array_keys(self::DEFAULT_GYM_FEES), self::DEFAULT_GYM_FEES)
+            ),
+            'coach' => array_combine(
+                array_keys(self::DEFAULT_COACH_FEES),
+                array_map(fn ($plan, $amount) => self::resolveRateSetting('coach', $plan, (int) $amount), array_keys(self::DEFAULT_COACH_FEES), self::DEFAULT_COACH_FEES)
+            ),
+        ];
+    }
+
+    public static function gymRates(): array
+    {
+        return self::rateSettings()['gym'];
+    }
+
+    public static function coachRates(): array
+    {
+        return self::rateSettings()['coach'];
+    }
+
+    public static function gymRate(string $type): int
+    {
+        return (int) (self::gymRates()[$type] ?? self::DEFAULT_GYM_FEES[$type] ?? 0);
+    }
+
+    public static function coachRate(string $type): int
+    {
+        return (int) (self::coachRates()[$type] ?? self::DEFAULT_COACH_FEES[$type] ?? 0);
+    }
 
     // ── Relationships ─────────────────────────────────────────────────────────
     public function member(): \Illuminate\Database\Eloquent\Relations\BelongsTo

@@ -2,6 +2,7 @@
 
 namespace App\Services\Algorithms;
 
+use App\Models\Payment;
 use Carbon\Carbon;
 
 /**
@@ -97,7 +98,7 @@ class GreedyScheduler
      */
     public static function computeGymFee(string $membershipType): int
     {
-        return self::GYM_PRICES[$membershipType] ?? 0;
+        return Payment::gymRate($membershipType);
     }
 
     /**
@@ -115,7 +116,7 @@ class GreedyScheduler
             return 0;
         }
 
-        return self::COACH_PRICES[$membershipType] ?? 0;
+        return Payment::coachRate($membershipType);
     }
 
     /**

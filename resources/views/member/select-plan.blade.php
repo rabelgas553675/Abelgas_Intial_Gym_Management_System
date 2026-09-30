@@ -190,11 +190,12 @@
                 <h2 class="section-title">2. Gym Subscription</h2>
                 <div class="grid-4">
                     @php
+                        $gymRates = \App\Models\Payment::gymRates();
                         $gymDurations = [
-                            ['type'=>'Monthly', 'price'=>'800', 'display'=>'₱800', 'label'=>'₱800 / Month', 'days'=>'30 days'],
-                            ['type'=>'Quarterly', 'price'=>'2100', 'display'=>'₱2,100', 'label'=>'₱2,100 / Quarter', 'days'=>'90 days'],
-                            ['type'=>'Semi-Annual', 'price'=>'4500', 'display'=>'₱4,500', 'label'=>'₱4,500 / 6 Months', 'days'=>'180 days'],
-                            ['type'=>'Annually', 'price'=>'7500', 'display'=>'₱7,500', 'label'=>'₱7,500 / Year', 'days'=>'365 days'],
+                            ['type'=>'Monthly', 'price'=>(string)($gymRates['Monthly'] ?? 800), 'display'=>'₱'.number_format($gymRates['Monthly'] ?? 800, 0), 'label'=>'₱'.number_format($gymRates['Monthly'] ?? 800, 0).' / Month', 'days'=>'30 days'],
+                            ['type'=>'Quarterly', 'price'=>(string)($gymRates['Quarterly'] ?? 2100), 'display'=>'₱'.number_format($gymRates['Quarterly'] ?? 2100, 0), 'label'=>'₱'.number_format($gymRates['Quarterly'] ?? 2100, 0).' / Quarter', 'days'=>'90 days'],
+                            ['type'=>'Semi-Annual', 'price'=>(string)($gymRates['Semi-Annual'] ?? 4500), 'display'=>'₱'.number_format($gymRates['Semi-Annual'] ?? 4500, 0), 'label'=>'₱'.number_format($gymRates['Semi-Annual'] ?? 4500, 0).' / 6 Months', 'days'=>'180 days'],
+                            ['type'=>'Annually', 'price'=>(string)($gymRates['Annually'] ?? 7500), 'display'=>'₱'.number_format($gymRates['Annually'] ?? 7500, 0), 'label'=>'₱'.number_format($gymRates['Annually'] ?? 7500, 0).' / Year', 'days'=>'365 days'],
                         ];
                         $selectedGym = old('membership_type') ?? $member?->membership_type ?? '';
                     @endphp
@@ -265,11 +266,12 @@
                         Coach Subscription Duration
                     </h3>
                     @php
+                        $coachRates = \App\Models\Payment::coachRates();
                         $coachDurations = [
-                            ['type'=>'Monthly', 'price'=>'300', 'display'=>'₱300', 'label'=>'₱300 / Month', 'days'=>'30 days'],
-                            ['type'=>'Quarterly', 'price'=>'1200', 'display'=>'₱1,200', 'label'=>'₱1,200 / Quarter', 'days'=>'90 days'],
-                            ['type'=>'Semi-Annual', 'price'=>'1800', 'display'=>'₱1,800', 'label'=>'₱1,800 / 6 Months', 'days'=>'180 days'],
-                            ['type'=>'Annually', 'price'=>'3600', 'display'=>'₱3,600', 'label'=>'₱3,600 / Year', 'days'=>'365 days'],
+                            ['type'=>'Monthly', 'price'=>(string)($coachRates['Monthly'] ?? 300), 'display'=>'₱'.number_format($coachRates['Monthly'] ?? 300, 0), 'label'=>'₱'.number_format($coachRates['Monthly'] ?? 300, 0).' / Month', 'days'=>'30 days'],
+                            ['type'=>'Quarterly', 'price'=>(string)($coachRates['Quarterly'] ?? 1200), 'display'=>'₱'.number_format($coachRates['Quarterly'] ?? 1200, 0), 'label'=>'₱'.number_format($coachRates['Quarterly'] ?? 1200, 0).' / Quarter', 'days'=>'90 days'],
+                            ['type'=>'Semi-Annual', 'price'=>(string)($coachRates['Semi-Annual'] ?? 1800), 'display'=>'₱'.number_format($coachRates['Semi-Annual'] ?? 1800, 0), 'label'=>'₱'.number_format($coachRates['Semi-Annual'] ?? 1800, 0).' / 6 Months', 'days'=>'180 days'],
+                            ['type'=>'Annually', 'price'=>(string)($coachRates['Annually'] ?? 3600), 'display'=>'₱'.number_format($coachRates['Annually'] ?? 3600, 0), 'label'=>'₱'.number_format($coachRates['Annually'] ?? 3600, 0).' / Year', 'days'=>'365 days'],
                         ];
                         $selectedCoach = old('coach_membership_type') ?? $member?->coach_membership_type ?? '';
                     @endphp
