@@ -155,6 +155,26 @@
       Profile
     </a>
 
+    <a href="{{ route('member.attendance-history') }}"
+       class="nav-item {{ $active === 'attendance' ? 'active' : '' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <path d="M8 11h8M8 15h5"/>
+      </svg>
+      Attendance
+    </a>
+
+    <a href="{{ route('member.subscription-history') }}"
+       class="nav-item {{ $active === 'subscriptions' ? 'active' : '' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <rect x="1" y="4" width="22" height="16" rx="2"/>
+        <line x1="1" y1="10" x2="23" y2="10"/>
+      </svg>
+      Subscriptions
+    </a>
+
     <a href="{{ route('member.payments') }}"
        class="nav-item {{ $active === 'payments' ? 'active' : '' }}">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

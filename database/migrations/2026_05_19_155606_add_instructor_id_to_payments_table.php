@@ -20,7 +20,9 @@ return new class extends Migration
     {
         Schema::table('payments', function (Blueprint $table) {
             if (Schema::hasColumn('payments', 'instructor_id')) {
-                $table->dropForeign(['instructor_id']);
+                if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                    $table->dropForeign(['instructor_id']);
+                }
                 $table->dropColumn('instructor_id');
             }
         });

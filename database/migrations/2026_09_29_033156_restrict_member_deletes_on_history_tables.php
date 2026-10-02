@@ -41,6 +41,10 @@ return new class extends Migration
             return;
         }
 
+        if (Schema::getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Find the existing member_id → members FK by column (don't guess its name).
         $existing = collect(Schema::getForeignKeys($tableName))->first(
             fn (array $fk) => $fk['columns'] === ['member_id'] && $fk['foreign_table'] === 'members'

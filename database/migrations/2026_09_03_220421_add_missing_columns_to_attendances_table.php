@@ -37,7 +37,9 @@ return new class extends Migration
     {
         Schema::table('attendances', function (Blueprint $table) {
             if (Schema::hasColumn('attendances', 'staff_user_id')) {
-                $table->dropForeign(['staff_user_id']);
+                if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                    $table->dropForeign(['staff_user_id']);
+                }
                 $table->dropColumn('staff_user_id');
             }
             if (Schema::hasColumn('attendances', 'scanned_by')) {

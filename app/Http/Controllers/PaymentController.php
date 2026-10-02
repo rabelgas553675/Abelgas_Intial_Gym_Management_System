@@ -292,7 +292,9 @@ class PaymentController extends Controller
         $gymAmount = GreedyScheduler::computeGymFee($gymType);
         $coachAmount = $request->filled('instructor_id') ? GreedyScheduler::computeCoachFee($coachType, (int) $request->instructor_id) : 0;
 
-        $start = Carbon::parse($request->payment_date);
+        $start = $member->end_date && $member->end_date->isFuture()
+            ? $member->end_date->copy()
+            : Carbon::parse($request->payment_date);
         $end = GreedyScheduler::computeEndDate($start, $gymType);
 
         $member->update([

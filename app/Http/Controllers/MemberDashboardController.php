@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\Attendance;
 use App\Models\CoachRequest;
 use App\Services\Algorithms\GreedyScheduler;
 use App\Services\Algorithms\MergeSort;
@@ -124,15 +125,20 @@ class MemberDashboardController extends Controller
             return back()->with('error', 'Unauthenticated. Please log in again.');
         }
 
+        $existingMember = Member::where('user_id', $user->id)->first();
+
         // ── GreedyScheduler: compute fees ────────────────────────────────────
         $coachPlan   = $request->filled('instructor_id') ? $request->coach_membership_type : null;
         $instructorId = $request->filled('instructor_id') ? (int) $request->instructor_id : null;
         $gymAmount   = GreedyScheduler::computeGymFee($request->membership_type);
         $coachAmount = GreedyScheduler::computeCoachFee($coachPlan, $instructorId);
 
-        // ── GreedyScheduler: compute end date ────────────────────────────────
-        $start = Carbon::now();
-        $end   = GreedyScheduler::computeEndDate($start, $request->membership_type);
+        // Accumulate renewals: extend the active end date when the member already
+        // has a future plan instead of resetting the subscription from today.
+        $start = $existingMember && $existingMember->end_date && $existingMember->end_date->isFuture()
+            ? $existingMember->end_date->copy()
+            : Carbon::now();
+        $end = GreedyScheduler::computeEndDate($start, $request->membership_type);
 
         DB::beginTransaction();
         try {
@@ -373,5 +379,44 @@ class MemberDashboardController extends Controller
         $payments = collect($sorted);
 
         return view('member.payment-history', ['payments' => $payments, 'member' => $member]);
+    }
+
+    /**
+     * Show the member's subscription history.
+     */
+    public function subscriptionHistory()
+    {
+        $member = $this->getMember();
+
+        if (!$member) {
+            return view('member.subscription-history', ['payments' => collect(), 'member' => null]);
+        }
+
+        $payments = Payment::query()
+            ->where('member_id', $member->id)
+            ->orderByDesc('payment_date')
+            ->get();
+
+        return view('member.subscription-history', ['payments' => $payments, 'member' => $member]);
+    }
+
+    /**
+     * Show the member's attendance history.
+     */
+    public function attendanceHistory()
+    {
+        $member = $this->getMember();
+
+        if (!$member) {
+            return view('member.attendance-history', ['attendance' => collect(), 'member' => null]);
+        }
+
+        $attendance = Attendance::query()
+            ->where('member_id', $member->id)
+            ->orderByDesc('date')
+            ->orderByDesc('time_in')
+            ->get();
+
+        return view('member.attendance-history', ['attendance' => $attendance, 'member' => $member]);
     }
 }

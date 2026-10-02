@@ -363,4 +363,111 @@ class ReportsAccessTest extends TestCase
         $this->assertSame($instructor->id, $member->instructor_id);
         $this->assertSame('Monthly', $member->coach_membership_type);
     }
+
+    public function test_member_can_view_own_attendance_history()
+    {
+        $user = User::factory()->create([
+            'role' => 'member',
+            'email' => 'member-attendance-history@test.com',
+        ]);
+
+        $member = \App\Models\Member::create([
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'status' => 'Active',
+            'fitness_plan' => 'Hybrid Training',
+            'membership_type' => 'Monthly',
+        ]);
+
+        \App\Models\Attendance::create([
+            'member_id' => $member->id,
+            'staff_user_id' => $user->id,
+            'date' => '2026-10-01',
+            'time_in' => '2026-10-01 08:00:00',
+            'time_out' => '2026-10-01 09:30:00',
+            'duration_minutes' => 90,
+            'entry_method' => 'qr',
+            'scanned_by' => 'member',
+        ]);
+
+        $response = $this->actingAs($user)->get('/my/attendance-history');
+
+        $response->assertOk();
+        $response->assertSee('Attendance History');
+        $response->assertSee('Hybrid Training');
+    }
+
+    public function test_member_can_view_own_subscription_history()
+    {
+        $user = User::factory()->create([
+            'role' => 'member',
+            'email' => 'member-subscription-history@test.com',
+        ]);
+
+        $member = \App\Models\Member::create([
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'status' => 'Active',
+            'fitness_plan' => 'Powerlifting',
+            'membership_type' => 'Quarterly',
+        ]);
+
+        \App\Models\Payment::create([
+            'member_id' => $member->id,
+            'payment_type' => 'gym_fee',
+            'receipt_number' => 'RCP-SUB-HISTORY-1',
+            'amount' => 2100,
+            'fitness_plan' => 'Powerlifting',
+            'membership_type' => 'Quarterly',
+            'payment_date' => '2026-10-01',
+            'status' => 'Paid',
+            'method' => 'Cash',
+            'notes' => 'Quarterly membership',
+        ]);
+
+        $response = $this->actingAs($user)->get('/my/subscription-history');
+
+        $response->assertOk();
+        $response->assertSee('Subscription History');
+        $response->assertSee('Powerlifting');
+        $response->assertSee('Quarterly');
+    }
+
+    public function test_member_renewal_adds_to_existing_subscription_end_date()
+    {
+        $user = User::factory()->create([
+            'role' => 'member',
+            'email' => 'member-renewal-accumulates@test.com',
+        ]);
+
+        $member = \App\Models\Member::create([
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'fitness_plan' => 'Calisthenics',
+            'membership_type' => 'Monthly',
+            'start_date' => '2026-10-01',
+            'end_date' => '2026-10-30',
+            'status' => 'Active',
+            'fee' => 800,
+            'coach_status' => 'none',
+        ]);
+
+        $response = $this->actingAs($user)->post('/my/subscribe', [
+            'fitness_plan' => 'Calisthenics',
+            'membership_type' => 'Monthly',
+        ]);
+
+        $response->assertRedirect();
+
+        $member->refresh();
+        $this->assertSame('2026-11-30', $member->end_date->format('Y-m-d'));
+        $this->assertDatabaseHas('payments', [
+            'member_id' => $member->id,
+            'payment_type' => 'gym_fee',
+            'membership_type' => 'Monthly',
+        ]);
+    }
 }

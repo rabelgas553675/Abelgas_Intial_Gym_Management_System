@@ -58,6 +58,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/subscribe',             [MemberDashboardController::class, 'subscribePlan'])     ->name('subscribe');
         Route::get('/receipt/{payment}',      [MemberDashboardController::class, 'receipt'])           ->name('receipt');
         Route::get('/payments',               [MemberDashboardController::class, 'paymentHistory'])    ->name('payments');
+        Route::get('/subscription-history',   [MemberDashboardController::class, 'subscriptionHistory'])->name('subscription-history');
+        Route::get('/subscription',            [MemberDashboardController::class, 'subscriptionHistory'])->name('subscription');
+        Route::get('/attendance-history',     [MemberDashboardController::class, 'attendanceHistory']) ->name('attendance-history');
+        Route::get('/attendance',             [MemberDashboardController::class, 'attendanceHistory']) ->name('attendance');
         Route::post('/subscription/update',   [MemberDashboardController::class, 'updateSubscription'])->name('subscription.update');
         Route::get('/schedule',               [WorkoutPlanController::class, 'memberSchedule'])        ->name('schedule');
         // ✅ Waiting for approval page
