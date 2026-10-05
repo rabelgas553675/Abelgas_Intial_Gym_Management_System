@@ -208,6 +208,29 @@
 
     .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
+    /* Clickable user chip → staff profile. Same pill + gold underline as .nav-link.active.
+       34px tall (30px avatar + 2×2px) so the underline lands where the nav links' does. */
+    .user-chip--link {
+      padding: 2px 12px 2px 4px;
+      border-radius: 8px;
+      text-decoration: none;
+      position: relative;
+      transition: all 0.15s;
+    }
+    .user-chip--link:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .user-chip--link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .user-chip--link.active { background: rgba(255,255,255,0.05); color: var(--text); font-weight: 600; }
+    .user-chip--link.active .user-avatar { border-color: var(--accent); }
+    .user-chip--link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -11px;
+      left: 10px; right: 10px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
     .btn-logout {
       display: flex;
       align-items: center;
@@ -638,6 +661,8 @@
       .topnav-right { gap: 8px; order: 2; }
       .user-chip span,
       .user-chip { font-size: 0; gap: 0; } /* collapse text, keep avatar visible */
+      .user-chip--link { padding: 2px; }
+      .user-chip--link.active::after { display: none; }
       .user-avatar { font-size: 13px; }
       .staff-badge { display: none; }
       .btn-logout { padding: 8px; width: 38px; height: 38px; }
@@ -727,6 +752,10 @@
     }
     html:root[data-theme="light"] .nav-link.active svg { stroke: var(--accent-2); }
     html:root[data-theme="light"] .nav-link.active::after { background: var(--accent-2); }
+    html:root[data-theme="light"] .user-chip--link:hover,
+    html:root[data-theme="light"] .user-chip--link.active { color: #fff; background: rgba(255,255,255,.07); }
+    html:root[data-theme="light"] .user-chip--link.active .user-avatar { border-color: var(--accent-2); }
+    html:root[data-theme="light"] .user-chip--link.active::after { background: var(--accent-2); }
 
     html:root[data-theme="light"] .staff-badge { color: #111; box-shadow: none; }
     html:root[data-theme="light"] .user-avatar {
@@ -962,7 +991,7 @@
     </a>
 
     <a href="{{ route('staff.payments') }}"
-       class="nav-link {{ request()->routeIs('staff.payments') ? 'active' : '' }}">
+       class="nav-link {{ request()->routeIs('staff.payments', 'walkin.*') ? 'active' : '' }}">
       <svg viewBox="0 0 24 24" stroke-width="2">
         <rect x="1" y="4" width="22" height="16" rx="2"/>
         <line x1="1" y1="10" x2="23" y2="10"/>
@@ -979,20 +1008,15 @@
       Reports
     </a>
 
-    <a href="{{ route('staff.profile') }}"
-       class="nav-link {{ request()->routeIs('staff.profile') ? 'active' : '' }}">
-      <svg viewBox="0 0 24 24" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-      </svg>
-      Profile
-    </a>
   </div>
 
   <div class="topnav-right">
     <span class="staff-badge">Staff</span>
 
-    <div class="user-chip">
+    <a href="{{ route('staff.profile') }}"
+       class="user-chip user-chip--link {{ request()->routeIs('staff.profile') ? 'active' : '' }}"
+       title="My Profile"
+       @if(request()->routeIs('staff.profile')) aria-current="page" @endif>
       <div class="user-avatar">
         @if(auth()->user()->photo)
           <img src="{{ asset('storage/'.auth()->user()->photo) }}" alt=""/>
@@ -1001,7 +1025,7 @@
         @endif
       </div>
       <span>{{ auth()->user()->name }}</span>
-    </div>
+    </a>
 
     <form method="POST" action="{{ route('logout') }}" style="margin:0;">
       @csrf

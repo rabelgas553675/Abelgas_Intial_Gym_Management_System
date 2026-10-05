@@ -33,7 +33,8 @@
     .sub-plan .icon-wrap { width:52px; height:52px; display:flex; align-items:center; justify-content:center; background:var(--accent-soft); color:var(--accent); border-radius:14px; flex-shrink:0; }
     .sub-plan .icon-wrap svg { width:28px; height:28px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     .sub-plan .info .label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; font-weight:600; }
-    .sub-plan .info .value { font-size:20px; font-weight:700; color:#fff; }
+    /* FIX 1: was color:#fff (invisible on the light-mode card) */
+    .sub-plan .info .value { font-size:20px; font-weight:700; color:var(--text); }
     .sub-details { display:grid; gap:12px; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border); }
     .sub-details .item .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
     .sub-details .item .value { font-weight:600; }
@@ -101,9 +102,11 @@
     .modal-plan-option input[type="radio"] { display:none; }
     .modal-plan-card { border-radius:12px; padding:12px 8px; text-align:center; transition:border-color .18s, background .18s; position:relative; background:var(--surface2); border:1.5px solid var(--border); height:100%; box-sizing:border-box; }
     .modal-plan-card:hover { border-color:rgba(224,169,59,0.4); }
-    .modal-plan-card .icon { width:32px; height:32px; margin:0 auto 8px; color:rgba(255,255,255,0.25); }
+    /* FIX 2: was color:rgba(255,255,255,0.25) (invisible in light mode) */
+    .modal-plan-card .icon { width:32px; height:32px; margin:0 auto 8px; color:var(--muted); }
     .modal-plan-card .icon svg { width:100%; height:100%; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-    .modal-plan-card .name { font-size:11px; font-weight:700; color:#fff; line-height:1.3; }
+    /* FIX 3: was color:#fff (invisible in light mode) */
+    .modal-plan-card .name { font-size:11px; font-weight:700; color:var(--text); line-height:1.3; }
     .modal-plan-card .dot { position:absolute; top:7px; right:7px; width:7px; height:7px; border-radius:50%; background:var(--accent); display:none; }
     .modal-plan-card.selected { border-color:var(--accent) !important; background:rgba(224,169,59,0.08) !important; }
     .modal-plan-card.selected .icon { color:var(--accent); }

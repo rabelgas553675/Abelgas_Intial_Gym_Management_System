@@ -2,6 +2,7 @@
     $roleLayout = auth()->user()->isAdmin() ? 'layouts.admin' : (auth()->user()->isInstructor() ? 'layouts.instructor' : 'layouts.staff');
     $labels = [
         'payment' => 'Payment',
+        'walkin' => 'Walk-in',
         'attendance' => 'Attendance',
         'workout' => 'Workout Sessions',
         'member' => 'Members',
@@ -374,6 +375,13 @@
                                     <th>Time In</th>
                                     <th>Time Out</th>
                                     <th>Duration</th>
+                                @elseif($selectedType === 'walkin')
+                                    <th>Receipt #</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Amount</th>
                                 @elseif($selectedType === 'member')
                                     <th>Name</th>
                                     <th>Email</th>
@@ -405,6 +413,13 @@
                                         <td>{{ $row['time_in'] }}</td>
                                         <td>{{ $row['time_out'] }}</td>
                                         <td>{{ $row['duration'] }}</td>
+                                    @elseif($selectedType === 'walkin')
+                                        <td>{{ $row['receipt'] }}</td>
+                                        <td>{{ $row['name'] }}</td>
+                                        <td>{{ $row['date'] }}</td>
+                                        <td>{{ $row['method'] }}</td>
+                                        <td>{{ $row['status'] }}</td>
+                                        <td>{{ $row['amount'] }}</td>
                                     @elseif($selectedType === 'member')
                                         <td>{{ $row['name'] }}</td>
                                         <td>{{ $row['email'] }}</td>

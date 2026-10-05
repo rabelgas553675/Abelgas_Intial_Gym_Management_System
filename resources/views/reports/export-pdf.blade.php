@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ ucfirst($type) }} Report</title>
+    <title>{{ $report['title'] ?? (ucfirst($type) . ' Report') }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -158,6 +158,13 @@
                         <th>Time In</th>
                         <th>Time Out</th>
                         <th>Duration</th>
+                    @elseif($type === 'walkin')
+                        <th>Receipt #</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Amount</th>
                     @elseif($type === 'member')
                         <th>Name</th>
                         <th>Email</th>
@@ -189,6 +196,13 @@
                             <td>{{ $row['time_in'] }}</td>
                             <td>{{ $row['time_out'] }}</td>
                             <td>{{ $row['duration'] }}</td>
+                        @elseif($type === 'walkin')
+                            <td>{{ $row['receipt'] }}</td>
+                            <td>{{ $row['name'] }}</td>
+                            <td>{{ $row['date'] }}</td>
+                            <td>{{ $row['method'] }}</td>
+                            <td>{{ $row['status'] }}</td>
+                            <td>{{ $row['amount'] }}</td>
                         @elseif($type === 'member')
                             <td>{{ $row['name'] }}</td>
                             <td>{{ $row['email'] }}</td>

@@ -120,6 +120,21 @@
       font-weight:700;font-size:12px;color:var(--accent-2);overflow:hidden;flex-shrink:0;
     }
     .user-avatar img{width:100%;height:100%;object-fit:cover;}
+
+    /* Clickable user chip → profile page (admin). Same pill + gold underline as .nav-item.active.
+       Height is 34px (30px avatar + 2×2px) so the underline lands exactly where nav items' do. */
+    .user-chip--link{
+      padding:2px 12px 2px 4px;border-radius:8px;text-decoration:none;position:relative;
+      transition:all 0.15s;
+    }
+    .user-chip--link:hover{background:rgba(255,255,255,0.05);color:#fff;}
+    .user-chip--link:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px;}
+    .user-chip--link.active{background:rgba(255,255,255,0.05);color:#fff;font-weight:600;}
+    .user-chip--link.active .user-avatar{border-color:var(--accent-2);}
+    .user-chip--link.active::after{
+      content:'';position:absolute;bottom:-11px;left:10px;right:10px;
+      height:2px;background:var(--accent-2);border-radius:2px;
+    }
     .btn-logout-top{
       display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
       background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.45);color:#f87171;
@@ -338,6 +353,8 @@
       .plan-grid{grid-template-columns:repeat(2,1fr);}
       .two-col{grid-template-columns:1fr;}
       .user-chip span.user-name-text{display:none;}
+      .user-chip--link{padding:2px;}
+      .user-chip--link.active::after{left:2px;right:2px;}
     }
 
     /* ═══════════════════════════════════════════
@@ -536,15 +553,17 @@
         </svg>
         Manage Users
       </a>
-      {{-- Integrated My Profile for Admin --}}
-      <a href="{{ route('admin.profile') }}"
-         class="nav-item {{ $activeNav === 'admin.profile' ? 'active' : '' }}">
+      {{-- Audit Trail (strict admin only) --}}
+      @if(auth()->user()->isAdmin())
+      <a href="{{ route('admin.audit.index') }}"
+         class="nav-item {{ $activeNav === 'audit' ? 'active' : '' }}">
         <svg viewBox="0 0 24 24" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.7L3 8"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5M12 7v5l3 2"/>
         </svg>
-        My Profile
+        Audit Trail
       </a>
+      @endif
     @endif
 
   </div>
@@ -554,7 +573,12 @@
     <span class="role-chip {{ auth()->user()->isAdmin() ? 'role-admin' : 'role-staff' }}">
       {{ strtoupper(auth()->user()->role) }}
     </span>
-    <div class="user-chip">
+    @php $chipIsLink = ! auth()->user()->isStaff(); @endphp
+    <{{ $chipIsLink ? 'a' : 'div' }} class="user-chip{{ $chipIsLink ? ' user-chip--link' : '' }}{{ $chipIsLink && $activeNav === 'admin.profile' ? ' active' : '' }}"
+      @if($chipIsLink)
+        href="{{ route('admin.profile') }}" title="My Profile"
+        @if($activeNav === 'admin.profile') aria-current="page" @endif
+      @endif>
       <div class="user-avatar">
         @if(auth()->user()->photo)
           <img src="{{ asset('storage/'.auth()->user()->photo) }}" alt="{{ auth()->user()->name }}"/>
@@ -563,7 +587,7 @@
         @endif
       </div>
       <span class="user-name-text">{{ auth()->user()->name }}</span>
-    </div>
+    </{{ $chipIsLink ? 'a' : 'div' }}>
     <form method="POST" action="{{ route('logout') }}" style="margin:0;">
       @csrf
       <button type="submit" class="btn-logout-top">

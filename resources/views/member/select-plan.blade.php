@@ -1,50 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Choose Your Plan – APEX</title>
+
+    {{-- Apply the saved theme BEFORE first paint (prevents a dark flash in light mode).
+         THEME_KEY must match the localStorage key used by layouts/member.blade.php
+         so the dashboard toggle and this page stay in sync. --}}
+    <script>
+        window.APEX_THEME_KEY = 'theme';
+        (function () {
+            var t = 'dark';
+            try {
+                var v = localStorage.getItem(window.APEX_THEME_KEY);
+                if (v && /light/i.test(v)) t = 'light';
+            } catch (e) {}
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet" />
     <style>
-        /* ── reset & base ── */
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background:#0d0d0d;
-            color:#f0f0f0;
-            padding:20px 16px 40px;
-        }
-        .member-wrapper { max-width:1280px; margin:0 auto; }
-
-        /* Charcoal & gold — keep in sync with layouts/member.blade.php */
-        :root {
-            --accent:#e0a93b;
-            --accent-2:#f0c060;
-            --accent-dark:#b8862a;
-            --accent-hover:#b8862a;
-            --accent-soft:rgba(224,169,59,0.12);
+        /* ── theme tokens (charcoal & gold) — keep in sync with layouts/member.blade.php ── */
+        :root,
+        [data-theme="dark"] {
+            color-scheme: dark;
+            --bg:#0d0d0d;
+            --text:#f0f0f0;
             --surface:#151515;
             --surface2:#1c1c1c;
             --border:#2a2a2a;
             --border-hover:#3a3a3a;
             --muted:#888;
+            --accent:#e0a93b;
+            --accent-2:#f0c060;
+            --accent-dark:#b8862a;
+            --accent-hover:#b8862a;
+            --accent-soft:rgba(224,169,59,0.12);
+            --accent-text:#e0a93b;           /* gold used for small text */
+            --selected-bg:rgba(224,169,59,0.07);
+            --selected-shadow:0 0 30px rgba(224,169,59,0.08);
+            --icon-idle:rgba(255,255,255,0.2);
+            --danger:#f87171;
+            --danger-soft:rgba(248,113,113,0.12);
+            --toggle-shadow:0 4px 14px rgba(0,0,0,0.35);
             --radius:14px;
         }
+        [data-theme="light"] {
+            color-scheme: light;
+            --bg:#f3f0ea;
+            --text:#1c1c1c;
+            --surface:#fdfcf9;
+            --surface2:#f1ede5;
+            --border:#e3ddd0;
+            --border-hover:#d3ccbb;
+            --muted:#6f6a60;
+            --accent:#cf9a28;
+            --accent-2:#f0c060;
+            --accent-dark:#b8862a;
+            --accent-hover:#b8862a;
+            --accent-soft:rgba(207,154,40,0.14);
+            --accent-text:#8f620c;           /* darker gold = readable on cream */
+            --selected-bg:rgba(207,154,40,0.10);
+            --selected-shadow:0 4px 18px rgba(207,154,40,0.18);
+            --icon-idle:#b9b1a2;
+            --danger:#dc2626;
+            --danger-soft:rgba(220,38,38,0.08);
+            --toggle-shadow:0 4px 14px rgba(0,0,0,0.12);
+        }
+
+        /* ── reset & base ── */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background:var(--bg);
+            color:var(--text);
+            padding:20px 16px 40px;
+            transition:background .25s, color .25s;
+        }
+        .member-wrapper { max-width:1280px; margin:0 auto; }
+
+        /* ── back button ── */
+        .top-bar { margin-bottom:20px; }
+        .btn-back {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:10px 16px; min-height:44px; border-radius:10px;
+            background:var(--surface2); border:1px solid var(--border);
+            color:var(--text); font-size:0.9rem; font-weight:600; text-decoration:none;
+            transition:border-color .2s, color .2s, transform .1s;
+        }
+        .btn-back:hover { border-color:var(--accent); color:var(--accent-text); transform:translateX(-2px); }
+        .btn-back svg { flex-shrink:0; }
+
         .page-header { text-align:center; margin-bottom:36px; }
-        .page-header h1 { font-size:2.4rem; font-weight:800; margin-bottom:8px; color:#fff; letter-spacing:-0.02em; }
+        .page-header h1 { font-size:2.4rem; font-weight:800; margin-bottom:8px; color:var(--text); letter-spacing:-0.02em; }
         .page-header p { color:var(--muted); font-size:1rem; }
         .text-accent { color:var(--accent); }
 
         /* ── alerts ── */
         .alert { padding:14px 18px; border-radius:12px; margin-bottom:24px; font-weight:500; display:flex; flex-wrap:wrap; gap:4px 8px; }
-        .alert-success { background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent); }
-        .alert-error { background:rgba(248,113,113,0.12); border:1px solid #f87171; color:#f87171; }
+        .alert-success { background:var(--accent-soft); border:1px solid var(--accent); color:var(--accent-text); }
+        .alert-error { background:var(--danger-soft); border:1px solid var(--danger); color:var(--danger); }
 
         /* ── sections ── */
         .section-group { margin-bottom:44px; }
-        .section-title { font-size:1.5rem; font-weight:700; margin-bottom:18px; color:#fff; letter-spacing:-0.01em; }
+        .section-title { font-size:1.5rem; font-weight:700; margin-bottom:18px; color:var(--text); letter-spacing:-0.01em; }
         .section-title small { font-size:0.9rem; font-weight:400; color:var(--muted); margin-left:8px; }
 
         /* ── grids ── */
@@ -60,39 +123,51 @@
             height:100%; position:relative; box-sizing:border-box;
             display:flex; flex-direction:column; align-items:flex-start; text-align:left;
         }
-        .card:hover { border-color:rgba(224,169,59,0.4); }
-        .card.selected { border-color:var(--accent) !important; background:rgba(224,169,59,0.07) !important; box-shadow:0 0 30px rgba(224,169,59,0.08); }
+        .card:hover { border-color:rgba(224,169,59,0.5); }
+        .card.selected { border-color:var(--accent) !important; background:var(--selected-bg) !important; box-shadow:var(--selected-shadow); }
         .badge {
             position:absolute; top:12px; right:12px; background:linear-gradient(135deg, var(--accent-2), var(--accent-dark));
             color:#1a1a1a; font-size:0.65rem; font-weight:700; text-transform:uppercase;
             padding:2px 10px; border-radius:20px; letter-spacing:0.3px;
         }
-        .icon-box { width:44px; height:44px; margin-bottom:12px; color:rgba(255,255,255,0.2); flex-shrink:0; }
+        .icon-box { width:44px; height:44px; margin-bottom:12px; color:var(--icon-idle); flex-shrink:0; }
         .card.selected .icon-box { color:var(--accent); }
-        .card-title { font-size:1.15rem; font-weight:700; margin-bottom:6px; color:#fff; }
-        .card-subtitle { font-size:0.95rem; font-weight:600; margin-bottom:8px; color:#fff; }
-        .card-price { font-size:2rem; font-weight:800; margin-bottom:4px; color:#fff; }
-        .card.selected .card-price { color:var(--accent); }
+        .card-title { font-size:1.15rem; font-weight:700; margin-bottom:6px; color:var(--text); }
+        .card-subtitle { font-size:0.95rem; font-weight:600; margin-bottom:8px; color:var(--text); }
+        .card-price { font-size:2rem; font-weight:800; margin-bottom:4px; color:var(--text); }
+        .card.selected .card-price { color:var(--accent-text); }
         .card-desc { font-size:0.8rem; color:var(--muted); line-height:1.5; }
         .card-desc-sm { font-size:0.7rem; color:var(--muted); margin-top:2px; }
-        .selected-indicator { margin-top:14px; font-size:0.75rem; font-weight:600; color:var(--accent); display:none; align-items:center; gap:4px; }
+        .selected-indicator { margin-top:14px; font-size:0.75rem; font-weight:600; color:var(--accent-text); display:none; align-items:center; gap:4px; }
         .avatar-placeholder, .avatar-img {
             width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center;
-            font-size:1.2rem; background:var(--surface2); margin-bottom:12px; flex-shrink:0; object-fit:cover; color:#fff;
+            font-size:1.2rem; background:var(--surface2); margin-bottom:12px; flex-shrink:0; object-fit:cover; color:var(--text);
         }
         .avatar-img { background:transparent; }
 
         /* ── summary ── */
         .summary-container { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); padding:24px 20px; margin-bottom:20px; }
         .summary-row { display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); color:var(--muted); font-size:0.95rem; }
-        .summary-row .fw-600 { color:#fff; font-weight:600; }
-        .summary-total { display:flex; justify-content:space-between; padding:18px 0 10px; font-size:1.6rem; font-weight:800; color:var(--accent); }
+        .summary-row .fw-600 { color:var(--text); font-weight:600; }
+        .summary-total { display:flex; justify-content:space-between; padding:18px 0 10px; font-size:1.6rem; font-weight:800; color:var(--accent-text); }
         .btn-submit {
             width:100%; padding:16px; border-radius:12px; border:none; font-size:1rem; font-weight:700;
             background:var(--surface2); color:var(--muted); transition:all .2s; cursor:not-allowed;
         }
         .btn-submit.active { background:linear-gradient(135deg, var(--accent-2), var(--accent-dark)); color:#1a1a1a; cursor:pointer; }
         .btn-submit.active:hover { box-shadow:0 6px 20px rgba(224,169,59,0.3); transform:scale(1.01); }
+
+        /* ── theme toggle (bottom-right pill, same spot as the dashboard) ── */
+        .theme-toggle {
+            position:fixed; right:14px; bottom:14px; z-index:50;
+            display:inline-flex; align-items:center; gap:8px;
+            padding:10px 16px; border-radius:999px;
+            background:var(--surface); border:1px solid var(--border); color:var(--text);
+            font-family:inherit; font-size:0.85rem; font-weight:600; cursor:pointer;
+            box-shadow:var(--toggle-shadow); transition:border-color .2s, background .25s, color .25s;
+        }
+        .theme-toggle:hover { border-color:var(--accent); }
+        .theme-toggle svg { flex-shrink:0; }
 
         /* ── responsive breakpoints ── */
         @media (max-width:1024px) {
@@ -113,6 +188,8 @@
             .summary-total { font-size:1.4rem; }
             .page-header h1 { font-size:1.8rem; }
             .section-title { font-size:1.3rem; }
+            .btn-back { padding:8px 14px; min-height:40px; font-size:0.85rem; }
+            .theme-toggle { padding:8px 14px; font-size:0.8rem; }
         }
         @media (max-width:400px) {
             .grid-plans, .grid-4, .grid-3 { grid-template-columns:1fr; }
@@ -125,10 +202,25 @@
         .mt-2 { margin-top:8px; }
         .fw-600 { font-weight:600; }
         .text-muted { color:var(--muted); }
+
+        @media (prefers-reduced-motion:reduce) { * { transition-duration:.01ms !important; } }
     </style>
 </head>
 <body>
     <div class="member-wrapper">
+
+        <!-- back button -->
+        <div class="top-bar">
+            <a href="{{ route('member.dashboard') }}" class="btn-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"/>
+                    <polyline points="12 19 5 12 12 5"/>
+                </svg>
+                Back to Dashboard
+            </a>
+        </div>
+
         <!-- page header -->
         <div class="page-header">
             <h1>Choose Your <span class="text-accent">Plan</span></h1>
@@ -225,7 +317,14 @@
                     $noInstSelected = ($selectedInst === '' || $selectedInst === null);
                     $instructorRateMap = [];
                     foreach ($instructors ?? [] as $inst) {
-                        $instructorRateMap[(string) $inst->id] = \App\Models\Payment::rateSettings((int) $inst->id)['coach'];
+                        if (!is_object($inst) || !isset($inst->id)) {
+                            continue;
+                        }
+
+                        $rates = \App\Models\Payment::rateSettings((int) $inst->id);
+                        $instructorRateMap[(string) $inst->id] = is_array($rates) && isset($rates['coach'])
+                            ? $rates['coach']
+                            : \App\Models\Payment::defaultCoachRates();
                     }
                     $selectedInstructorRates = $selectedInst && isset($instructorRateMap[(string) $selectedInst])
                         ? $instructorRateMap[(string) $selectedInst]
@@ -269,7 +368,7 @@
                 <!-- Coach duration container -->
                 <div id="coach-duration-container"
                      style="{{ $noInstSelected ? 'opacity:0.4;pointer-events:none;' : 'opacity:1;pointer-events:auto;' }}">
-                    <h3 style="font-size:1rem; font-weight:700; color:#fff; margin-bottom: 14px;">
+                    <h3 style="font-size:1rem; font-weight:700; color:var(--text); margin-bottom: 14px;">
                         Coach Subscription Duration
                     </h3>
                     @php
@@ -333,9 +432,35 @@
         </form>
     </div>
 
+    <!-- theme toggle -->
+    <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle light / dark mode"></button>
+
     <script>
         (function() {
             document.addEventListener('DOMContentLoaded', function() {
+
+                /* ───────── Theme toggle ───────── */
+                var root = document.documentElement;
+                var toggleBtn = document.getElementById('theme-toggle');
+                var SUN  = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg>';
+                var MOON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+                function renderToggle() {
+                    var isLight = root.getAttribute('data-theme') === 'light';
+                    // Button shows the mode you will SWITCH to (same as the dashboard)
+                    toggleBtn.innerHTML = isLight ? MOON + '<span>Dark mode</span>' : SUN + '<span>Light mode</span>';
+                }
+
+                toggleBtn.addEventListener('click', function() {
+                    var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                    root.setAttribute('data-theme', next);
+                    try { localStorage.setItem(window.APEX_THEME_KEY, next); } catch (e) {}
+                    renderToggle();
+                });
+
+                renderToggle();
+
+                /* ───────── Plan selection ───────── */
                 const coachContainer = document.getElementById('coach-duration-container');
                 const defaultCoachRates = @json(\App\Models\Payment::defaultCoachRates());
                 const instructorCoachRates = @json($instructorRateMap ?? []);

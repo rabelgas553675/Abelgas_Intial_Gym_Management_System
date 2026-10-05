@@ -4,6 +4,9 @@
 
 @section('content')
 
+{{-- Payments sections: Member Payments | Walk-In Payments --}}
+@include('partials.payment-tabs', ['active' => 'member'])
+
 <style>
   /* ── Page-scoped styles (uses the theme variables from layouts/staff.blade.php) ── */
 

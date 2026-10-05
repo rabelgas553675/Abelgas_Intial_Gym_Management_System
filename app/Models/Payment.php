@@ -2,13 +2,28 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
 
 class Payment extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
+
+    protected string $auditModule = 'Payments';
+
+    public function auditLabel(): string
+    {
+        return ($this->receipt_number ?: '#' . $this->getKey())
+            . ' — ' . ($this->member?->name ?? 'Unknown member')
+            . ' (₱' . number_format((float) $this->amount, 2) . ')';
+    }
+
+    public function auditAction(string $event, ?array $old, ?array $new): string
+    {
+        return match ($event) { 'created' => 'recorded', 'deleted' => 'deleted', default => 'updated' };
+    }
 
     protected $fillable = [
         'member_id',
@@ -57,6 +72,16 @@ class Payment extends Model
     public static function defaultCoachRates(): array
     {
         return self::DEFAULT_COACH_FEES;
+    }
+
+    // Day Pass (walk-in) rate — kept OUT of DEFAULT_GYM_FEES on purpose so it never
+    // shows up as a membership plan. It is stored in the same gym rate settings
+    // (payment_settings, key 'gym_day_pass') and edited from the same Subscription Rates form.
+    const DEFAULT_DAY_PASS_RATE = 100;
+
+    public static function dayPassRate(): int
+    {
+        return self::resolveRateSetting('gym', 'Day Pass', self::DEFAULT_DAY_PASS_RATE);
     }
 
     protected static function resolveRateSetting(string $group, string $plan, int $default, ?int $instructorId = null): int

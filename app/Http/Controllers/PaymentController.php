@@ -160,12 +160,14 @@ class PaymentController extends Controller
             ? Payment::rateSettings((int) $selectedInstructorId)
             : Payment::rateSettings();
 
+        $dayPassRate = Payment::dayPassRate();
+
         return view('admin.payments', compact(
             'totalCount', 'thisMonth', 'totalCollected',
             'totalCoachFees', 'thisMonthCoachFees', 'instructorsPaidCount',
             'instructorLeaderboard', 'instructorOptions', 'instructorRateMap',
             'payments', 'coachFeePayments',
-            'members', 'rates', 'selectedInstructorId'
+            'members', 'rates', 'selectedInstructorId', 'dayPassRate'
         ));
     }
 
@@ -176,6 +178,7 @@ class PaymentController extends Controller
             'gym_quarterly' => 'required|integer|min:1',
             'gym_semi_annual' => 'required|integer|min:1',
             'gym_annually' => 'required|integer|min:1',
+            'gym_day_pass' => 'nullable|integer|min:1',
             'coach_monthly' => 'required|integer|min:1',
             'coach_quarterly' => 'required|integer|min:1',
             'coach_semi_annual' => 'required|integer|min:1',
@@ -244,6 +247,14 @@ class PaymentController extends Controller
                     $instructorUser->notify(new InstructorRateUpdated($changes));
                 }
             }
+        }
+
+        // Day Pass (walk-in) rate — stored with the other gym rates, shared by Admin and Staff walk-in pages.
+        if ($request->filled('gym_day_pass')) {
+            PaymentSetting::updateOrCreate(
+                ['key' => 'gym_day_pass'],
+                ['value' => (string) $request->gym_day_pass]
+            );
         }
 
         $label = $instructorId ? 'Instructor-specific subscription rates updated successfully.' : 'Subscription rates updated successfully.';

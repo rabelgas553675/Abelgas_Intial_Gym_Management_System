@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use App\Exceptions\MemberHasHistoryException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -12,6 +13,15 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class Member extends Model
 {
+    use Auditable;
+
+    protected string $auditModule = 'Members';
+
+    public function auditExcept(): array
+    {
+        return ['qr_id', 'qr_code_path', 'qr_token', 'qr_code']; // QR regeneration is noise + token is a secret
+    }
+
     /**
      * Relations that hold a member's history. If ANY of these has rows the member
      * can never be permanently deleted — deactivate / suspend them instead.

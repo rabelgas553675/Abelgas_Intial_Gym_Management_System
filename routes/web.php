@@ -12,11 +12,15 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\QrCodeController;
 use App\Http\Controllers\CoachRequestController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\WalkInPaymentController;
+use App\Http\Middleware\AdminOnly;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Landing page (public)
 Route::get('/', function () {
-    if (auth()->check()) {
+    if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     return view('landing');
@@ -26,7 +30,7 @@ Route::middleware(['auth'])->group(function () {
 
     // ── Smart redirect based on role ────────────────────────────
     Route::get('/dashboard', function () {
-        $role = auth()->user()->role;
+        $role = Auth::user()->role;
         return match($role) {
             'member'     => redirect()->route('member.dashboard'),
             'instructor' => redirect()->route('instructor.dashboard'),
@@ -36,7 +40,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     // ── Plans (public view) ─────────────────────────────────────
-    Route::get('/plans', fn() => view('plans'))->name('plans');
+    Route::get('/plans', fn() => view('landing'))->name('plans');
 
     // ── Reports ─────────────────────────────────────────────────
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -129,6 +133,28 @@ Route::middleware(['auth'])->group(function () {
 
     // Payment recording is available to admin and staff; deletion remains admin-only.
     Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+
+    // ── WALK-IN (DAY PASS) PAYMENTS — Admin + Staff ─────────────────────────
+    // Separate module from Member Payments: own page, form, table and records.
+    // 'admin' alias = admin + staff (existing behaviour); delete is additionally admin-only.
+    Route::middleware('admin')
+        ->prefix('walk-in-payments')
+        ->name('walkin.')
+        ->group(function () {
+            Route::get('/',  [WalkInPaymentController::class, 'index'])->name('index');
+            Route::post('/', [WalkInPaymentController::class, 'store'])->name('store');
+            Route::delete('/{walkIn}', [WalkInPaymentController::class, 'destroy'])
+                ->middleware(AdminOnly::class)->name('destroy');
+        });
+
+    // ── AUDIT TRAIL (strict admin only — NOT the 'admin' alias, which lets staff in) ──
+    Route::middleware(AdminOnly::class)
+        ->prefix('admin')
+        ->name('admin.')
+        ->group(function () {
+            // GET only: no edit/update/destroy routes exist for audit logs.
+            Route::get('/audit-trail', [AuditLogController::class, 'index'])->name('audit.index');
+        });
 
     // ── ADMIN AREA (Admin Only) ─────────────────────────────────
     Route::middleware('admin')->group(function () {

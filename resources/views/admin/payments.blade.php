@@ -184,6 +184,9 @@
     }
 </style>
 
+{{-- Payments sections: Member Payments | Walk-In Payments --}}
+@include('partials.payment-tabs', ['active' => 'member'])
+
 {{-- Page header --}}
 <div class="pay-head">
     <div>
@@ -334,6 +337,11 @@
                                     <input type="number" name="gym_{{ strtolower(str_replace('-', '_', $period)) }}" class="form-control" min="0" value="{{ $rates['gym'][$period] ?? 0 }}" required>
                                 </div>
                             @endforeach
+                            {{-- Day Pass rate used by the separate Walk-In Payments module --}}
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label class="form-label">Day Pass (Walk-In)</label>
+                                <input type="number" name="gym_day_pass" class="form-control" min="1" value="{{ $dayPassRate ?? \App\Models\Payment::dayPassRate() }}">
+                            </div>
                         </div>
                         <div>
                             <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:700;">Instructor</div>

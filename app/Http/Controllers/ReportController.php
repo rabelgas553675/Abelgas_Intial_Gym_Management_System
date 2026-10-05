@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Member;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\WalkInPayment;
 use App\Models\WorkoutPlan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -66,11 +67,11 @@ class ReportController extends Controller
     private function allowedTypesForUser(User $user): array
     {
         if ($user->isAdmin()) {
-            return ['payment', 'attendance', 'workout', 'member'];
+            return ['payment', 'walkin', 'attendance', 'workout', 'member'];
         }
 
         if ($user->isStaff()) {
-            return ['payment', 'attendance', 'member'];
+            return ['payment', 'walkin', 'attendance', 'member'];
         }
 
         if ($user->isInstructor()) {
@@ -125,6 +126,7 @@ class ReportController extends Controller
     {
         return match ($type) {
             'payment' => $this->paymentReport($window, $user),
+            'walkin' => $this->walkInReport($window, $user),
             'attendance' => $this->attendanceReport($window, $user),
             'workout' => $this->workoutReport($window, $user),
             'member' => $this->memberReport($window, $user),
@@ -146,7 +148,7 @@ class ReportController extends Controller
         }
 
         if ($type === 'payment') {
-            $query = Payment::query()->whereBetween('payment_date', $window);
+            $query = Payment::query()->whereBetween('payment_date', $window, 'and', false);
             if ($user->isInstructor()) {
                 $query->where('payment_type', 'coach_fee')->where('instructor_id', $user->id);
             }
@@ -157,10 +159,18 @@ class ReportController extends Controller
             foreach ($start->daysUntil($end->copy()->addDay()) as $date) {
                 $values[] = (float) ($totals[$date->format('Y-m-d')] ?? 0);
             }
+        } elseif ($type === 'walkin') {
+            $totals = WalkInPayment::query()->whereBetween('payment_date', $window)->get()
+                ->groupBy(fn ($sale) => Carbon::parse($sale->payment_date)->format('Y-m-d'))
+                ->map(fn ($rows) => (float) $rows->sum('amount'));
+
+            foreach ($start->daysUntil($end->copy()->addDay()) as $date) {
+                $values[] = (float) ($totals[$date->format('Y-m-d')] ?? 0);
+            }
         } elseif ($type === 'attendance') {
-            $query = Attendance::query()->whereBetween('date', $window);
+            $query = Attendance::query()->whereBetween('date', $window, 'and', false);
             if ($user->isInstructor()) {
-                $memberIds = Member::where('instructor_id', $user->id)->pluck('id');
+                $memberIds = Member::query()->where('instructor_id', '=', $user->id, 'and')->pluck('id');
                 $query->whereIn('member_id', $memberIds);
             }
 
@@ -171,7 +181,7 @@ class ReportController extends Controller
                 $values[] = (float) ($totals[$date->format('Y-m-d')] ?? 0);
             }
         } elseif ($type === 'workout') {
-            $query = WorkoutPlan::query()->whereBetween('scheduled_date', $window);
+            $query = WorkoutPlan::query()->whereBetween('scheduled_date', $window, 'and', false);
             if ($user->isInstructor()) {
                 $query->where('instructor_id', $user->id);
             }
@@ -183,7 +193,7 @@ class ReportController extends Controller
                 $values[] = (float) ($totals[$date->format('Y-m-d')] ?? 0);
             }
         } else {
-            $totals = Member::query()->whereBetween('created_at', $window)->get()->groupBy(fn ($member) => $member->created_at->format('Y-m-d'))
+            $totals = Member::query()->whereBetween('created_at', $window, 'and', false)->get()->groupBy(fn ($member) => $member->created_at->format('Y-m-d'))
                 ->map(fn ($rows) => $rows->count());
 
             foreach ($start->daysUntil($end->copy()->addDay()) as $date) {
@@ -247,11 +257,62 @@ class ReportController extends Controller
         ];
     }
 
+    /**
+     * Walk-In / Day Pass sales. Kept separate from the member Payment report on
+     * purpose: walk-ins live in their own table and are never members.
+     */
+    private function walkInReport(array $window, User $user): array
+    {
+        $sales = WalkInPayment::query()
+            ->whereBetween('payment_date', $window)
+            ->orderByDesc('payment_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $stats = [
+            [
+                'label' => 'Total Collection',
+                'value' => '₱' . number_format((float) $sales->sum('amount'), 2),
+                'tone' => 'green',
+            ],
+            [
+                'label' => 'Walk-ins',
+                'value' => (string) $sales->count(),
+                'tone' => 'blue',
+            ],
+            [
+                'label' => 'Average Sale',
+                'value' => '₱' . number_format($sales->count() ? ((float) $sales->sum('amount') / $sales->count()) : 0, 2),
+                'tone' => 'orange',
+            ],
+        ];
+
+        $rows = $sales->map(function ($sale) {
+            return [
+                'receipt' => $sale->receipt_number,
+                'name' => $sale->customer_name,
+                'date' => $sale->payment_date ? $sale->payment_date->format('M d, Y') : '—',
+                'method' => $sale->method ?? 'Cash',
+                'status' => $sale->status ?? 'Paid',
+                'amount' => '₱' . number_format((float) $sale->amount, 2),
+            ];
+        })->all();
+
+        return [
+            'title' => 'Walk-in report',
+            'subtitle' => 'Day pass sales to non-members for the selected time frame.',
+            'stats' => $stats,
+            'rows' => $rows,
+            'chart' => $this->buildChartData('walkin', $window, $user),
+            'empty' => $sales->isEmpty(),
+        ];
+    }
+
     private function memberReport(array $window, User $user): array
     {
         $allMembers = Member::query()->get();
         $newMembers = Member::query()
-            ->whereBetween('created_at', $window)
+            ->whereBetween('created_at', $window, 'and', false)
             ->orderByDesc('created_at')
             ->get();
 
@@ -303,7 +364,7 @@ class ReportController extends Controller
             ->whereBetween('date', $window);
 
         if ($user->isInstructor()) {
-            $memberIds = Member::where('instructor_id', $user->id)->pluck('id');
+            $memberIds = Member::where('instructor_id', '=', $user->id, 'and')->pluck('id');
             $query->whereIn('member_id', $memberIds);
         }
 
@@ -405,6 +466,7 @@ class ReportController extends Controller
     {
         $columns = match ($type) {
             'payment' => ['Member', 'Type', 'Date', 'Method', 'Amount'],
+            'walkin' => ['Receipt #', 'Customer', 'Date', 'Method', 'Status', 'Amount'],
             'attendance' => ['Name', 'Role', 'Date', 'Time In', 'Time Out', 'Duration'],
             'workout' => ['Member', 'Session', 'Date', 'Status', 'Instructor'],
             'member' => ['Name', 'Email', 'Date Joined', 'Plan', 'Status'],
@@ -417,6 +479,11 @@ class ReportController extends Controller
         foreach ($report['rows'] as $row) {
             if ($type === 'payment') {
                 fputcsv($buffer, [$row['name'], $row['type'], $row['date'], $row['method'], $row['amount']]);
+                continue;
+            }
+
+            if ($type === 'walkin') {
+                fputcsv($buffer, [$row['receipt'], $row['name'], $row['date'], $row['method'], $row['status'], $row['amount']]);
                 continue;
             }
 
