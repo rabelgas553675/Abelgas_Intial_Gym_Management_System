@@ -202,10 +202,9 @@
       $statusLabel    = $isExpired ? 'Expired' : ($isExpiring ? 'Expiring Soon' : 'Active');
       $statusColor    = $isExpired ? 'var(--danger)' : ($isExpiring ? 'var(--warning)' : 'var(--success)');
       $statusBg       = 'color-mix(in srgb, ' . $statusColor . ' 15%, transparent)';
-      $daysRemaining  = $isExpired ? 0 : (int) now()->diffInDays($member->end_date);
-      $totalDays      = ($member->start_date && $member->end_date)
-                          ? (int) $member->start_date->diffInDays($member->end_date) : 30;
-      $progressPct    = $totalDays > 0 ? min(100, round(($daysRemaining / $totalDays) * 100)) : 0;
+      $exp            = $member->expiration();   // single source of truth
+      $daysRemaining  = $exp->daysRemaining ?? 0;
+      $progressPct    = $exp->progress;
       $memberPhotoUrl = ($member->user?->photo ?? $member->photo ?? null)
                           ? asset('storage/' . ($member->user?->photo ?? $member->photo))
                           : '';

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\Auditable;
 use App\Exceptions\MemberHasHistoryException;
+use App\Services\MembershipExpiration;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -63,9 +64,12 @@ class Member extends Model
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date'   => 'date',
-        'birthdate'  => 'date',
+        // 'date:Y-m-d' keeps attribute access as Carbon but serializes toArray()/JSON
+        // as a plain calendar date (a bare 'date' cast serializes as UTC and shifts
+        // Asia/Manila midnight back one day).
+        'start_date' => 'date:Y-m-d',
+        'end_date'   => 'date:Y-m-d',
+        'birthdate'  => 'date:Y-m-d',
     ];
 
     /**
@@ -95,44 +99,41 @@ class Member extends Model
     // ─────────────────────────────────────────
 
     /**
-     * Compute status from end_date at runtime.
+     * Status is ALWAYS derived from the subscription dates (never edited by hand
+     * to flip Active → Expired). The calculation lives in MembershipExpiration so
+     * every screen agrees:
      *
-     *  No end_date                        → 'No Plan'
-     *  end_date in the past               → 'Expired'
-     *  now → end_date is within 7 days    → 'Expiring Soon'
-     *  now → end_date is more than 7 days → 'Active'
+     *  No end_date                  → 'No Plan'
+     *  end_date today or earlier    → 'Expired'
+     *  1–7 days remaining           → 'Expiring Soon'
+     *  more than 7 days remaining   → 'Active'
+     *  stored Suspended / Inactive  → kept as-is (staff controlled)
      */
     protected function status(): Attribute
     {
         return Attribute::make(
-            get: function () {
-                // These are staff controlled account states. Subscription
-                // dates determine the ordinary Active/Expired states.
-                $storedStatus = $this->attributes['status'] ?? null;
-                if (in_array($storedStatus, ['Suspended', 'Inactive'], true)) {
-                    return $storedStatus;
-                }
-
-                if (!$this->end_date) {
-                    return 'No Plan';
-                }
-
-                if ($this->end_date->isPast()) {
-                    return 'Expired';
-                }
-
-                // now() → end_date: days remaining (always positive for future dates)
-                $daysLeft = now()->diffInDays($this->end_date);
-
-                if ($daysLeft <= 7) {
-                    return 'Expiring Soon';
-                }
-
-                return 'Active';
-            }
+            get: fn () => $this->expiration()->status
         );
     }
-    
+
+    /**
+     * The one and only expiration state for this member
+     * (status, days remaining, progress %, dates, badge/tone helpers).
+     */
+    public function expiration(): MembershipExpiration
+    {
+        try {
+            return MembershipExpiration::calculate(
+                $this->start_date,
+                $this->end_date,
+                $this->attributes['status'] ?? null,
+            );
+        } catch (\Throwable $e) {
+            // Corrupt date data must never take a page down.
+            return MembershipExpiration::calculate(null, null, $this->attributes['status'] ?? null);
+        }
+    }
+
     // ─────────────────────────────────────────
     //  QR Code Generation
     // ─────────────────────────────────────────
@@ -259,22 +260,22 @@ class Member extends Model
     // ─────────────────────────────────────────
 
     /**
-     * True if subscription ends within $days days and is not yet expired.
-     * Uses now() → end_date direction to get correct positive day count.
+     * True if the subscription ends within $days days and is not yet expired.
      */
     public function isDueWithinDays(int $days = 7): bool
     {
-        if (!$this->end_date) return false;
+        $exp = $this->expiration();
 
-        return $this->end_date->isFuture()
-            && now()->diffInDays($this->end_date) <= $days;
+        return $exp->hasDates()
+            && !$exp->dateExpired
+            && $exp->daysRemaining <= $days;
     }
 
     /**
-     * True if the subscription end date is in the past.
+     * True once the end date is today or earlier.
      */
     public function isExpired(): bool
     {
-        return $this->end_date && $this->end_date->isPast();
+        return $this->expiration()->dateExpired;
     }
 }

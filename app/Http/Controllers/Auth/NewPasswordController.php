@@ -34,7 +34,13 @@ class NewPasswordController extends Controller
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->numbers()],
+        ], [
+            'password.required'  => 'The new password field is required.',
+            'password.confirmed' => 'The new password confirmation does not match.',
+            'password.min'       => 'The new password must be at least 8 characters.',
+            'password.letters'   => 'The new password must contain at least one letter.',
+            'password.numbers'   => 'The new password must contain at least one number.',
         ]);
 
         // Here we will attempt to reset the user's password. If it is successful we
@@ -61,3 +67,4 @@ class NewPasswordController extends Controller
                         ->withErrors(['email' => __($status)]);
     }
 }
+

@@ -207,15 +207,32 @@
         <p>Track your fitness journey and manage your subscription</p>
     </div>
 
-    {{-- Near-due warning --}}
-    @if($nearDue && $member)
+    {{-- Expiration warnings (text comes from Member::expiration(), same as the admin side) --}}
+    {{-- FIX: was the inline form @php($exp = ...), which Blade's @php...@endphp regex
+         mistook for the start of a block and swallowed the @if($member) further down.
+         Use the block form instead. --}}
+    @php
+        $exp = $member?->expiration();
+    @endphp
+    @if($exp && $exp->state === 'expiring')
     <div class="warning-banner">
         <span class="icon">⚠️</span>
         <div class="text">
             <strong>Subscription Expiring Soon</strong>
             <div class="sub">
-                Your {{ $member->membership_type }} plan expires on
-                <strong>{{ $member->end_date->format('M d, Y') }}</strong>.
+                {{ $exp->message() }} Your {{ $member->membership_type }} plan ends on
+                <strong>{{ $exp->endDate->format('M d, Y') }}</strong>.
+                <a href="{{ route('member.select-plan') }}">Renew now →</a>
+            </div>
+        </div>
+    </div>
+    @elseif($exp && $exp->state === 'expired')
+    <div class="warning-banner" style="border-color:var(--danger);background:rgba(248,113,113,.08);">
+        <span class="icon">⛔</span>
+        <div class="text">
+            <strong>Membership Expired</strong>
+            <div class="sub">
+                Your membership has expired. Please renew your membership to continue accessing member benefits.
                 <a href="{{ route('member.select-plan') }}">Renew now →</a>
             </div>
         </div>
@@ -266,13 +283,10 @@
                         <div class="label">Instructor</div>
                         <div class="value">{{ $member->instructor->name ?? 'Not assigned' }}</div>
                     </div>
-                    <div class="item">
-                        <div class="label">Active Period</div>
-                        <div class="value">
-                            {{ $member->start_date?->format('M d, Y') }} – {{ $member->end_date?->format('M d, Y') }}
-                        </div>
-                    </div>
                 </div>
+
+                {{-- Status, active period, days remaining + progress (shared with the admin page) --}}
+                <x-membership-expiration :member="$member" :plan="false" :alert="false" style="margin:4px 0 18px;" />
 
                 <div class="sub-actions">
                     <a href="{{ route('member.select-plan') }}" class="btn btn-primary" style="flex:1;justify-content:center;">
@@ -440,7 +454,9 @@
             @endphp
             <div class="modal-plan-grid">
                 @foreach($svgPlans as $planName => $planSvg)
-                    @php $isPlan = $member->fitness_plan === $planName; @endphp
+                    @php
+                        $isPlan = $member->fitness_plan === $planName;
+                    @endphp
                     <label class="modal-plan-option">
                         <input type="radio" name="fitness_plan" value="{{ $planName }}" {{ $isPlan ? 'checked' : '' }}/>
                         <div class="modal-plan-card {{ $isPlan ? 'selected' : '' }}">

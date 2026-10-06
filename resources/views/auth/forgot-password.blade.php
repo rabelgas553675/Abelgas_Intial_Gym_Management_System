@@ -1,25 +1,39 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+@extends('layouts.auth-modal')
+@section('title', 'Forgot Password – APEX FITNESS GYM')
+
+@section('content')
+  <div class="modal-heading" id="authHeading">FORGOT PASSWORD?</div>
+  <div class="modal-sub">Enter your email and we'll send you a link to reset it</div>
+
+  @if(session('status'))
+    <div class="fm-success" role="status">✓ {{ session('status') }}</div>
+  @endif
+  @if(session('error'))
+    <div class="fm-error" role="alert">{{ session('error') }}</div>
+  @endif
+
+  <form method="POST" action="{{ route('password.email') }}" id="forgot-form">
+    @csrf
+
+    <div class="fm-group">
+      <label class="fm-label" for="email">Email</label>
+      <input type="email" id="email" name="email" class="fm-input @error('email') is-invalid @enderror"
+             value="{{ old('email') }}" placeholder="you@example.com" required autofocus autocomplete="email"/>
+      @error('email')<div class="fm-field-error">{{ $message }}</div>@enderror
     </div>
 
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <button type="submit" class="btn-submit" id="forgot-btn">Send Reset Link →</button>
+  </form>
 
-    <form method="POST" action="{{ route('password.email') }}">
-        @csrf
+  <div class="fm-footer">Remembered it? <a href="{{ url('/') }}?auth=login">Back to sign in</a></div>
+@endsection
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+@push('scripts')
+<script>
+  (function () {
+    var f = document.getElementById('forgot-form'), b = document.getElementById('forgot-btn');
+    f.addEventListener('submit', function () { b.disabled = true; b.textContent = 'Sending…'; });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) { b.disabled = false; b.textContent = 'Send Reset Link →'; } });
+  })();
+</script>
+@endpush

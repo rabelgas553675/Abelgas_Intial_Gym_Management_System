@@ -275,6 +275,9 @@
             </div>
         </div>
     </form>
+
+    {{-- Change Password (all roles share this card) --}}
+    @include('partials.change-password-card')
 </div>
 
 <script>

@@ -130,6 +130,9 @@
 
 </form>
 
+{{-- Change Password (all roles share this card) --}}
+@include('partials.change-password-card')
+
 <style>
   /* Charcoal & gold — colours come from the tokens in layouts/instructor.blade.php */
 

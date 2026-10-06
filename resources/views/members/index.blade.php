@@ -307,6 +307,14 @@
     .badge-status.suspended .dot { background: #fb923c; }
     .badge-status.inactive  { background: rgba(148, 163, 184, .12); color: #94a3b8; }
     .badge-status.inactive .dot { background: #94a3b8; }
+    .badge-status.expiring { background: rgba(251, 191, 36, .12); color: #fbbf24; }
+    .badge-status.expiring .dot { background: #fbbf24; box-shadow: 0 0 6px #fbbf24; }
+
+    /* "N days left" line under the status badge */
+    .days-left { margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--muted, #888); }
+    .days-left.active   { color: #4ade80; }
+    .days-left.expiring { color: #fbbf24; }
+    .days-left.expired  { color: #f87171; }
 
     /* ───────── Due date ───────── */
     .due-date { font-weight: 700; font-size: 12.5px; }
@@ -658,8 +666,32 @@
                         'Expired'   => 'expired',
                         'Suspended' => 'suspended',
                         'Inactive'  => 'inactive',
+                        'Expiring Soon' => 'expiring',
                         default     => 'pending',
                     };
+
+                    // Same calculation as the member page (App\Services\MembershipExpiration).
+                    // Rows without an end date (e.g. staff accounts) keep their original badge.
+                    $expRow = null;
+                    try {
+                        if (!empty($member->end_date)) {
+                            $expRow = \App\Services\MembershipExpiration::calculate(
+                                !empty($member->start_date) ? \Carbon\Carbon::parse($member->start_date) : null,
+                                \Carbon\Carbon::parse($member->end_date),
+                                $member->status ?? null
+                            );
+                            $statusClass = match ($expRow->state) {
+                                'active'    => 'active',
+                                'expiring'  => 'expiring',
+                                'expired'   => 'expired',
+                                'suspended' => 'suspended',
+                                'inactive'  => 'inactive',
+                                default     => 'pending',
+                            };
+                        }
+                    } catch (\Throwable $e) {
+                        $expRow = null;
+                    }
                 @endphp
                 <tr>
                     <td class="col-index">{{ $members->firstItem() + $loop->index }}</td>
@@ -695,8 +727,11 @@
                     <td class="col-status" data-label="Status">
                         <span class="badge-status {{ $statusClass }}">
                             <span class="dot"></span>
-                            {{ $member->status ?? '—' }}
+                            {{ $expRow?->status ?? $member->status ?? '—' }}
                         </span>
+                        @if($expRow)
+                            <div class="days-left {{ $statusClass }}">{{ $expRow->shortText() }}</div>
+                        @endif
                     </td>
 
                     <td class="col-start" data-label="Start Date">{{ isset($member->start_date) && $member->start_date ? \Carbon\Carbon::parse($member->start_date)->format('Y-m-d') : '—' }}</td>
@@ -704,10 +739,12 @@
                     <td class="col-due" data-label="Expiry Date">
                         @if(isset($member->end_date) && $member->end_date)
                             @php
-                                $due      = \Carbon\Carbon::parse($member->end_date);
-                                $daysLeft = now()->startOfDay()->diffInDays($due->copy()->startOfDay(), false);
+                                $due = $expRow?->endDate ?? \Carbon\Carbon::parse($member->end_date);
+                                $dueClass = $expRow
+                                    ? ($expRow->dateExpired ? 'danger' : ($expRow->isExpiringSoon() ? 'warning' : 'success'))
+                                    : 'success';
                             @endphp
-                            <span class="due-date {{ $due->isPast() ? 'danger' : ($daysLeft <= 7 ? 'warning' : 'success') }}">
+                            <span class="due-date {{ $dueClass }}">
                                 {{ $due->format('Y-m-d') }}
                             </span>
                         @else

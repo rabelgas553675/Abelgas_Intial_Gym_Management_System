@@ -20,6 +20,14 @@
       <div style="font-size:18px;font-weight:700;margin-bottom:6px;">Welcome back</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:24px;">Sign in to your account</div>
 
+      @if(session('status'))
+        <div style="background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.30);
+                    border-radius:var(--radius);padding:10px 14px;margin-bottom:18px;
+                    font-size:13px;color:var(--success);">
+          ✓ {{ session('status') }}
+        </div>
+      @endif
+
       @if(session('error'))
         <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
                     border-radius:var(--radius);padding:10px 14px;margin-bottom:18px;

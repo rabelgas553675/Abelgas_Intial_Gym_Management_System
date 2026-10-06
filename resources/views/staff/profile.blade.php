@@ -138,6 +138,9 @@
 
 </form>
 
+{{-- Change Password (all roles share this card) --}}
+@include('partials.change-password-card')
+
 <style>
   /* Reuses the charcoal & gold tokens (--accent, --accent-2, --accent-dark,
      --surface, --surface2, --border, --text, --text-soft, --muted,

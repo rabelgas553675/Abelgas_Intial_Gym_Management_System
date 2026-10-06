@@ -91,6 +91,7 @@ nav{position:relative;z-index:10;display:flex;align-items:center;justify-content
 .fm-footer{text-align:center;font-size:13px;color:#666;margin-top:14px;}
 .fm-footer a{color:var(--accent);text-decoration:none;cursor:pointer;}
 .fm-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#ef4444;}
+.fm-success{background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.30);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#4ade80;}
 .fm-member-badge{display:flex;align-items:center;gap:10px;background:var(--accent-soft);border:1px solid rgba(224,169,59,0.25);border-radius:10px;padding:10px 14px;margin-bottom:18px;}
 .fm-member-badge svg{width:16px;height:16px;stroke:var(--accent);flex-shrink:0;}
 .fm-member-badge-text{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);}
@@ -274,6 +275,10 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
       <div class="modal-heading">WELCOME BACK</div>
       <div class="modal-sub">Sign in to your account</div>
 
+      @if(session('status'))
+        <div class="fm-success">✓ {{ session('status') }}</div>
+      @endif
+
       @if($errors->has('email') && old('_form') === 'login')
         <div class="fm-error">{{ $errors->first('email') }}</div>
       @endif
@@ -394,6 +399,13 @@ function switchTab(tab){
   document.getElementById('panel-'+tab).classList.add('active');
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// Deep links from the forgot/reset password pages: /?auth=login  or  /?auth=register
+const authParam=new URLSearchParams(location.search).get('auth');
+if(authParam==='login'||authParam==='register'){openModal(authParam);}
+@if(session('status'))
+  openModal('login');
+@endif
 
 @if($errors->any())
   @if(old('_form') === 'login')

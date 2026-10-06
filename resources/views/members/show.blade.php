@@ -861,49 +861,8 @@
                 <div class="profile-name">{{ $member->name }}</div>
                 <div class="profile-email">{{ $member->email }}</div>
 
-                {{-- Status Badge --}}
-                @php
-                    $dynamicStatus = $member->status;
-                    $end = $member->end_date;
-                    $daysLeft = $end ? (int) now()->diffInDays($end, false) : null;
-
-                    match ($dynamicStatus) {
-                        'Active' => [
-                            $badgeLabel  = 'Active',
-                            $badgeColor  = '#4ade80',
-                            $badgeBg     = 'rgba(74,222,128,0.12)',
-                            $badgeBorder = 'rgba(74,222,128,0.25)',
-                        ],
-                        'Expiring Soon' => [
-                            $badgeLabel  = 'Expiring Soon',
-                            $badgeColor  = '#fbbf24',
-                            $badgeBg     = 'rgba(251,191,36,0.12)',
-                            $badgeBorder = 'rgba(251,191,36,0.25)',
-                        ],
-                        'Expired' => [
-                            $badgeLabel  = 'Expired',
-                            $badgeColor  = '#f87171',
-                            $badgeBg     = 'rgba(248,113,113,0.12)',
-                            $badgeBorder = 'rgba(248,113,113,0.25)',
-                        ],
-                        'Suspended' => [
-                            $badgeLabel  = 'Suspended',
-                            $badgeColor  = '#fb923c',
-                            $badgeBg     = 'rgba(251,146,60,0.12)',
-                            $badgeBorder = 'rgba(251,146,60,0.25)',
-                        ],
-                        default => [
-                            $badgeLabel  = $dynamicStatus,
-                            $badgeColor  = 'var(--muted)',
-                            $badgeBg     = 'rgba(255,255,255,0.05)',
-                            $badgeBorder = 'var(--border)',
-                        ],
-                    };
-                @endphp
-                <span class="status-badge" style="background:{{ $badgeBg }};color:{{ $badgeColor }};border:1px solid {{ $badgeBorder }};">
-                    <span class="dot"></span>
-                    {{ $badgeLabel }}
-                </span>
+                {{-- Status Badge (Member::expiration() — same source as the member portal) --}}
+                <x-membership-status-badge :member="$member" />
             </div>
 
             {{-- Personal Info Card --}}
@@ -1013,77 +972,8 @@
                     </div>
                 </div>
 
-                {{-- Bottom row: Start Date / End Date / Status --}}
-                <div class="membership-grid" style="margin-bottom:20px;">
-                    <div class="membership-item">
-                        <div class="label">Start Date</div>
-                        <div class="value">{{ $member->start_date?->format('M d, Y') ?? '—' }}</div>
-                    </div>
-
-                    <div class="membership-item">
-                        <div class="label">End Date</div>
-                        @php
-                            $endDateColor = match(true) {
-                                $end && $end->isPast() => '#f87171',
-                                $end && now()->diffInDays($end) <= 7 => '#fbbf24',
-                                default => 'var(--text)',
-                            };
-                        @endphp
-                        <div class="value" style="color:{{ $endDateColor }};">
-                            {{ $end?->format('M d, Y') ?? '—' }}
-                        </div>
-                    </div>
-
-                    <div class="membership-item">
-                        <div class="label">Status</div>
-                        <div style="display:inline-flex;align-items:center;gap:7px;font-size:16px;font-weight:700;color:{{ $badgeColor }};">
-                            <span style="width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor;flex-shrink:0;"></span>
-                            {{ $badgeLabel }}
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Days remaining progress bar --}}
-                @if($end && !$end->isPast())
-                    @php
-                        $daysRemaining = (int) now()->diffInDays($end);
-                        $totalDays = $member->start_date ? (int) $member->start_date->diffInDays($end) : 30;
-                        $progressPct = $totalDays > 0 ? min(100, round(($daysRemaining / $totalDays) * 100)) : 0;
-                        $barColor = $daysRemaining <= 7 ? '#fbbf24' : '#4ade80';
-                    @endphp
-                    <div class="progress-wrap">
-                        <div class="progress-header">
-                            <div class="progress-label">Days Remaining</div>
-                            <div class="progress-days" style="color:{{ $barColor }};">
-                                {{ $daysRemaining }} day{{ $daysRemaining !== 1 ? 's' : '' }} left
-                            </div>
-                        </div>
-                        <div class="progress-track">
-                            <div class="progress-bar" style="width:{{ $progressPct }}%;background:{{ $barColor }};"></div>
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Alert Bar --}}
-                @if($dynamicStatus === 'Expiring Soon')
-                    <div class="alert-bar alert-warning">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3 L13.71 3.86a2 2 0 00-3.42 0z"/>
-                            <line x1="12" y1="9" x2="12" y2="13"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
-                        </svg>
-                        Membership expiring in {{ (int) now()->diffInDays($end) }} day{{ now()->diffInDays($end) !== 1 ? 's' : '' }}.
-                    </div>
-                @elseif($dynamicStatus === 'Expired')
-                    <div class="alert-bar alert-danger">
-                        <svg viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="12"/>
-                            <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                        Membership has expired. Please renew to continue access.
-                    </div>
-                @endif
+                {{-- Start / expiry / days remaining / progress / status — identical to the member's view --}}
+                <x-membership-expiration :member="$member" :plan="false" />
             </div>
 
             {{-- Payment History Card --}}

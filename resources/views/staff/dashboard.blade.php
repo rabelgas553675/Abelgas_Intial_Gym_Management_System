@@ -103,15 +103,16 @@
     <div class="members-list" id="membersList">
       @forelse($members as $member)
         @php
+          $exp        = $member->expiration();   // single source of truth
           $end        = $member->end_date;
-          $isExpired  = $end && $end->isPast();
-          $isExpiring = $end && !$isExpired && now()->diffInDays($end) <= 7;
-          $pillClass  = $isExpired  ? 'pill-expired'
-                      : ($isExpiring ? 'pill-expiring'
-                      : 'pill-active');
-          $pillLabel  = $isExpired  ? 'Expired'
-                      : ($isExpiring ? 'Expiring'
-                      : 'Active');
+          [$pillClass, $pillLabel] = match ($exp->state) {
+              'active'    => ['pill-active',   'Active'],
+              'expiring'  => ['pill-expiring', 'Expiring'],
+              'suspended' => ['pill-expiring', 'Suspended'],
+              'inactive'  => ['pill-expired',  'Inactive'],
+              'unavailable' => ['pill-expired', 'No Plan'],
+              default     => ['pill-expired',  'Expired'],
+          };
           $memberPhoto = $member->user?->photo ?? $member->photo ?? null;
         @endphp
         <div class="member-item"
@@ -249,31 +250,13 @@
 <div id="memberData" style="display:none;">
   @foreach($members as $member)
     @php
-      $end         = $member->end_date;
-      $isExpired   = $end && $end->isPast();
-      $isExpiring  = $end && !$isExpired && now()->diffInDays($end) <= 7;
-
-      $statusLabel = $isExpired  ? 'Expired'
-                   : ($isExpiring ? 'Expiring Soon'
-                   : 'Active');
-
-      // Theme-aware: these resolve to the same #f87171 / #fbbf24 / #4ade80 in dark mode,
-      // and to the readable light-theme colours in light mode.
-      $statusColor = $isExpired  ? 'var(--danger)'
-                   : ($isExpiring ? 'var(--warning)'
-                   : 'var(--success)');
-      $statusBg    = $isExpired  ? 'color-mix(in srgb, var(--danger) 15%, transparent)'
-                   : ($isExpiring ? 'color-mix(in srgb, var(--warning) 15%, transparent)'
-                   : 'color-mix(in srgb, var(--success) 15%, transparent)');
-      $barColor    = $statusColor;
-
-      $daysRemaining = $isExpired ? 0 : (int) now()->diffInDays($end);
-      $totalDays     = ($member->start_date && $end)
-                         ? (int) $member->start_date->diffInDays($end)
-                         : 30;
-      $progressPct   = $totalDays > 0
-                         ? min(100, round(($daysRemaining / $totalDays) * 100))
-                         : 0;
+      $exp   = $member->expiration();   // single source of truth
+      $color = match ($exp->tone()) {
+          'success' => 'var(--success)',
+          'warning' => 'var(--warning)',
+          'danger'  => 'var(--danger)',
+          default   => 'var(--muted, #94a3b8)',
+      };
 
       $memberPhotoUrl = ($member->user?->photo ?? $member->photo ?? null)
                           ? asset('storage/' . ($member->user?->photo ?? $member->photo))
@@ -287,13 +270,13 @@
          data-plan="{{ $member->fitness_plan ?? '—' }}"
          data-duration="{{ $member->membership_type ?? '—' }}"
          data-start="{{ $member->start_date?->format('M d, Y') ?? '—' }}"
-         data-end="{{ $end?->format('M d, Y') ?? '—' }}"
-         data-status="{{ $statusLabel }}"
-         data-status-color="{{ $statusColor }}"
-         data-status-bg="{{ $statusBg }}"
-         data-days-remaining="{{ $daysRemaining }}"
-         data-progress-pct="{{ $progressPct }}"
-         data-bar-color="{{ $barColor }}"
+         data-end="{{ $member->end_date?->format('M d, Y') ?? '—' }}"
+         data-status="{{ $exp->status }}"
+         data-status-color="{{ $color }}"
+         data-status-bg="color-mix(in srgb, {{ $color }} 15%, transparent)"
+         data-days-text="{{ $exp->displayText() }}"
+         data-progress-pct="{{ $exp->progress }}"
+         data-bar-color="{{ $color }}"
          data-photo="{{ $memberPhotoUrl }}"
          data-url="{{ route('members.show', $member) }}">
     </div>
@@ -963,13 +946,12 @@ function showMemberDetail(id, el) {
   document.getElementById('detailsDuration').textContent = md.dataset.duration;
   document.getElementById('detailsPeriod').textContent = `${md.dataset.start} – ${md.dataset.end}`;
 
-  const days = parseInt(md.dataset.daysRemaining) || 0;
-  const pct = parseInt(md.dataset.progressPct) || 0;
+  const pct      = parseInt(md.dataset.progressPct, 10) || 0;
   const barColor = md.dataset.barColor;
+  const label    = document.getElementById('daysRemainingLabel');
 
-  document.getElementById('daysRemainingLabel').textContent =
-    days === 0 ? 'Expired' : `${days} day${days !== 1 ? 's' : ''} left`;
-  document.getElementById('daysRemainingLabel').style.color = barColor;
+  label.textContent = md.dataset.daysText;   // computed server-side: same text the member sees
+  label.style.color = barColor;
   document.getElementById('daysRemainingBar').style.width = pct + '%';
   document.getElementById('daysRemainingBar').style.background = barColor;
 
