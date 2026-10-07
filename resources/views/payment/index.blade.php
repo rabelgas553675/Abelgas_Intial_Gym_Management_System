@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Payment Transactions – IRONFORGE')
+@section('title', 'Payment Transactions – APEX')
 @section('page_title', 'Payments')
 @section('active_nav', 'payments')
 

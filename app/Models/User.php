@@ -2,12 +2,27 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasFactory, Notifiable, Auditable;
+
+    protected string $auditModule = 'Users';
+
+    public function auditExcept(): array
+    {
+        return ['last_login_at', 'email_verified_at'];
+    }
+
+    public function auditLabel(): string
+    {
+        return "{$this->name} ({$this->role})";
+    }
 
     protected $fillable = [
         'name', 'email', 'password', 'role',
@@ -79,5 +94,18 @@ class User extends Authenticatable
     public function createdWorkoutPlans()
     {
         return $this->hasMany(WorkoutPlan::class, 'instructor_id');
+    }
+
+    /**
+     * Get the QR token record associated with this user (admin/staff/instructor).
+     */
+    public function qrToken()
+    {
+        return $this->hasOne(UserQrToken::class);
+    }
+
+    public function coachRequest(): HasOne
+    {
+        return $this->hasOne(CoachRequest::class);
     }
 }

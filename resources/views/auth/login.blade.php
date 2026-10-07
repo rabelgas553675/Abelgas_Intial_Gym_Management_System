@@ -1,5 +1,5 @@
 @extends('layouts.guest')
-@section('title', 'Login – IRONFORGE')
+@section('title', 'Login – APEX')
 
 @section('content')
 <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -10,7 +10,7 @@
     {{-- Logo --}}
     <div style="text-align:center;margin-bottom:32px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--accent);
-                  letter-spacing:4px;line-height:1;">IRONFORGE</div>
+                  letter-spacing:4px;line-height:1;">APEX</div>
       <div style="font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;
                   margin-top:4px;">Gym Management System</div>
     </div>
@@ -19,6 +19,14 @@
 
       <div style="font-size:18px;font-weight:700;margin-bottom:6px;">Welcome back</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:24px;">Sign in to your account</div>
+
+      @if(session('status'))
+        <div style="background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.30);
+                    border-radius:var(--radius);padding:10px 14px;margin-bottom:18px;
+                    font-size:13px;color:var(--success);">
+          ✓ {{ session('status') }}
+        </div>
+      @endif
 
       @if(session('error'))
         <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);

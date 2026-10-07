@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
+use App\Models\CoachRequest;
 use App\Models\Member;
 use App\Models\Payment;
 use App\Models\User;
-use App\Models\CoachRequest;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use App\Services\Algorithms\GreedyScheduler;
+use App\Services\Algorithms\MergeSort;
+use App\Services\CoachConfirmationService;
+use App\Services\MemberSnapshot;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MemberDashboardController extends Controller
 {
@@ -19,30 +25,45 @@ class MemberDashboardController extends Controller
      */
     private function getMember(): ?Member
     {
-        return auth()->user()?->memberProfile;
+        return Auth::user()?->memberProfile;
     }
 
     /**
      * Show the member's own dashboard.
+     *
+     * Everything about the subscription period, coach and profile comes from
+     * MemberSnapshot, the same object the subscription / payment pages use.
+     *
+     * DSA integration:
+     *   - MergeSort::sortBy() replaces ->latest()
      */
-    public function index()
+    public function index(CoachConfirmationService $coaches)
     {
         /** @var \App\Models\User $user */
-        $user   = auth()->user();
-        $member = $this->getMember();
-
+        $user     = Auth::user();
+        $member   = $this->getMember();
         $payments = collect();
+        $snapshot = null;
+
         if ($member) {
-            $payments = Payment::query()
-                               ->where('member_id', $member->id)
-                               ->where('payment_type', 'gym_fee')
-                               ->latest()
-                               ->get();
+            // A scheduled coach whose start date has arrived becomes the current coach
+            // right now — it does not depend on the scheduler having run.
+            $coaches->activateDue();
+            $member->refresh();
+
+            $snapshot = MemberSnapshot::for($member);
+
+            // Every payment type, same history as the dedicated payments page.
+            $rawPayments = Payment::query()
+                                  ->where('member_id', $member->id)
+                                  ->get()
+                                  ->all();
+
+            // MergeSort replaces ->latest()
+            $payments = collect(MergeSort::sortBy($rawPayments, 'payment_date', 'desc'));
         }
 
-        $nearDue = $member && $member->isDueWithinDays(7);
-
-        return view('member.dashboard', compact('user', 'member', 'payments', 'nearDue'));
+        return view('member.dashboard', compact('user', 'member', 'payments', 'snapshot'));
     }
 
     /**
@@ -56,8 +77,9 @@ class MemberDashboardController extends Controller
             return redirect()->route('member.select-plan');
         }
 
-        // If already approved or no coach involved, go straight to dashboard
-        if (in_array($member->coach_status, ['approved', 'none', null])) {
+        // Pending or rejected coach requests should return to the member home page
+        // instead of leaving them stuck on the waiting screen.
+        if (in_array($member->coach_status, ['approved', 'none', null, 'pending', 'rejected'])) {
             return redirect()->route('member.dashboard');
         }
 
@@ -91,39 +113,70 @@ class MemberDashboardController extends Controller
 
     /**
      * Save plan selection and process payment.
+     *
+     * DSA integration:
+     *   - GreedyScheduler::computeGymFee()    replaces inline $gymPriceMap array
+     *   - GreedyScheduler::computeCoachFee()  replaces inline $coachPriceMap array
+     *   - GreedyScheduler::computeEndDate()   replaces Carbon match() block
      */
     public function subscribePlan(Request $request)
     {
         $request->validate([
             'fitness_plan'          => 'required|in:Calisthenics,Bodybuilding,Plyometrics,Powerlifting,Endurance,Functional Training,Hybrid Training',
-            'membership_type'       => 'required|in:Monthly,Quarterly,Annually',
+            'membership_type'       => 'required|in:Monthly,Quarterly,Semi-Annual,Annually',
             'instructor_id'         => 'nullable|exists:users,id',
-            'coach_membership_type' => 'nullable|in:Monthly,Quarterly,Annually',
+            'coach_membership_type' => 'nullable|in:Monthly,Quarterly,Semi-Annual,Annually',
         ]);
 
         /** @var \App\Models\User $user */
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user) {
             return back()->with('error', 'Unauthenticated. Please log in again.');
         }
 
-        // Pricing maps
-        $gymPriceMap   = ['Monthly' => 800,  'Quarterly' => 3200, 'Annually' => 9600];
-        $coachPriceMap = ['Monthly' => 300,  'Quarterly' => 1200, 'Annually' => 3600];
+        $existingMember = Member::where('user_id', '=', $user->id, 'and')->first();
 
-        $gymAmount   = $gymPriceMap[$request->membership_type] ?? 0;
-        $coachAmount = $request->filled('instructor_id')
-                        ? ($coachPriceMap[$request->coach_membership_type] ?? 0)
-                        : 0;
+        // ── GreedyScheduler: compute fees ────────────────────────────────────
+        $coachPlan    = $request->filled('instructor_id') ? $request->coach_membership_type : null;
+        $instructorId = $request->filled('instructor_id') ? (int) $request->instructor_id : null;
+        $gymAmount    = GreedyScheduler::computeGymFee($request->membership_type);
+        $coachAmount  = GreedyScheduler::computeCoachFee($coachPlan, $instructorId);
 
-        // Date calculation
-        $start = Carbon::now();
-        $end   = match ($request->membership_type) {
-            'Monthly'   => $start->copy()->addMonth(),
-            'Quarterly' => $start->copy()->addMonths(3),
-            'Annually'  => $start->copy()->addYear(),
-        };
+        $activeCoachIsRunning = $existingMember
+            && $existingMember->instructor_id
+            && $existingMember->end_date
+            && $existingMember->end_date->isFuture();
+
+        $currentCoachStillRunning = $activeCoachIsRunning
+            && $request->filled('instructor_id')
+            && (int) $existingMember->instructor_id !== (int) $request->instructor_id;
+
+        $shouldKeepCurrentCoach = $activeCoachIsRunning
+            && (!$request->filled('instructor_id') || (int) $existingMember->instructor_id === (int) $request->instructor_id);
+
+        // Accumulate renewals: extend the active end date when the member already
+        // has a future plan instead of resetting the subscription from today.
+        $start = $activeCoachIsRunning || ($existingMember && $existingMember->end_date && $existingMember->end_date->isFuture())
+            ? $existingMember->end_date->copy()
+            : Carbon::now();
+        $end = GreedyScheduler::computeEndDate($start, $request->membership_type);
+
+        $memberInstructorId = $shouldKeepCurrentCoach
+            ? $existingMember->instructor_id
+            : ($request->filled('instructor_id') ? null : ($existingMember?->instructor_id ?? null));
+
+        $memberCoachStatus = $shouldKeepCurrentCoach
+            ? ($existingMember->coach_status ?? 'approved')
+            : ($request->filled('instructor_id') ? 'pending' : 'none');
+
+        $memberCoachMembershipType = $shouldKeepCurrentCoach
+            ? ($existingMember->coach_membership_type ?? $coachPlan)
+            : $coachPlan;
+
+        $scheduledCoachStartsOn = $existingMember && $existingMember->end_date && $existingMember->end_date->isFuture()
+            ? $existingMember->end_date->copy()->startOfDay()
+            : null;
 
         DB::beginTransaction();
         try {
@@ -136,9 +189,9 @@ class MemberDashboardController extends Controller
                     'phone'                 => $user->phone,
                     'fitness_plan'          => $request->fitness_plan,
                     'membership_type'       => $request->membership_type,
-                    'instructor_id'         => null, // stays null until coach approved
-                    'coach_membership_type' => $request->filled('instructor_id') ? $request->coach_membership_type : null,
-                    'coach_status'          => $request->filled('instructor_id') ? 'pending' : 'none',
+                    'instructor_id'         => $memberInstructorId,
+                    'coach_membership_type' => $memberCoachMembershipType,
+                    'coach_status'          => $memberCoachStatus,
                     'start_date'            => $start,
                     'end_date'              => $end,
                     'fee'                   => $gymAmount,
@@ -151,19 +204,34 @@ class MemberDashboardController extends Controller
 
             // Handle CoachRequest logic
             if ($request->filled('instructor_id')) {
-                // Reject existing pending requests
-                CoachRequest::query()
-                            ->where('member_id', $member->id)
-                            ->where('status', 'pending')
-                            ->update(['status' => 'rejected']);
+                // If the current active coach is still valid, do not swap them mid-term.
+                // Schedule the new coach to take over only after the current term ends.
+                if ($currentCoachStillRunning && $scheduledCoachStartsOn) {
+                    CoachRequest::supersedePending($member->id);
 
-                CoachRequest::create([
-                    'member_id'     => $member->id,
-                    'instructor_id' => $request->instructor_id,
-                    'status'        => 'pending',
-                    'message'       => 'New subscription request',
-                ]);
+                    CoachRequest::create([
+                        'member_id'             => $member->id,
+                        'instructor_id'         => $request->instructor_id,
+                        'status'                => 'pending',
+                        'message'               => 'Request to replace the current coach after the active term ends.',
+                        'coach_membership_type' => $coachPlan,
+                        'starts_on'             => $scheduledCoachStartsOn->toDateString(),
+                    ]);
+                } else {
+                    // Supersede any existing pending requests
+                    CoachRequest::supersedePending($member->id);
+
+                    CoachRequest::create([
+                        'member_id'             => $member->id,
+                        'instructor_id'         => $request->instructor_id,
+                        'status'                => 'pending',
+                        'message'               => 'New subscription request',
+                        'coach_membership_type' => $coachPlan,
+                    ]);
+                }
             }
+
+            $isAdvanceRenewal = $existingMember && $existingMember->end_date && $existingMember->end_date->isFuture();
 
             // Record gym_fee payment
             $gymPayment = Payment::create([
@@ -176,7 +244,7 @@ class MemberDashboardController extends Controller
                 'payment_date'    => Carbon::now(),
                 'status'          => 'Paid',
                 'method'          => 'Cash',
-                'notes'           => 'Gym membership fee',
+                'notes'           => Payment::paymentNoteFor(null, $request->membership_type, $gymAmount, 'gym_fee', $isAdvanceRenewal) ?: 'Gym membership fee',
             ]);
 
             // Record coach_fee payment (if applicable)
@@ -192,15 +260,15 @@ class MemberDashboardController extends Controller
                     'payment_date'    => Carbon::now(),
                     'status'          => 'Paid',
                     'method'          => 'Cash',
-                    'notes'           => 'Coach subscription fee',
+                    'notes'           => Payment::paymentNoteFor(null, $request->coach_membership_type, $coachAmount, 'coach_fee', $isAdvanceRenewal, (int) $request->instructor_id) ?: 'Coach subscription fee',
                 ]);
             }
 
             DB::commit();
 
             if ($request->filled('instructor_id')) {
-                return redirect()->route('member.waiting')
-                                 ->with('success', 'Subscription submitted! Waiting for coach approval.');
+                return redirect()->route('member.dashboard')
+                                 ->with('success', 'Subscription submitted successfully.');
             }
 
             return redirect()->route('member.receipt', $gymPayment->id)
@@ -217,19 +285,23 @@ class MemberDashboardController extends Controller
      */
     public function editProfile()
     {
-        $user        = auth()->user();
+        $user        = Auth::user();
         $instructors = User::query()->where('role', 'instructor')->get();
         $member      = $this->getMember();
+        $snapshot    = $member ? MemberSnapshot::for($member) : null;
 
-        return view('member.profile', compact('user', 'member', 'instructors'));
+        return view('member.profile', compact('user', 'member', 'instructors', 'snapshot'));
     }
 
     /**
      * Save profile changes.
+     *
+     * users + members are written in ONE transaction so the dashboard Profile card,
+     * the profile page and the admin side can never disagree.
      */
     public function updateProfile(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $request->validate([
             'name'      => 'required|string|max:255',
@@ -249,12 +321,36 @@ class MemberDashboardController extends Controller
             $data['photo'] = $request->file('photo')->store('avatars', 'public');
         }
 
-        $user->update($data);
+        DB::transaction(function () use ($user, $data, $request) {
+            $user->update($data);
 
-        $member = $this->getMember();
-        if ($member) {
-            $member->update(['name' => $request->name, 'phone' => $request->phone]);
-        }
+            $member = $this->getMember();
+            if (!$member) {
+                return;
+            }
+
+            $memberData = ['name' => $request->name, 'phone' => $request->phone];
+
+            // Member::full_name prefers first_name / last_name, so keep them in step
+            // or the admin side would keep showing the old name.
+            if ($member->first_name) {
+                $parts = preg_split('/\s+/', trim($request->name), 2);
+                $memberData['first_name'] = $parts[0];
+                $memberData['last_name']  = $parts[1] ?? '';
+            }
+
+            if (isset($data['photo'])) {
+                $memberData['photo'] = $data['photo'];
+            }
+
+            foreach (['gender', 'birthdate', 'address'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $memberData[$field] = $data[$field];
+                }
+            }
+
+            $member->update($memberData);
+        });
 
         return back()->with('success', 'Profile updated successfully!');
     }
@@ -264,7 +360,7 @@ class MemberDashboardController extends Controller
      */
     public function selectPlan()
     {
-        $user        = auth()->user();
+        $user        = Auth::user();
         $instructors = User::query()->where('role', 'instructor')->get();
         $member      = $this->getMember();
 
@@ -278,7 +374,7 @@ class MemberDashboardController extends Controller
     {
         $request->validate([
             'fitness_plan'    => 'required|in:Calisthenics,Bodybuilding,Plyometrics,Powerlifting,Endurance,Functional Training,Hybrid Training',
-            'membership_type' => 'required|in:Monthly,Quarterly,Annually',
+            'membership_type' => 'required|in:Monthly,Quarterly,Semi-Annual,Annually',
             'instructor_id'   => 'nullable|exists:users,id',
         ]);
 
@@ -323,37 +419,79 @@ class MemberDashboardController extends Controller
 
     /**
      * Show payment history.
+     *
+     * DSA integration:
+     *   - MergeSort::sortBy() replaces ->latest() on both gym and coach payments
      */
     public function paymentHistory()
     {
         $member = $this->getMember();
 
         if (!$member) {
-            return view('member.payment-history', ['payments' => collect(), 'member' => null]);
+            return view('member.payment-history', ['payments' => collect(), 'member' => null, 'snapshot' => null]);
         }
 
-        $gymPayments = Payment::query()
-            ->where('member_id', $member->id)
-            ->where('payment_type', 'gym_fee')
-            ->latest()
+        // Merge gym and coach payments for the same cycle/date so the member sees
+        // one row per payment period instead of split rows for each fee type.
+        $payments = Payment::forMember($member)
+            ->orderByDesc('payment_date')
+            ->orderByDesc('id')
             ->get();
 
-        $coachPayments = Payment::query()
+        $mergedPayments = $payments
+            ->groupBy(function ($payment) {
+                $date = $payment->payment_date ? $payment->payment_date->toDateString() : ($payment->created_at ? $payment->created_at->toDateString() : '');
+
+                return ($payment->fitness_plan ?? 'Unknown') . '|' . ($payment->membership_type ?? 'Unknown') . '|' . $date;
+            })
+            ->map(function ($group) {
+                $first = $group->first();
+                $gymFee = (float) $group->where('payment_type', 'gym_fee')->sum('amount');
+                $coachFee = (float) $group->where('payment_type', 'coach_fee')->sum('amount');
+                $total = $gymFee + $coachFee;
+
+                $merged = new \stdClass();
+                $merged->id = $first->id;
+                $merged->receipt_number = $first->receipt_number;
+                $merged->payment_date = $first->payment_date;
+                $merged->fitness_plan = $first->fitness_plan;
+                $merged->membership_type = $first->membership_type;
+                $merged->gym_fee_amount = $gymFee;
+                $merged->coach_fee_amount = $coachFee;
+                $merged->amount = $total;
+                $merged->status = 'Paid';
+                $merged->coach_fee_payment = null;
+                $merged->payment_type = 'combined';
+
+                return $merged;
+            })
+            ->sortByDesc('payment_date')
+            ->values();
+
+        return view('member.payment-history', [
+            'payments' => $mergedPayments,
+            'member'   => $member,
+            'snapshot' => MemberSnapshot::for($member),
+        ]);
+    }
+
+    /**
+     * Show the member's attendance history.
+     */
+    public function attendanceHistory()
+    {
+        $member = $this->getMember();
+
+        if (!$member) {
+            return view('member.attendance-history', ['attendance' => collect(), 'member' => null]);
+        }
+
+        $attendance = Attendance::query()
             ->where('member_id', $member->id)
-            ->where('payment_type', 'coach_fee')
+            ->orderByDesc('date')
+            ->orderByDesc('time_in')
             ->get();
 
-        $gymPayments->each(function ($gymPayment) use ($coachPayments) {
-            $match = $coachPayments
-                ->filter(fn ($cp) =>
-                    Carbon::parse($cp->payment_date)->isSameDay($gymPayment->payment_date)
-                )
-                ->first();
-
-            $gymPayment->coach_fee_amount  = $match ? $match->amount : 0;
-            $gymPayment->coach_fee_payment = $match;
-        });
-
-        return view('member.payment-history', ['payments' => $gymPayments, 'member' => $member]);
+        return view('member.attendance-history', ['attendance' => $attendance, 'member' => $member]);
     }
 }

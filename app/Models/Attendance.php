@@ -2,10 +2,32 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class Attendance extends Model
 {
+    use Auditable;
+
+    protected string $auditModule = 'Attendance';
+
+    public function auditExcept(): array
+    {
+        return ['scanned_by']; // holds the staff member's QR token
+    }
+
+    public function auditLabel(): string
+    {
+        return $this->member?->name ?? $this->user?->name ?? 'Unknown';
+    }
+
+    public function auditAction(string $event, ?array $old, ?array $new): string
+    {
+        if ($event === 'created') return 'check_in';
+        if ($event === 'updated' && array_key_exists('time_out', $new ?? [])) return 'check_out';
+        return $event;
+    }
+
     protected $fillable = [
         'member_id',
         'staff_user_id', // MUST BE HERE

@@ -1,5 +1,5 @@
 @extends('layouts.guest')
-@section('title', 'Register – IRONFORGE')
+@section('title', 'Register – APEX')
 
 @section('content')
 <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -10,14 +10,14 @@
     {{-- Logo --}}
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--accent);
-                  letter-spacing:4px;line-height:1;">IRONFORGE</div>
+                  letter-spacing:4px;line-height:1;">APEX</div>
       <div style="font-size:12px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;
                   margin-top:4px;">Create Your Account</div>
     </div>
 
     <div class="card" style="padding:32px;">
 
-      <div style="font-size:18px;font-weight:700;margin-bottom:6px;">Join IRONFORGE</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:6px;">Join APEX</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:24px;">Fill in your details to get started</div>
 
       <form method="POST" action="{{ route('register') }}">

@@ -15,16 +15,9 @@ class CoachApproved
             return $next($request);
         }
 
-        // If member chose a coach but not yet approved — redirect to waiting page
-        if ($member->coach_status === 'pending') {
-            return redirect()->route('member.waiting');
-        }
-
-        // If rejected — redirect to waiting page with rejected status
-        if ($member->coach_status === 'rejected') {
-            return redirect()->route('member.waiting');
-        }
-
+        // Keep the member on the dashboard instead of forcing them to a waiting screen.
+        // Pending or rejected coach requests are still tracked on the member record,
+        // but they should not be stuck on a blocking page.
         return $next($request);
     }
 }

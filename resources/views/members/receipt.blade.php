@@ -1,5 +1,5 @@
 @extends(auth()->user()->isAdmin() ? 'layouts.admin' : 'layouts.staff')
-@section('title', 'Member Receipt – IRONFORGE')
+@section('title', 'Member Receipt – APEX')
 @section('page_title', 'Registration Receipt')
 
 @section('topbar_actions')
@@ -31,7 +31,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;">
         <div>
           <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:#111;letter-spacing:3px;line-height:1;">
-            IRONFORGE
+            APEX
           </div>
           <div style="font-size:11px;color:#333;letter-spacing:2px;text-transform:uppercase;margin-top:2px;">
             Gym Management System
@@ -193,14 +193,14 @@
       {{-- Footer note --}}
       <div style="text-align:center;">
         <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">
-          Thank you for joining IRONFORGE! This serves as your official membership receipt.
+          Thank you for joining APEX! This serves as your official membership receipt.
         </div>
         <div style="font-size:11px;color:var(--muted);">
           Keep this receipt for your records. For concerns, contact the front desk.
         </div>
         <div style="margin-top:16px;font-family:'Bebas Neue',sans-serif;font-size:16px;
                     color:var(--accent);letter-spacing:3px;opacity:0.6;">
-          IRONFORGE GMS
+          APEX GMS
         </div>
       </div>
 

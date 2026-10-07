@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Member;
 use App\Models\Payment;
 use App\Models\WorkoutPlan;
+use App\Models\UserQrToken;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -52,12 +53,17 @@ class UserController extends Controller
             'role'     => 'required|in:admin,staff,instructor,member',
         ]);
 
-        User::create([
+        $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => bcrypt($request->password),
             'role'     => $request->role,
         ]);
+
+        // Generate a QR token for any role that needs one to scan into attendance
+        if (in_array($user->role, ['admin', 'staff', 'instructor'])) {
+            UserQrToken::createForUser($user);
+        }
 
         return back()->with('success', 'User added successfully!');
     }
@@ -65,12 +71,14 @@ class UserController extends Controller
     public function promoteToAdmin(User $user)
     {
         $user->update(['role' => 'admin']);
+        UserQrToken::createForUser($user);
         return back()->with('success', "{$user->name} promoted to Admin.");
     }
 
     public function makeInstructor(User $user)
     {
         $user->update(['role' => 'instructor']);
+        UserQrToken::createForUser($user);
         return back()->with('success', "{$user->name} is now an Instructor.");
     }
 

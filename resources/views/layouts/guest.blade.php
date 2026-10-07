@@ -2,9 +2,9 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
   <meta name="csrf-token" content="{{ csrf_token() }}"/>
-  <title>@yield('title', 'IRONFORGE')</title>
+  <title>@yield('title', 'APEX FITNESS GYM')</title>
   <link rel="icon" type="image/png" href="{{ asset('favicon.svg') }}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -20,25 +20,41 @@
       --border:   rgba(255,255,255,0.08);
       --text:     #f0f0f0;
       --muted:    #888;
-      --accent:   #e8ff2a;
+      --accent:   #ff2b3d;
       --danger:   #ef4444;
       --success:  #4ade80;
       --warning:  #fbbf24;
       --radius:   12px;
     }
 
+    html { -webkit-text-size-adjust: 100%; }
+
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      /* Most auth pages (login/register) center a single card —
+         these defaults make that layout responsive by default.
+         @yield('content') can still override with its own wrapper. */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
     }
+
+    img, svg { max-width: 100%; }
 
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 24px;
+      width: 100%;
+      max-width: 420px;
     }
 
     .form-label {
@@ -51,6 +67,14 @@
       margin-bottom: 8px;
     }
 
+    .form-group { margin-bottom: 16px; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
     .form-control {
       width: 100%;
       background: var(--surface2);
@@ -58,7 +82,8 @@
       border-radius: 8px;
       padding: 11px 14px;
       color: var(--text);
-      font-size: 14px;
+      /* 16px prevents iOS Safari from auto-zooming into the field on focus */
+      font-size: 16px;
       font-family: 'Inter', sans-serif;
       outline: none;
       transition: border-color 0.2s;
@@ -82,6 +107,7 @@
       border: none;
       text-decoration: none;
       transition: all 0.2s;
+      width: 100%;
     }
 
     .btn-primary {
@@ -93,7 +119,7 @@
     }
 
     .btn-primary:hover {
-      background: #d4eb00;
+      background: #e0141f;
       transform: translateY(-1px);
     }
 
@@ -106,6 +132,16 @@
     select.form-control option {
       background: var(--surface2);
       color: var(--text);
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE — SMALL PHONES (≤ 400px)
+       ═══════════════════════════════════════════ */
+    @media (max-width: 400px) {
+      body { padding: 16px 14px; }
+      .card { padding: 18px; border-radius: 10px; }
+      .form-row { grid-template-columns: 1fr; gap: 0; }
+      .btn-primary { font-size: 14px; letter-spacing: 1.5px; }
     }
   </style>
 </head>
