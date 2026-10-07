@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payment extends Model
 {
@@ -42,7 +44,7 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'payment_date' => 'date',
+        'payment_date' => 'date:Y-m-d', // plain date on toArray()/JSON; avoids UTC shift (-1 day) in views
         'amount'       => 'decimal:2',
         'platform_fee' => 'decimal:2',
     ];
@@ -172,32 +174,40 @@ class Payment extends Model
     // ── Query scopes ──────────────────────────────────────────────────────────
 
     /** Gym membership fees — admin / platform earnings */
-    public function scopeGymFees($query)
+    public function scopeGymFees(Builder $query)
     {
         return $query->where('payment_type', 'gym_fee');
     }
 
     /** Coach fees — instructor earnings */
-    public function scopeCoachFees($query)
+    public function scopeCoachFees(Builder $query)
     {
         return $query->where('payment_type', 'coach_fee');
     }
 
     /** All payments visible to admin (gym + platform, NOT coach fees) */
-    public function scopeAdminPayments($query)
+    public function scopeAdminPayments(Builder $query)
     {
         return $query->whereIn('payment_type', ['gym_fee', 'platform_fee']);
     }
 
+    /** All payments (gym, coach, platform, manual) belonging to a member */
+    public function scopeForMember(Builder $query, Member|int|string $member)
+    {
+        $memberId = $member instanceof Member ? $member->getKey() : $member;
+
+        return $query->where('member_id', $memberId);
+    }
+
     /** Coach fee payments for a specific instructor */
-    public function scopeForInstructor($query, int $instructorId)
+    public function scopeForInstructor(Builder $query, int $instructorId)
     {
         return $query->where('payment_type', 'coach_fee')
                      ->where('instructor_id', $instructorId);
     }
 
     /** This month filter */
-    public function scopeThisMonth($query)
+    public function scopeThisMonth(Builder $query)
     {
         return $query->whereMonth('payment_date', now()->month)
                      ->whereYear('payment_date',  now()->year);
@@ -233,7 +243,11 @@ class Payment extends Model
     public static function instructorEarningsLeaderboard(int $limit = 10): \Illuminate\Support\Collection
     {
         return static::coachFees()
-            ->select('instructor_id', DB::raw('SUM(amount) as total'), DB::raw('COUNT(*) as txn_count'))
+            ->select([
+                'instructor_id',
+                DB::raw('SUM(amount) as total'),
+                DB::raw('COUNT(*) as txn_count'),
+            ])
             ->with('instructor:id,name,photo')
             ->groupBy('instructor_id')
             ->orderByDesc('total')
@@ -247,18 +261,32 @@ class Payment extends Model
         return 'RCP-' . strtoupper(uniqid());
     }
 
-    public static function forMember(Member $member)
-    {
-        return static::where('member_id', $member->id)
-            ->orderByDesc('payment_date')
-            ->orderByDesc('id');
-    }
-
-    public static function historyForMember(Member $member)
-    {
-        return static::forMember($member)->get();
-    }
-
     public function isCoachFee(): bool   { return $this->payment_type === 'coach_fee'; }
     public function isGymFee(): bool     { return $this->payment_type === 'gym_fee'; }
+
+    // ── Payment states ────────────────────────────────────────────────────────
+    public const STATUS_PAID           = 'Paid';
+    public const STATUS_AWAITING_COACH = 'Awaiting Coach'; // held until the coach confirms
+    public const STATUS_REJECTED       = 'Rejected';       // coach declined → never official
+
+    /**
+     * Payments waiting for / refused by a coach are NOT official payments.
+     * This scope hides them from every existing query (admin totals, member history,
+     * instructor earnings, reports, leaderboard…) so they cannot leak into any sum.
+     * Use Payment::withUnconfirmed() when you really need them.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('confirmed', function (Builder $query) {
+            $query->whereNotIn(
+                $query->getModel()->getTable() . '.status',
+                [self::STATUS_AWAITING_COACH, self::STATUS_REJECTED]
+            );
+        });
+    }
+
+    public static function withUnconfirmed(): Builder
+    {
+        return static::query()->withoutGlobalScope('confirmed');
+    }
 }

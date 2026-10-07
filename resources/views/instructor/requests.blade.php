@@ -97,6 +97,21 @@
     .request-item:nth-child(4) { animation-delay:.2s; }
     .request-item:nth-child(5) { animation-delay:.25s; }
 
+    /* Held-payment box, rejection reason, reject modal */
+    .hold-box { margin-top:10px; padding:10px 14px; border-radius:10px; font-size:12px; color:var(--muted);
+        background:var(--surface2); border:1px dashed rgba(224,169,59,0.35); display:flex; flex-wrap:wrap; gap:6px 16px; }
+    .hold-box strong { color:var(--text); }
+    .reason-text { font-size:11px; color:var(--muted); margin-top:4px; max-width:280px; white-space:normal; }
+    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:1000; padding:16px; }
+    .modal-backdrop.open { display:flex; }
+    .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; width:100%; max-width:440px; }
+    .modal-box h3 { font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text); }
+    .modal-box p { font-size:12px; color:var(--muted); margin-bottom:14px; }
+    .modal-box textarea { width:100%; min-height:96px; resize:vertical; padding:10px 12px; border-radius:10px;
+        background:var(--surface2); color:var(--text); border:1px solid var(--border); font:inherit; font-size:13px; }
+    .modal-box textarea:focus { outline:none; border-color:var(--accent); }
+    .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+
     /* Responsive */
     @media (max-width:1024px) {
         .request-item { padding:16px 20px; gap:16px; flex-wrap:wrap; }
@@ -184,6 +199,28 @@
                         @if($req->message)
                             <div class="request-message">"{{ $req->message }}"</div>
                         @endif
+
+                        @if($req->isManual())
+                            <div class="hold-box">
+                                <span>Coaching package: <strong>{{ $req->coach_membership_type ?? '—' }}</strong></span>
+                                @if($req->payment)
+                                    <span>Payment on hold: <strong>₱{{ number_format((float) $req->payment->amount, 2) }}</strong></span>
+                                @endif
+                                <span>Start:
+                                    <strong>
+                                        @if($req->starts_on && $req->starts_on->isFuture())
+                                            {{ $req->starts_on->format('M d, Y') }}
+                                        @else
+                                            Upon your approval
+                                        @endif
+                                    </strong>
+                                </span>
+                                @if($req->requester)
+                                    <span>Recorded by: <strong>{{ $req->requester->name }}</strong></span>
+                                @endif
+                            </div>
+                        @endif
+
                         <div class="request-meta">
                             @if($member?->fitness_plan)
                                 <span class="badge badge-plan">{{ $member->fitness_plan }}</span>
@@ -205,16 +242,15 @@
                                 Approve
                             </button>
                         </form>
-                        <form action="{{ route('instructor.requests.reject', $req->id) }}" method="POST" onsubmit="return confirm('Decline this request?')">
-                            @csrf
-                            <button type="submit" class="btn btn-danger btn-sm">
-                                <svg viewBox="0 0 24 24" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                                Reject
-                            </button>
-                        </form>
+                        <button type="button" class="btn btn-danger btn-sm js-reject"
+                                data-action="{{ route('instructor.requests.reject', $req->id) }}"
+                                data-member="{{ $member->name ?? 'this member' }}">
+                            <svg viewBox="0 0 24 24" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                            Reject
+                        </button>
                     </div>
                 </div>
                 @endforeach
@@ -256,22 +292,28 @@
                                 {{ $h->member->fitness_plan ?? '—' }}
                             </td>
                             <td>
-                                @if($h->member?->membership_type)
-                                    <span class="badge badge-{{ strtolower($h->member->membership_type) }}">
-                                        {{ $h->member->membership_type }}
-                                    </span>
+                                @php $duration = $h->coach_membership_type ?? $h->member?->membership_type; @endphp
+                                @if($duration)
+                                    <span class="badge badge-{{ strtolower($duration) }}">{{ $duration }}</span>
                                 @else
                                     <span style="color:var(--muted)">—</span>
                                 @endif
                             </td>
                             <td style="font-size:13px;color:var(--muted);">
-                                {{ $h->updated_at->format('M d, Y') }}
+                                {{ ($h->responded_at ?? $h->updated_at)->format('M d, Y') }}
                             </td>
                             <td>
                                 @if($h->status === 'approved')
-                                    <span class="badge badge-active">Approved</span>
+                                    @if($h->isScheduled())
+                                        <span class="badge badge-pending">Scheduled · {{ $h->starts_on?->format('M d, Y') }}</span>
+                                    @else
+                                        <span class="badge badge-active">Approved</span>
+                                    @endif
                                 @else
                                     <span class="badge badge-expired">Rejected</span>
+                                    @if($h->rejection_reason)
+                                        <div class="reason-text">{{ $h->rejection_reason }}</div>
+                                    @endif
                                 @endif
                             </td>
                         </tr>
@@ -282,6 +324,45 @@
         </div>
     </div>
     @endif
+
+    {{-- REJECT MODAL (reason required) --}}
+    <div class="modal-backdrop" id="rejectModal">
+        <form class="modal-box" id="rejectForm" method="POST">
+            @csrf
+            <h3>Reject request</h3>
+            <p id="rejectMember">Tell the admin/staff why you are declining. The payment will not be recorded and no coaching will be assigned.</p>
+            <textarea name="rejection_reason" id="rejectReason" required minlength="5" maxlength="500"
+                      placeholder="e.g. My schedule is full for that period."></textarea>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="rejectCancel">Cancel</button>
+                <button type="submit" class="btn btn-danger btn-sm">Reject request</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        (function () {
+            const modal  = document.getElementById('rejectModal');
+            const form   = document.getElementById('rejectForm');
+            const reason = document.getElementById('rejectReason');
+            const label  = document.getElementById('rejectMember');
+
+            document.querySelectorAll('.js-reject').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    form.action = btn.dataset.action;
+                    label.textContent = 'Why are you declining ' + btn.dataset.member + '? The payment will not be recorded and no coaching will be assigned.';
+                    reason.value = '';
+                    modal.classList.add('open');
+                    reason.focus();
+                });
+            });
+
+            const close = () => modal.classList.remove('open');
+            document.getElementById('rejectCancel').addEventListener('click', close);
+            modal.addEventListener('click', e => { if (e.target === modal) close(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+        })();
+    </script>
 
 </div>
 

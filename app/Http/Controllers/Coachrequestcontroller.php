@@ -3,90 +3,110 @@
 namespace App\Http\Controllers;
 
 use App\Models\CoachRequest;
-use App\Models\Member;
+use App\Services\CoachConfirmationService;
+use DomainException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
-class CoachRequestController extends Controller 
+class CoachRequestController extends Controller
 {
+    public function __construct(private CoachConfirmationService $coachConfirmation)
+    {
+    }
+
     /**
      * Show all pending and historical coach requests for the authenticated instructor.
      */
     public function index()
     {
-        /** @var \App\Models\User $instructor */
-        $instructor = auth()->user();
+        $instructor = Auth::user();
 
-        // Get all requests for this instructor with member and user details
+        // Start any approved renewals whose start date has arrived.
+        $this->coachConfirmation->activateDue();
+
         $allRequests = CoachRequest::query()
-            ->with('member.user')
+            ->with(['member.user', 'payment', 'requester'])
             ->where('instructor_id', $instructor->id)
             ->latest()
             ->get();
 
-        // Separate collections for different view sections
         $pending = $allRequests->where('status', 'pending');
-        $history = $allRequests->whereIn('status', ['approved', 'rejected']);
+        $history = $allRequests->whereIn('status', [
+            'approved',
+            'rejected',
+        ]);
 
-        // Passing all variables to satisfy Blade requirements
         return view('instructor.requests', compact('allRequests', 'pending', 'history'));
     }
 
     /**
-     * Approve a coach request.
+     * Approve a coach request. For manual renewals this confirms the held payment
+     * and assigns (or schedules) the coach.
      */
     public function approve(CoachRequest $coachRequest)
     {
-        // Security check
-        $this->authorizeRequest($coachRequest);
+        $this->authorizeCoach($coachRequest);
 
-        // Update the request record
-        $coachRequest->update(['status' => 'approved']);
-
-        // Update the member record to link the coach and update status
-        if ($coachRequest->member) {
-            $coachRequest->member->update([
-                'instructor_id' => auth()->id(),
-                'coach_status'  => 'approved'
-            ]);
+        try {
+            $result = $this->coachConfirmation->approve($coachRequest->id, Auth::user());
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Request approved! Member has been notified.');
+        if ($result->payment_id) {
+            $message = $result->isScheduled()
+                ? 'Request approved. The payment is confirmed and coaching is scheduled to start on '
+                    . $result->starts_on->format('M d, Y') . '.'
+                : 'Request approved. The payment is confirmed and the member is now assigned to you.';
+        } else {
+            $message = 'Request approved! Member has been notified.';
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
-     * Reject a coach request.
+     * Reject a coach request. A reason is required.
      */
-    public function reject(CoachRequest $coachRequest)
+    public function reject(Request $request, CoachRequest $coachRequest)
     {
-        // Security check
-        $this->authorizeRequest($coachRequest);
+        $this->authorizeCoach($coachRequest);
 
-        // Update the request record
-        $coachRequest->update(['status' => 'rejected']);
+        $validator = Validator::make($request->all(), [
+            'rejection_reason' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'rejection_reason.required' => 'Please give a reason for rejecting this request.',
+            'rejection_reason.min'      => 'The rejection reason must be at least 5 characters.',
+        ]);
 
-        // Update the member record — clear assignment and mark as rejected
-        if ($coachRequest->member) {
-            $coachRequest->member->update([
-                'instructor_id' => null,
-                'coach_status'  => 'rejected'
-            ]);
+        if ($validator->fails()) {
+            return back()->with('error', $validator->errors()->first());
         }
 
-        return back()->with('success', 'Request rejected.');
+        try {
+            $this->coachConfirmation->reject(
+                $coachRequest->id,
+                Auth::user(),
+                $request->input('rejection_reason')
+            );
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Request rejected. The held payment was cancelled.');
     }
 
     /**
-     * Ensure this request belongs to the authenticated instructor
-     * and is still in a pending state before performing actions.
+     * Only the selected coach may respond. (Checked again inside the service
+     * after the row is locked.)
      */
-    private function authorizeRequest(CoachRequest $coachRequest): void
+    private function authorizeCoach(CoachRequest $coachRequest): void
     {
-        if ($coachRequest->instructor_id !== auth()->id()) {
+        $user = Auth::user();
+
+        if (! $user || ! $user->isInstructor() || (int) $coachRequest->instructor_id !== (int) $user->id) {
             abort(403, 'This request does not belong to you.');
-        }
-
-        if ($coachRequest->status !== 'pending') {
-            abort(422, 'This request has already been processed.');
         }
     }
 }

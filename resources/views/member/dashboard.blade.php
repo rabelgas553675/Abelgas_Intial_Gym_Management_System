@@ -20,7 +20,7 @@
     .warning-banner .text a { color:var(--accent); margin-left:6px; text-decoration:none; }
     .warning-banner .text a:hover { text-decoration:underline; }
 
-    .top-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+    .top-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; align-items:stretch; }
 
     .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; transition:transform .2s, box-shadow .2s, border-color .3s; }
     .card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.15); border-color:rgba(224,169,59,0.5); }
@@ -33,12 +33,25 @@
     .sub-plan .icon-wrap { width:52px; height:52px; display:flex; align-items:center; justify-content:center; background:var(--accent-soft); color:var(--accent); border-radius:14px; flex-shrink:0; }
     .sub-plan .icon-wrap svg { width:28px; height:28px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     .sub-plan .info .label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; font-weight:600; }
-    /* FIX 1: was color:#fff (invisible on the light-mode card) */
     .sub-plan .info .value { font-size:20px; font-weight:700; color:var(--text); }
     .sub-details { display:grid; gap:12px; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border); }
     .sub-details .item .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
     .sub-details .item .value { font-weight:600; }
     .sub-actions { display:flex; gap:10px; }
+
+    /* Coach indicator (Current / Upcoming / None) */
+    .coach-section { display:grid; gap:10px; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+    .coach-box { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+    .coach-box.current  { border-color:rgba(224,169,59,0.55); }
+    .coach-box.upcoming { border-style:dashed; border-color:rgba(224,169,59,0.45); }
+    .coach-tag { font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-bottom:8px; }
+    .coach-row { display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:13px; padding:3px 0; }
+    .coach-row > span:first-child { color:var(--muted); }
+    .coach-row strong { font-weight:600; text-align:right; }
+    .coach-status { display:inline-block; padding:2px 10px; border-radius:40px; font-size:11px; font-weight:700; background:rgba(74,222,128,0.15); color:#4ade80; }
+    .coach-status.scheduled, .coach-status.pending { background:rgba(224,169,59,0.15); color:var(--accent); }
+    .coach-status.expired { background:rgba(248,113,113,0.15); color:#f87171; }
+    .coach-none { color:var(--muted); font-size:13px; font-weight:600; text-align:center; }
 
     .btn { padding:10px 20px; border:none; border-radius:8px; font-weight:700; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:14px; min-height:44px; text-decoration:none; font-family:'DM Sans',sans-serif; }
     .btn-primary { background:linear-gradient(135deg, var(--accent-2), var(--accent-dark)); color:#1a1a1a; }
@@ -47,17 +60,37 @@
     .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
     .btn-sm { padding:6px 14px; font-size:12px; min-height:36px; }
 
-    /* Profile */
-    .profile-avatar { display:flex; align-items:center; gap:14px; margin-bottom:20px; padding-bottom:20px; border-bottom:1px solid var(--border); }
-    .profile-avatar img { width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid var(--accent); flex-shrink:0; }
-    .profile-avatar .placeholder { width:56px; height:56px; border-radius:50%; background:var(--accent-soft); border:2px solid var(--accent); display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--accent); flex-shrink:0; }
-    .profile-avatar .name { font-weight:700; font-size:15px; }
-    .profile-avatar .email { font-size:12px; color:var(--muted); }
-    .profile-details { display:grid; gap:14px; margin-bottom:20px; }
-    .profile-details .item .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
-    .profile-details .item .value { font-weight:600; }
+    /* Status badge (used by the profile card) */
     .status-badge { display:inline-block; padding:3px 12px; border-radius:40px; font-size:12px; font-weight:600; background:rgba(74,222,128,0.15); color:#4ade80; }
     .status-badge.inactive { background:rgba(248,113,113,0.15); color:#f87171; }
+
+    /* Profile card (redesign) */
+    .profile-card { display:flex; flex-direction:column; }
+
+    .pf-hero { display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;
+               padding:28px 16px 24px; margin-bottom:8px; border-radius:14px;
+               background:linear-gradient(180deg, var(--accent-soft), transparent); }
+    .pf-avatar { width:88px; height:88px; border-radius:50%; object-fit:cover; border:3px solid var(--accent);
+                 box-shadow:0 0 0 6px rgba(224,169,59,0.12); margin-bottom:10px; }
+    .pf-avatar-ph { width:88px; height:88px; border-radius:50%; background:var(--surface2); border:3px solid var(--accent);
+                    box-shadow:0 0 0 6px rgba(224,169,59,0.12); display:flex; align-items:center; justify-content:center;
+                    font-family:'Bebas Neue',sans-serif; font-size:34px; letter-spacing:1px; color:var(--accent); margin-bottom:10px; }
+    .pf-name { font-size:20px; font-weight:700; line-height:1.2; text-transform:capitalize; }
+    .pf-email { font-size:13px; color:var(--muted); word-break:break-all; }
+    .pf-hero .status-badge { margin-top:8px; padding:4px 14px; }
+
+    .pf-list { flex:1; display:flex; flex-direction:column; justify-content:space-evenly; }
+    .pf-row { display:flex; align-items:center; gap:16px; padding:16px 4px; border-bottom:1px solid var(--border); }
+    .pf-row:last-child { border-bottom:none; }
+    .pf-icon { width:40px; height:40px; border-radius:12px; background:var(--accent-soft); color:var(--accent);
+               display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .pf-icon svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+    .pf-text { min-width:0; flex:1; }
+    .pf-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:3px; }
+    .pf-value { font-weight:600; font-size:15px; line-height:1.4; word-break:break-word; }
+    .pf-value.empty { color:var(--muted); font-weight:500; }
+
+    .profile-card .btn { margin-top:20px; width:100%; }
 
     /* Banner */
     .explore-banner { background:linear-gradient(135deg, var(--accent-2), var(--accent-dark)); border-radius:16px; padding:28px 32px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
@@ -102,10 +135,8 @@
     .modal-plan-option input[type="radio"] { display:none; }
     .modal-plan-card { border-radius:12px; padding:12px 8px; text-align:center; transition:border-color .18s, background .18s; position:relative; background:var(--surface2); border:1.5px solid var(--border); height:100%; box-sizing:border-box; }
     .modal-plan-card:hover { border-color:rgba(224,169,59,0.4); }
-    /* FIX 2: was color:rgba(255,255,255,0.25) (invisible in light mode) */
     .modal-plan-card .icon { width:32px; height:32px; margin:0 auto 8px; color:var(--muted); }
     .modal-plan-card .icon svg { width:100%; height:100%; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-    /* FIX 3: was color:#fff (invisible in light mode) */
     .modal-plan-card .name { font-size:11px; font-weight:700; color:var(--text); line-height:1.3; }
     .modal-plan-card .dot { position:absolute; top:7px; right:7px; width:7px; height:7px; border-radius:50%; background:var(--accent); display:none; }
     .modal-plan-card.selected { border-color:var(--accent) !important; background:rgba(224,169,59,0.08) !important; }
@@ -123,6 +154,8 @@
         .top-row { grid-template-columns:1fr; gap:16px; }
         .explore-banner { flex-direction:column; text-align:center; padding:24px 20px; }
         .explore-banner .btn-dark { width:100%; justify-content:center; }
+        .pf-hero { padding:22px 12px 18px; }
+        .pf-row { padding:13px 2px; }
     }
     @media (max-width:768px) {
         .welcome-header h1 { font-size:24px; }
@@ -133,9 +166,6 @@
         .sub-plan .icon-wrap { width:44px; height:44px; }
         .sub-plan .icon-wrap svg { width:24px; height:24px; }
         .sub-plan .info .value { font-size:18px; }
-        .profile-avatar img, .profile-avatar .placeholder { width:48px; height:48px; font-size:18px; }
-        .profile-avatar .name { font-size:14px; }
-        .profile-avatar .email { font-size:11px; }
         .btn { font-size:13px; padding:8px 16px; min-height:40px; }
         .btn-sm { font-size:11px; padding:5px 12px; min-height:32px; }
         .warning-banner { padding:12px 16px; flex-wrap:wrap; }
@@ -162,12 +192,14 @@
         .sub-plan .icon-wrap svg { width:20px; height:20px; }
         .sub-plan .info .value { font-size:16px; }
         .sub-details { gap:8px; padding-bottom:14px; }
+        .coach-row { flex-direction:column; align-items:flex-start; gap:2px; }
+        .coach-row strong { text-align:left; }
         .sub-actions { flex-direction:column; }
         .sub-actions .btn { width:100%; justify-content:center; }
-        .profile-avatar { flex-wrap:wrap; }
-        .profile-avatar img, .profile-avatar .placeholder { width:42px; height:42px; font-size:16px; }
-        .profile-avatar .name { font-size:13px; }
-        .profile-details { gap:10px; }
+        .pf-avatar, .pf-avatar-ph { width:72px; height:72px; font-size:28px; }
+        .pf-name { font-size:18px; }
+        .pf-icon { width:36px; height:36px; }
+        .pf-value { font-size:14px; }
         .btn { font-size:12px; padding:8px 14px; min-height:38px; }
         .payment-info .plan { font-size:13px; }
         .payment-amount { font-size:14px; }
@@ -192,35 +224,49 @@
     @media (max-width:360px) {
         .modal-plan-card .name { font-size:9px; }
         .sub-plan .info .value { font-size:15px; }
-        .profile-avatar img, .profile-avatar .placeholder { width:36px; height:36px; font-size:14px; }
     }
     @media (prefers-reduced-motion:reduce) { * { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
 </style>
+
+@php
+    /*
+     * ONE source of truth for this page: $snapshot (App\Services\MemberSnapshot).
+     * Active period, days remaining, progress bar, status badge, coach and profile
+     * all read from it, so no card can disagree with another.
+     */
+    $exp     = $snapshot?->expiration;
+    $coach   = $snapshot?->coach;
+    $profile = $snapshot?->profile;
+
+    $svgPlans = [
+        'Calisthenics'        => '<svg viewBox="0 0 48 48"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>',
+        'Bodybuilding'        => '<svg viewBox="0 0 48 48"><path d="M14 28 Q10 24 14 20 Q18 16 22 20 L26 28 Q30 32 26 36 Q22 40 18 36 Z"/><path d="M26 28 Q30 24 34 20"/><path d="M6 22 L14 20"/><path d="M34 20 L42 18"/><path d="M6 26 L14 28"/><path d="M34 28 L42 26"/></svg>',
+        'Plyometrics'         => '<svg viewBox="0 0 48 48"><circle cx="24" cy="8" r="3"/><path d="M24 11 L18 22 L24 20 L20 34"/><path d="M24 20 L30 18 L26 30"/><path d="M16 38 L32 38"/></svg>',
+        'Powerlifting'        => '<svg viewBox="0 0 48 48"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>',
+        'Endurance'           => '<svg viewBox="0 0 48 48"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>',
+        'Functional Training' => '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>',
+        'Hybrid Training'     => '<svg viewBox="0 0 48 48"><polygon points="24,6 28,18 40,18 30,26 34,38 24,30 14,38 18,26 8,18 20,18"/></svg>',
+    ];
+@endphp
 
 <div class="dashboard-container">
 
     {{-- Welcome Header --}}
     <div class="welcome-header">
         <h1>
-            Welcome back, <span>{{ explode(' ', auth()->user()->name)[0] }}</span>
+            Welcome back, <span>{{ explode(' ', $profile['name'] ?? auth()->user()->name)[0] }}</span>
         </h1>
         <p>Track your fitness journey and manage your subscription</p>
     </div>
 
-    {{-- Expiration warnings (text comes from Member::expiration(), same as the admin side) --}}
-    {{-- FIX: was the inline form @php($exp = ...), which Blade's @php...@endphp regex
-         mistook for the start of a block and swallowed the @if($member) further down.
-         Use the block form instead. --}}
-    @php
-        $exp = $member?->expiration();
-    @endphp
+    {{-- Expiration warnings (same expiration object as the Subscription card) --}}
     @if($exp && $exp->state === 'expiring')
     <div class="warning-banner">
         <span class="icon">⚠️</span>
         <div class="text">
             <strong>Subscription Expiring Soon</strong>
             <div class="sub">
-                {{ $exp->message() }} Your {{ $member->membership_type }} plan ends on
+                {{ $exp->message() }} Your {{ $snapshot->planType ?? $member->membership_type }} plan ends on
                 <strong>{{ $exp->endDate->format('M d, Y') }}</strong>.
                 <a href="{{ route('member.select-plan') }}">Renew now →</a>
             </div>
@@ -236,7 +282,8 @@
                 <a href="{{ route('member.select-plan') }}">Renew now →</a>
             </div>
         </div>
-    </div>    @elseif($member && $member->hasPaidInAdvance())
+    </div>
+    @elseif($member && $member->hasPaidInAdvance())
     <div class="warning-banner" style="border-color:var(--success);background:rgba(74,222,128,.08);">
         <span class="icon">✅</span>
         <div class="text">
@@ -245,7 +292,8 @@
                 This membership has already been paid beyond the current plan amount. The extra payment is recorded in your payment history.
             </div>
         </div>
-    </div>    @endif
+    </div>
+    @endif
 
     {{-- Top Row: Subscription + Profile --}}
     <div class="top-row">
@@ -260,18 +308,9 @@
                 </svg>
             </div>
 
-            @if($member)
+            @if($member && $snapshot)
                 @php
-                    $plans = [
-                        'Calisthenics'       => '<svg viewBox="0 0 48 48"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>',
-                        'Bodybuilding'       => '<svg viewBox="0 0 48 48"><path d="M14 28 Q10 24 14 20 Q18 16 22 20 L26 28 Q30 32 26 36 Q22 40 18 36 Z"/><path d="M26 28 Q30 24 34 20"/><path d="M6 22 L14 20"/><path d="M34 20 L42 18"/><path d="M6 26 L14 28"/><path d="M34 28 L42 26"/></svg>',
-                        'Plyometrics'        => '<svg viewBox="0 0 48 48"><circle cx="24" cy="8" r="3"/><path d="M24 11 L18 22 L24 20 L20 34"/><path d="M24 20 L30 18 L26 30"/><path d="M16 38 L32 38"/></svg>',
-                        'Powerlifting'       => '<svg viewBox="0 0 48 48"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>',
-                        'Endurance'          => '<svg viewBox="0 0 48 48"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>',
-                        'Functional Training'=> '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>',
-                        'Hybrid Training'    => '<svg viewBox="0 0 48 48"><polygon points="24,6 28,18 40,18 30,26 34,38 24,30 14,38 18,26 8,18 20,18"/></svg>',
-                    ];
-                    $icon = $plans[$member->fitness_plan] ?? '<circle cx="24" cy="24" r="20"/>';
+                    $icon = $svgPlans[$member->fitness_plan] ?? '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/></svg>';
                 @endphp
 
                 <div class="sub-plan">
@@ -285,16 +324,75 @@
                 <div class="sub-details">
                     <div class="item">
                         <div class="label">Duration</div>
-                        <div class="value">{{ $member->membership_type }}</div>
+                        <div class="value">{{ $snapshot->planType ?? $member->membership_type }}</div>
                     </div>
+                    @if($snapshot->queuedRenewal)
                     <div class="item">
-                        <div class="label">Instructor</div>
-                        <div class="value">{{ $member->instructor->name ?? 'Not assigned' }}</div>
+                        <div class="label">Next Renewal (Paid)</div>
+                        <div class="value">{{ $snapshot->queuedRenewal['type'] }} · {{ $snapshot->queuedRenewal['period'] }}</div>
                     </div>
+                    @endif
                 </div>
 
-                {{-- Status, active period, days remaining + progress (shared with the admin page) --}}
-                <x-membership-expiration :member="$member" :plan="false" :alert="false" style="margin:4px 0 18px;" />
+                {{-- Current / Upcoming Coach --}}
+                <div class="coach-section">
+                    @if($coach['current'])
+                        @php $c = $coach['current']; @endphp
+                        <div class="coach-box current">
+                            <div class="coach-tag">Current Coach</div>
+                            <div class="coach-row"><span>Coach</span><strong>{{ $c['name'] }}</strong></div>
+                            @if($c['start'] && $c['end'])
+                            <div class="coach-row">
+                                <span>Coaching Period</span>
+                                <strong>{{ $c['start']->format('M j, Y') }} – {{ $c['end']->format('M j, Y') }}</strong>
+                            </div>
+                            @endif
+                            <div class="coach-row">
+                                <span>Status</span>
+                                <span class="coach-status {{ strtolower($c['status']) }}">{{ $c['status'] }}</span>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($coach['upcoming'])
+                        @php $u = $coach['upcoming']; @endphp
+                        <div class="coach-box upcoming">
+                            <div class="coach-tag">Upcoming Coach</div>
+                            <div class="coach-row"><span>Coach</span><strong>{{ $u['name'] }}</strong></div>
+                            <div class="coach-row"><span>Start Date</span><strong>{{ $u['start']->format('F j, Y') }}</strong></div>
+                            @if($u['end'])
+                            <div class="coach-row">
+                                <span>Coaching Period</span>
+                                <strong>{{ $u['start']->format('M j, Y') }} – {{ $u['end']->format('M j, Y') }}</strong>
+                            </div>
+                            @endif
+                            <div class="coach-row">
+                                <span>Status</span>
+                                <span class="coach-status scheduled">{{ $u['status'] }}</span>
+                            </div>
+                        </div>
+                    @elseif($coach['pending'])
+                        @php $p = $coach['pending']; @endphp
+                        <div class="coach-box upcoming">
+                            <div class="coach-tag">Coach Request</div>
+                            <div class="coach-row"><span>Coach</span><strong>{{ $p['name'] }}</strong></div>
+                            @if($p['start'])
+                            <div class="coach-row"><span>Requested Start</span><strong>{{ $p['start']->format('F j, Y') }}</strong></div>
+                            @endif
+                            <div class="coach-row">
+                                <span>Status</span>
+                                <span class="coach-status pending">{{ $p['status'] }}</span>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($coach['state'] === 'none')
+                        <div class="coach-box"><div class="coach-none">No Personal Coach</div></div>
+                    @endif
+                </div>
+
+                {{-- Status, active period, days remaining + progress: ALL from the snapshot --}}
+                <x-membership-expiration :member="$member" :exp="$exp" :plan="false" :alert="false" style="margin:4px 0 18px;" />
 
                 <div class="sub-actions">
                     <a href="{{ route('member.select-plan') }}" class="btn btn-primary" style="flex:1;justify-content:center;">
@@ -302,7 +400,7 @@
                              stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
                         </svg>
-                        {{ $member->isExpired() ? 'Renew Plan' : 'Change Plan' }}
+                        {{ $exp->dateExpired ? 'Renew Plan' : 'Change Plan' }}
                     </a>
                     <button type="button" class="btn btn-secondary"
                             onclick="document.getElementById('editSubModal').style.display='flex'"
@@ -325,8 +423,8 @@
             @endif
         </div>
 
-        {{-- Profile Card --}}
-        <div class="card">
+        {{-- Profile Card (live database values: snapshot first, then users, then members) --}}
+        <div class="card profile-card">
             <div class="card-header">
                 <div class="title">Profile</div>
                 <svg viewBox="0 0 24 24">
@@ -335,40 +433,81 @@
                 </svg>
             </div>
 
-            <div class="profile-avatar">
-                @if(auth()->user()->photo)
-                    <img src="{{ asset('storage/'.auth()->user()->photo) }}" alt="">
+            @php
+                $pName    = $profile['name']  ?? auth()->user()->name;
+                $pEmail   = $profile['email'] ?? auth()->user()->email;
+                $pPhone   = $profile['phone'] ?? auth()->user()->phone;
+                $pAddress = $profile['address'] ?? auth()->user()->address ?? $member?->address;
+                $pSince   = $profile['member_since'] ?? auth()->user()->created_at;
+                $pPhoto   = $profile['photo'] ?? auth()->user()->photo;
+                $pStatus  = $profile['status'] ?? 'No Plan';
+                $pUsable  = $profile['usable'] ?? false;
+            @endphp
+
+            <div class="pf-hero">
+                @if($pPhoto)
+                    <img class="pf-avatar" src="{{ asset('storage/'.$pPhoto) }}" alt="">
                 @else
-                    <div class="placeholder">{{ strtoupper(substr(auth()->user()->name,0,2)) }}</div>
+                    <div class="pf-avatar-ph">{{ strtoupper(mb_substr($pName, 0, 2)) }}</div>
                 @endif
-                <div>
-                    <div class="name">{{ auth()->user()->name }}</div>
-                    <div class="email">{{ auth()->user()->email }}</div>
-                </div>
+                <div class="pf-name">{{ $pName }}</div>
+                <div class="pf-email">{{ $pEmail }}</div>
+                <span class="status-badge {{ $pUsable ? '' : 'inactive' }}">{{ $pStatus }}</span>
             </div>
 
-            <div class="profile-details">
-                <div class="item">
-                    <div class="label">Phone</div>
-                    <div class="value">{{ auth()->user()->phone ?? '—' }}</div>
+            <div class="pf-list">
+                <div class="pf-row">
+                    <div class="pf-icon">
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="pf-text">
+                        <div class="pf-label">Full Name</div>
+                        <div class="pf-value">{{ $pName }}</div>
+                    </div>
                 </div>
-                <div class="item">
-                    <div class="label">Member Since</div>
-                    <div class="value">{{ auth()->user()->created_at->format('M d, Y') }}</div>
+
+                <div class="pf-row">
+                    <div class="pf-icon">
+                        <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/></svg>
+                    </div>
+                    <div class="pf-text">
+                        <div class="pf-label">Email</div>
+                        <div class="pf-value">{{ $pEmail }}</div>
+                    </div>
                 </div>
-                <div class="item">
-                    <div class="label">Status</div>
-                    <div>
-                        <span class="status-badge {{ $member ? '' : 'inactive' }}">
-                            {{ $member ? $member->status : 'No Plan' }}
-                        </span>
+
+                <div class="pf-row">
+                    <div class="pf-icon">
+                        <svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"/></svg>
+                    </div>
+                    <div class="pf-text">
+                        <div class="pf-label">Phone Number</div>
+                        <div class="pf-value {{ $pPhone ? '' : 'empty' }}">{{ $pPhone ?: 'Not provided' }}</div>
+                    </div>
+                </div>
+
+                <div class="pf-row">
+                    <div class="pf-icon">
+                        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                    <div class="pf-text">
+                        <div class="pf-label">Address</div>
+                        <div class="pf-value {{ $pAddress ? '' : 'empty' }}">{{ $pAddress ?: 'Not provided' }}</div>
+                    </div>
+                </div>
+
+                <div class="pf-row">
+                    <div class="pf-icon">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </div>
+                    <div class="pf-text">
+                        <div class="pf-label">Member Since</div>
+                        <div class="pf-value">{{ $pSince->format('M d, Y') }}</div>
                     </div>
                 </div>
             </div>
 
-            <a href="{{ route('member.profile') }}" class="btn btn-secondary" style="width:100%;justify-content:center;">
-                Edit Profile
-            </a>
+            <a href="{{ route('member.profile') }}" class="btn btn-secondary">Edit Profile</a>
         </div>
 
     </div>
@@ -449,22 +588,9 @@
 
             {{-- ── 1. FITNESS PLAN ── --}}
             <div class="modal-section-label">1. Fitness Plan</div>
-            @php
-                $svgPlans = [
-                    'Calisthenics'       => '<svg viewBox="0 0 48 48"><circle cx="24" cy="8" r="3"/><line x1="24" y1="11" x2="24" y2="24"/><line x1="24" y1="24" x2="14" y2="34"/><line x1="24" y1="24" x2="34" y2="34"/><line x1="24" y1="18" x2="14" y2="22"/><line x1="24" y1="18" x2="34" y2="22"/></svg>',
-                    'Bodybuilding'       => '<svg viewBox="0 0 48 48"><path d="M14 28 Q10 24 14 20 Q18 16 22 20 L26 28 Q30 32 26 36 Q22 40 18 36 Z"/><path d="M26 28 Q30 24 34 20"/><path d="M6 22 L14 20"/><path d="M34 20 L42 18"/><path d="M6 26 L14 28"/><path d="M34 28 L42 26"/></svg>',
-                    'Plyometrics'        => '<svg viewBox="0 0 48 48"><circle cx="24" cy="8" r="3"/><path d="M24 11 L18 22 L24 20 L20 34"/><path d="M24 20 L30 18 L26 30"/><path d="M16 38 L32 38"/></svg>',
-                    'Powerlifting'       => '<svg viewBox="0 0 48 48"><rect x="4" y="18" width="6" height="12" rx="2"/><rect x="38" y="18" width="6" height="12" rx="2"/><rect x="8" y="20" width="6" height="8" rx="1"/><rect x="34" y="20" width="6" height="8" rx="1"/><line x1="14" y1="24" x2="34" y2="24"/><circle cx="24" cy="14" r="3"/></svg>',
-                    'Endurance'          => '<svg viewBox="0 0 48 48"><circle cx="24" cy="8" r="3"/><path d="M20 12 Q16 18 18 24 L22 22 L20 34 L26 28 L28 34 L30 22 L34 24 Q36 18 32 12"/></svg>',
-                    'Functional Training'=> '<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="14"/><path d="M24 10 L24 14"/><path d="M24 34 L24 38"/><path d="M10 24 L14 24"/><path d="M34 24 L38 24"/><circle cx="24" cy="24" r="4"/></svg>',
-                    'Hybrid Training'    => '<svg viewBox="0 0 48 48"><polygon points="24,6 28,18 40,18 30,26 34,38 24,30 14,38 18,26 8,18 20,18"/></svg>',
-                ];
-            @endphp
             <div class="modal-plan-grid">
                 @foreach($svgPlans as $planName => $planSvg)
-                    @php
-                        $isPlan = $member->fitness_plan === $planName;
-                    @endphp
+                    @php $isPlan = $member->fitness_plan === $planName; @endphp
                     <label class="modal-plan-option">
                         <input type="radio" name="fitness_plan" value="{{ $planName }}" {{ $isPlan ? 'checked' : '' }}/>
                         <div class="modal-plan-card {{ $isPlan ? 'selected' : '' }}">
@@ -475,6 +601,10 @@
                     </label>
                 @endforeach
             </div>
+
+            {{-- The controller validates these two as required: keep the current values. --}}
+            <input type="hidden" name="membership_type" value="{{ $snapshot->planType ?? $member->membership_type }}">
+            <input type="hidden" name="instructor_id" value="{{ $member->instructor_id }}">
 
             {{-- ── ACTIONS ── --}}
             <div class="modal-actions">

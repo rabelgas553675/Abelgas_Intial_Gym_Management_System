@@ -10,7 +10,7 @@ use Carbon\CarbonInterface;
  *
  * Every screen (admin, staff, instructor, member, attendance scan) must obtain
  * its status / days-left / progress from here — usually through
- * Member::expiration() — and never recompute it.
+ * Member::expiration() or MemberSnapshot — and never recompute it.
  *
  * Rules
  * ─────
@@ -21,8 +21,6 @@ use Carbon\CarbonInterface;
  *  • Expiring soon  → 1..7 days remaining
  *  • Active         → more than 7 days remaining
  *  • progress       → remaining / (endDate − startDate) * 100, clamped 0..100
- *                     (a renewal that is stacked on top of a still-running plan
- *                      has remaining > total; it is simply clamped to 100)
  *  • Staff-controlled states (Suspended / Inactive) override the date-based
  *    label but the dates are still calculated so they remain visible.
  */
@@ -56,7 +54,7 @@ final class MembershipExpiration
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  Factory
+    //  Factories
     // ─────────────────────────────────────────────────────────────
 
     public static function calculate(
@@ -109,6 +107,37 @@ final class MembershipExpiration
             $end,
             $expired,
             $start !== null && $start->greaterThan($today),
+        );
+    }
+
+    /**
+     * One paid block inside a longer, stacked membership.
+     *
+     *  • dates / days remaining / progress  → the CURRENT block ($start–$end)
+     *  • status / state / expired flag      → the WHOLE membership (ends at $membershipEnd)
+     *
+     * So a member who is in an earlier block that is still followed by a paid
+     * block is never shown as "Expiring Soon" just because the early block ends.
+     */
+    public static function forPeriod(
+        CarbonInterface $start,
+        CarbonInterface $end,
+        CarbonInterface $membershipEnd,
+        ?string $storedStatus = null,
+        ?CarbonInterface $now = null,
+    ): self {
+        $block   = self::calculate($start, $end, $storedStatus, $now);
+        $overall = self::calculate($start, $membershipEnd, $storedStatus, $now);
+
+        return new self(
+            $overall->state,
+            $overall->status,
+            $block->daysRemaining,
+            $block->progress,
+            $block->startDate,
+            $block->endDate,
+            $overall->dateExpired,
+            $block->startsInFuture,
         );
     }
 

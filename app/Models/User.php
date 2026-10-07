@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -101,5 +102,10 @@ class User extends Authenticatable
     public function qrToken()
     {
         return $this->hasOne(UserQrToken::class);
+    }
+
+    public function coachRequest(): HasOne
+    {
+        return $this->hasOne(CoachRequest::class);
     }
 }

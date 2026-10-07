@@ -47,11 +47,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
     // ── QR CODE MANAGEMENT ──────────────────────────────────────
-    Route::get('/users/{user}/qr/print',       [QrCodeController::class, 'printUserCard'])->name('users.qr.print');
+    Route::get('/users/{user}/qr/print',       [QrCodeController::class, 'printCard'])->name('qr.print');
     Route::post('/users/{user}/qr/regenerate', [QrCodeController::class, 'regenerate'])->name('qr.regenerate');
 
     Route::post('/members/{member}/regenerate-qr', [QrCodeController::class, 'regenerate'])->name('members.qr.regenerate');
-    Route::get('/members/{member}/print-card',     [QrCodeController::class, 'printMemberCard'])->name('members.qr.print');
+    Route::get('/members/{member}/print-card',     [QrCodeController::class, 'printCard'])->name('members.qr.print');
 
     // ── MEMBER PORTAL ───────────────────────────────────────────
     Route::prefix('my')->name('member.')->middleware('member')->group(function () {
@@ -167,6 +167,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Admin Payment Routes
         Route::get('/payments',                 [PaymentController::class, 'index'])           ->name('payments.index');
+        Route::get('/payments/instructors/{instructor}', [PaymentController::class, 'instructorEarnings'])->name('payments.instructor-earnings');
         Route::post('/payments/settings',       [PaymentController::class, 'updateSettings'])  ->name('payments.settings');
         Route::delete('/payments/{payment}',    [PaymentController::class, 'destroy'])         ->name('payments.destroy');
 

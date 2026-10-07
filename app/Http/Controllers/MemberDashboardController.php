@@ -2,18 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
+use App\Models\CoachRequest;
 use App\Models\Member;
 use App\Models\Payment;
 use App\Models\User;
-use App\Models\Attendance;
-use App\Models\CoachRequest;
 use App\Services\Algorithms\GreedyScheduler;
 use App\Services\Algorithms\MergeSort;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use App\Services\CoachConfirmationService;
+use App\Services\MemberSnapshot;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MemberDashboardController extends Controller
 {
@@ -22,38 +25,45 @@ class MemberDashboardController extends Controller
      */
     private function getMember(): ?Member
     {
-        return auth()->user()?->memberProfile;
+        return Auth::user()?->memberProfile;
     }
 
     /**
      * Show the member's own dashboard.
      *
+     * Everything about the subscription period, coach and profile comes from
+     * MemberSnapshot, the same object the subscription / payment pages use.
+     *
      * DSA integration:
      *   - MergeSort::sortBy() replaces ->latest()
      */
-    public function index()
+    public function index(CoachConfirmationService $coaches)
     {
         /** @var \App\Models\User $user */
-        $user   = auth()->user();
-        $member = $this->getMember();
-
+        $user     = Auth::user();
+        $member   = $this->getMember();
         $payments = collect();
+        $snapshot = null;
+
         if ($member) {
-            // Load every payment type for the member so the dashboard reflects the
-            // same payment history as the dedicated payments page.
+            // A scheduled coach whose start date has arrived becomes the current coach
+            // right now — it does not depend on the scheduler having run.
+            $coaches->activateDue();
+            $member->refresh();
+
+            $snapshot = MemberSnapshot::for($member);
+
+            // Every payment type, same history as the dedicated payments page.
             $rawPayments = Payment::query()
                                   ->where('member_id', $member->id)
                                   ->get()
                                   ->all();
 
             // MergeSort replaces ->latest()
-            $sorted   = MergeSort::sortBy($rawPayments, 'payment_date', 'desc');
-            $payments = collect($sorted);
+            $payments = collect(MergeSort::sortBy($rawPayments, 'payment_date', 'desc'));
         }
 
-        $nearDue = $member && $member->isDueWithinDays(7);
-
-        return view('member.dashboard', compact('user', 'member', 'payments', 'nearDue'));
+        return view('member.dashboard', compact('user', 'member', 'payments', 'snapshot'));
     }
 
     /**
@@ -119,19 +129,19 @@ class MemberDashboardController extends Controller
         ]);
 
         /** @var \App\Models\User $user */
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user) {
             return back()->with('error', 'Unauthenticated. Please log in again.');
         }
 
-        $existingMember = Member::where('user_id', $user->id)->first();
+        $existingMember = Member::where('user_id', '=', $user->id, 'and')->first();
 
         // ── GreedyScheduler: compute fees ────────────────────────────────────
-        $coachPlan   = $request->filled('instructor_id') ? $request->coach_membership_type : null;
+        $coachPlan    = $request->filled('instructor_id') ? $request->coach_membership_type : null;
         $instructorId = $request->filled('instructor_id') ? (int) $request->instructor_id : null;
-        $gymAmount   = GreedyScheduler::computeGymFee($request->membership_type);
-        $coachAmount = GreedyScheduler::computeCoachFee($coachPlan, $instructorId);
+        $gymAmount    = GreedyScheduler::computeGymFee($request->membership_type);
+        $coachAmount  = GreedyScheduler::computeCoachFee($coachPlan, $instructorId);
 
         // Accumulate renewals: extend the active end date when the member already
         // has a future plan instead of resetting the subscription from today.
@@ -166,11 +176,8 @@ class MemberDashboardController extends Controller
 
             // Handle CoachRequest logic
             if ($request->filled('instructor_id')) {
-                // Reject existing pending requests
-                CoachRequest::query()
-                            ->where('member_id', $member->id)
-                            ->where('status', 'pending')
-                            ->update(['status' => 'rejected']);
+                // Supersede any existing pending requests
+                CoachRequest::supersedePending($member->id);
 
                 CoachRequest::create([
                     'member_id'     => $member->id,
@@ -232,19 +239,23 @@ class MemberDashboardController extends Controller
      */
     public function editProfile()
     {
-        $user        = auth()->user();
+        $user        = Auth::user();
         $instructors = User::query()->where('role', 'instructor')->get();
         $member      = $this->getMember();
+        $snapshot    = $member ? MemberSnapshot::for($member) : null;
 
-        return view('member.profile', compact('user', 'member', 'instructors'));
+        return view('member.profile', compact('user', 'member', 'instructors', 'snapshot'));
     }
 
     /**
      * Save profile changes.
+     *
+     * users + members are written in ONE transaction so the dashboard Profile card,
+     * the profile page and the admin side can never disagree.
      */
     public function updateProfile(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $request->validate([
             'name'      => 'required|string|max:255',
@@ -264,12 +275,36 @@ class MemberDashboardController extends Controller
             $data['photo'] = $request->file('photo')->store('avatars', 'public');
         }
 
-        $user->update($data);
+        DB::transaction(function () use ($user, $data, $request) {
+            $user->update($data);
 
-        $member = $this->getMember();
-        if ($member) {
-            $member->update(['name' => $request->name, 'phone' => $request->phone]);
-        }
+            $member = $this->getMember();
+            if (!$member) {
+                return;
+            }
+
+            $memberData = ['name' => $request->name, 'phone' => $request->phone];
+
+            // Member::full_name prefers first_name / last_name, so keep them in step
+            // or the admin side would keep showing the old name.
+            if ($member->first_name) {
+                $parts = preg_split('/\s+/', trim($request->name), 2);
+                $memberData['first_name'] = $parts[0];
+                $memberData['last_name']  = $parts[1] ?? '';
+            }
+
+            if (isset($data['photo'])) {
+                $memberData['photo'] = $data['photo'];
+            }
+
+            foreach (['gender', 'birthdate', 'address'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $memberData[$field] = $data[$field];
+                }
+            }
+
+            $member->update($memberData);
+        });
 
         return back()->with('success', 'Profile updated successfully!');
     }
@@ -279,7 +314,7 @@ class MemberDashboardController extends Controller
      */
     public function selectPlan()
     {
-        $user        = auth()->user();
+        $user        = Auth::user();
         $instructors = User::query()->where('role', 'instructor')->get();
         $member      = $this->getMember();
 
@@ -347,15 +382,15 @@ class MemberDashboardController extends Controller
         $member = $this->getMember();
 
         if (!$member) {
-            return view('member.payment-history', ['payments' => collect(), 'member' => null]);
+            return view('member.payment-history', ['payments' => collect(), 'member' => null, 'snapshot' => null]);
         }
 
-        // Use a single source of truth for all member payments so the history always
+        // Single source of truth for all member payments so the history always
         // matches every gym and coach transaction, including advance/manual entries.
         $payments = Payment::forMember($member)->get();
         $payments->each(function ($payment) use ($member) {
             $payment->coach_fee_amount = 0;
-            $payment->gym_fee_amount = 0;
+            $payment->gym_fee_amount   = 0;
 
             if ($payment->payment_type === 'gym_fee') {
                 $payment->gym_fee_amount = $payment->amount;
@@ -367,14 +402,18 @@ class MemberDashboardController extends Controller
                     ->latest('id')
                     ->first();
 
-                $payment->coach_fee_amount = $matchingCoach ? $matchingCoach->amount : 0;
+                $payment->coach_fee_amount  = $matchingCoach ? $matchingCoach->amount : 0;
                 $payment->coach_fee_payment = $matchingCoach;
             } elseif ($payment->payment_type === 'coach_fee') {
                 $payment->coach_fee_amount = $payment->amount;
             }
         });
 
-        return view('member.payment-history', ['payments' => $payments, 'member' => $member]);
+        return view('member.payment-history', [
+            'payments' => $payments,
+            'member'   => $member,
+            'snapshot' => MemberSnapshot::for($member),
+        ]);
     }
 
     /**
@@ -385,12 +424,14 @@ class MemberDashboardController extends Controller
         $member = $this->getMember();
 
         if (!$member) {
-            return view('member.subscription-history', ['payments' => collect(), 'member' => null]);
+            return view('member.subscription-history', ['payments' => collect(), 'member' => null, 'snapshot' => null]);
         }
 
-        $payments = Payment::forMember($member)->get();
-
-        return view('member.subscription-history', ['payments' => $payments, 'member' => $member]);
+        return view('member.subscription-history', [
+            'payments' => Payment::forMember($member)->get(),
+            'member'   => $member,
+            'snapshot' => MemberSnapshot::for($member),
+        ]);
     }
 
     /**

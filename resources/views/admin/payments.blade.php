@@ -125,6 +125,17 @@
         padding: 12px 0; border-bottom: 1px solid var(--border); gap: 10px;
     }
     .leaderboard-row:last-child { border-bottom: none; }
+    .leaderboard-link {
+        text-decoration: none; color: inherit; cursor: pointer;
+        padding: 12px 10px; margin: 0 -10px; border-radius: 10px;
+        transition: background .15s;
+    }
+    .leaderboard-link:hover,
+    .leaderboard-link:focus-visible { background: rgba(224,169,59,0.08); outline: none; }
+    .leaderboard-link:hover .leaderboard-name,
+    .leaderboard-link:focus-visible .leaderboard-name { color: var(--accent-2); }
+    .leaderboard-chevron { color: var(--muted); font-size: 18px; flex-shrink: 0; transition: color .15s, transform .15s; }
+    .leaderboard-link:hover .leaderboard-chevron { color: var(--accent-2); transform: translateX(2px); }
     .leaderboard-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
     .leaderboard-avatar {
         width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
@@ -200,8 +211,8 @@
         <p>Track gym fees, coach fees, and earnings per role.</p>
     </div>
     <div class="payments-tabs">
-        <button class="earn-tab active" onclick="showTab('admin')" id="tab-admin">Admin Earnings</button>
-        <button class="earn-tab" onclick="showTab('instructor')" id="tab-instructor">Instructor Earnings</button>
+        <button type="button" class="earn-tab active" onclick="showTab('admin')" id="tab-admin">Admin Earnings</button>
+        <button type="button" class="earn-tab" onclick="showTab('instructor')" id="tab-instructor">Instructor Earnings</button>
     </div>
 </div>
 
@@ -259,64 +270,75 @@
         <div class="record-payment-card">
             <div class="card-title">+ Record Payment</div>
 
-                <form method="POST" action="{{ route('payments.store') }}" id="admin-payment-form">
-                    @csrf
+            @if($errors->any())
+                <div class="field-error" style="margin-bottom:16px;padding:12px 14px;border:1px solid var(--danger);border-radius:10px;font-size:13px;">
+                    <strong>The payment was not saved:</strong>
+                    <ul style="margin:6px 0 0 18px;">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-                    <div class="form-group">
-                        <label class="form-label">Member</label>
-                        <select name="member_id" class="form-control" required>
-                            <option value="" disabled selected>— Select Member —</option>
-                            @foreach($members as $member)
-                                <option value="{{ $member['id'] }}" {{ old('member_id') == $member['id'] ? 'selected' : '' }}>
-                                    {{ $member['name'] }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('member_id')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
-                    </div>
+            <form method="POST" action="{{ route('payments.store') }}" id="admin-payment-form">
+                @csrf
 
-                    <div class="form-group">
-                        <label class="form-label">Membership Plan</label>
-                        <select name="membership_type" id="membership_type" class="form-control">
-                            <option value="">— Select Plan —</option>
-                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
-                                <option value="{{ $period }}" {{ old('membership_type') == $period ? 'selected' : '' }}>
-                                    {{ $period }} (₱{{ number_format($rates['gym'][$period] ?? 0, 0) }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Member</label>
+                    <select name="member_id" class="form-control" required>
+                        <option value="" disabled selected>— Select Member —</option>
+                        @foreach($members as $member)
+                            <option value="{{ $member['id'] }}" {{ old('member_id') == $member['id'] ? 'selected' : '' }}>
+                                {{ $member['name'] }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('member_id')<div class="field-error">{{ $message }}</div>@enderror
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Instructor (for coach payments)</label>
-                        <select name="instructor_id" id="instructor_id" class="form-control" style="color:var(--text); background:var(--bg-card);">
-                            <option value="">— No personal coaching —</option>
-                            @foreach($instructorOptions as $instructor)
-                                <option value="{{ $instructor->id }}" {{ old('instructor_id') == $instructor->id ? 'selected' : '' }}>
-                                    {{ $instructor->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Membership Plan</label>
+                    <select name="membership_type" id="membership_type" class="form-control">
+                        <option value="">— Select Plan —</option>
+                        @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                            <option value="{{ $period }}" {{ old('membership_type') == $period ? 'selected' : '' }}>
+                                {{ $period }} (₱{{ number_format($rates['gym'][$period] ?? 0, 0) }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-                    <div class="form-group" id="coach-package-group" style="display:none;">
-                        <label class="form-label">Coaching Package</label>
-                        <select name="coach_membership_type" id="coach_membership_type" class="form-control">
-                            <option value="">— Select Package —</option>
-                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
-                                <option value="{{ $period }}" {{ old('coach_membership_type') == $period ? 'selected' : '' }}>
-                                    {{ $period }} (₱{{ number_format($rates['coach'][$period] ?? 0, 0) }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Instructor (for coach payments)</label>
+                    <select name="instructor_id" id="instructor_id" class="form-control">
+                        <option value="">— No personal coaching —</option>
+                        @foreach($instructorOptions as $instructor)
+                            <option value="{{ $instructor->id }}" {{ old('instructor_id') == $instructor->id ? 'selected' : '' }}>
+                                {{ $instructor->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Total Amount (₱)</label>
-                        <input type="text" id="admin_total_amount" class="form-control" value="₱0" readonly>
-                        <input type="hidden" name="amount" id="admin_amount_hidden" value="{{ old('amount', 0) }}">
-                        @error('amount')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
-                    </div>
+                <div class="form-group" id="coach-package-group" style="display:none;">
+                    <label class="form-label">Coaching Package</label>
+                    <select name="coach_membership_type" id="coach_membership_type" class="form-control">
+                        <option value="">— Select Package —</option>
+                        @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                            <option value="{{ $period }}" {{ old('coach_membership_type') == $period ? 'selected' : '' }}>
+                                {{ $period }} (₱{{ number_format($rates['coach'][$period] ?? 0, 0) }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Total Amount (₱)</label>
+                    <input type="text" id="admin_total_amount" class="form-control" value="₱0" readonly>
+                    <input type="hidden" name="amount" id="admin_amount_hidden" value="{{ old('amount', 0) }}">
+                    @error('amount')<div class="field-error">{{ $message }}</div>@enderror
+                </div>
 
                 <div class="form-group">
                     <label class="form-label">Payment Date</label>
@@ -338,186 +360,186 @@
                     @error('payment_date')<div class="field-error">{{ $message }}</div>@enderror
                 </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Method</label>
-                        <select name="method" class="form-control" required>
-                            <option value="" disabled selected>— Select Method —</option>
-                            @foreach(['Cash','GCash','Bank Transfer','Card'] as $m)
-                                <option value="{{ $m }}" {{ old('method') == $m ? 'selected' : '' }}>{{ $m }}</option>
-                            @endforeach
-                        </select>
-                        @error('method')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Method</label>
+                    <select name="method" class="form-control" required>
+                        <option value="" disabled selected>— Select Method —</option>
+                        @foreach(['Cash','GCash','Bank Transfer','Card'] as $m)
+                            <option value="{{ $m }}" {{ old('method') == $m ? 'selected' : '' }}>{{ $m }}</option>
+                        @endforeach
+                    </select>
+                    @error('method')<div class="field-error">{{ $message }}</div>@enderror
+                </div>
 
-                    <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
-                        ✓ Record Payment
-                    </button>
-                </form>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+                    ✓ Record Payment
+                </button>
+            </form>
 
-                <form method="POST" action="{{ route('payments.settings') }}" class="mt-4" style="margin-top:22px; border-top:1px solid var(--border); padding-top:18px;">
-                    @csrf
-                    <div class="card-title" style="margin-bottom:14px; font-size:14px;">⚙ Subscription Rates</div>
+            <form method="POST" action="{{ route('payments.settings') }}" style="margin-top:22px; border-top:1px solid var(--border); padding-top:18px;">
+                @csrf
+                <div class="card-title" style="margin-bottom:14px; font-size:14px;">⚙ Subscription Rates</div>
 
-                    <div class="form-group" style="margin-bottom:14px;">
-                        <label class="form-label">Instructor to Update</label>
-                        <select id="instructor-rate-select" name="instructor_id" class="form-control" style="color:var(--text); background:var(--bg-card);">
-                            <option value="">Global default rates</option>
-                            @foreach($instructorOptions as $instructor)
-                                <option value="{{ $instructor->id }}" {{ request('instructor_id') == $instructor->id ? 'selected' : '' }}>
-                                    {{ $instructor->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label class="form-label">Instructor to Update</label>
+                    <select id="instructor-rate-select" name="instructor_id" class="form-control">
+                        <option value="">Global default rates</option>
+                        @foreach($instructorOptions as $instructor)
+                            <option value="{{ $instructor->id }}" {{ request('instructor_id') == $instructor->id ? 'selected' : '' }}>
+                                {{ $instructor->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                        <div>
-                            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:700;">Gym</div>
-                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
-                                <div class="form-group" style="margin-bottom:10px;">
-                                    <label class="form-label">{{ $period }}</label>
-                                    <input type="number" name="gym_{{ strtolower(str_replace('-', '_', $period)) }}" class="form-control" min="0" value="{{ $rates['gym'][$period] ?? 0 }}" required>
-                                </div>
-                            @endforeach
-                            {{-- Day Pass rate used by the separate Walk-In Payments module --}}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div>
+                        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:700;">Gym</div>
+                        @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
                             <div class="form-group" style="margin-bottom:10px;">
-                                <label class="form-label">Day Pass (Walk-In)</label>
-                                <input type="number" name="gym_day_pass" class="form-control" min="1" value="{{ $dayPassRate ?? \App\Models\Payment::dayPassRate() }}">
+                                <label class="form-label">{{ $period }}</label>
+                                <input type="number" name="gym_{{ strtolower(str_replace('-', '_', $period)) }}" class="form-control" min="0" value="{{ $rates['gym'][$period] ?? 0 }}" required>
                             </div>
-                        </div>
-                        <div>
-                            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:700;">Instructor</div>
-                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
-                                <div class="form-group" style="margin-bottom:10px;">
-                                    <label class="form-label">{{ $period }}</label>
-                                    <input type="number" name="coach_{{ strtolower(str_replace('-', '_', $period)) }}" class="form-control" min="0" value="{{ $rates['coach'][$period] ?? 0 }}" required>
-                                </div>
-                            @endforeach
+                        @endforeach
+                        {{-- Day Pass rate used by the separate Walk-In Payments module --}}
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label class="form-label">Day Pass (Walk-In)</label>
+                            <input type="number" name="gym_day_pass" class="form-control" min="1" value="{{ $dayPassRate ?? \App\Models\Payment::dayPassRate() }}">
                         </div>
                     </div>
-
-                    <button type="submit" class="btn btn-secondary" style="width:100%;justify-content:center;">
-                        Update Rates
-                    </button>
-                </form>
-            </div>
-
-            <script>
-                const defaultCoachRates = @json(\App\Models\Payment::defaultCoachRates());
-                const instructorCoachRates = @json($instructorRateMap);
-                const coachFieldMap = {
-                    Monthly: 'coach_monthly',
-                    Quarterly: 'coach_quarterly',
-                    'Semi-Annual': 'coach_semi_annual',
-                    Annually: 'coach_annually',
-                };
-
-                function applyCoachRatePreview(selectedInstructorId) {
-                    const rates = selectedInstructorId && instructorCoachRates[selectedInstructorId]
-                        ? instructorCoachRates[selectedInstructorId]
-                        : defaultCoachRates;
-
-                    Object.entries(coachFieldMap).forEach(([label, fieldName]) => {
-                        const input = document.querySelector(`input[name="${fieldName}"]`);
-                        if (input) {
-                            input.value = rates?.[label] ?? 0;
-                        }
-                    });
-                }
-
-                const instructorRateSelect = document.getElementById('instructor-rate-select');
-                if (instructorRateSelect) {
-                    instructorRateSelect.addEventListener('change', function () {
-                        applyCoachRatePreview(this.value || '');
-                    });
-                    applyCoachRatePreview(instructorRateSelect.value || '');
-                }
-            </script>
-
-            {{-- Admin Transactions Table --}}
-            <div>
-                <div class="section-header">
-                    <div class="section-title">
-                        Gym Fee Transactions
-                        <span class="sub">(Platform / Admin earnings only — coach fees excluded)</span>
+                    <div>
+                        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:700;">Instructor</div>
+                        @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label class="form-label">{{ $period }}</label>
+                                <input type="number" name="coach_{{ strtolower(str_replace('-', '_', $period)) }}" class="form-control" min="0" value="{{ $rates['coach'][$period] ?? 0 }}" required>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
-                <div class="card">
-                    <div class="table-responsive">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Receipt</th>
-                                    <th>Member</th>
-                                    <th>Assigned Instructor</th>
-                                    <th>Plan</th>
-                                    <th>Duration</th>
-                                    <th>Amount</th>
-                                    <th>Date</th>
-                                    <th>Method</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($payments as $payment)
-                                @php
-                                    $memberPhoto = $payment['member']['user']['photo']
-                                                ?? $payment['member']['photo']
-                                                ?? null;
-                                    $memberName  = $payment['member']['name'] ?? '?';
-                                    $receiptNum  = $payment['receipt_number']
-                                                ?? 'TXN-' . str_pad($payment['id'], 5, '0', STR_PAD_LEFT);
-                                @endphp
-                                <tr>
-                                    <td class="receipt-number">{{ $receiptNum }}</td>
-                                    <td>
-                                        <div class="member-cell">
-                                            @if($memberPhoto)
-                                                <img src="{{ asset('storage/'.$memberPhoto) }}" class="member-cell-avatar" alt="">
-                                            @else
-                                                <div class="member-cell-placeholder">
-                                                    {{ strtoupper(substr($memberName, 0, 2)) }}
-                                                </div>
-                                            @endif
-                                            <span class="member-cell-name">{{ $memberName }}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        @if(($payment['assigned_instructor'] ?? 'Unassigned') === 'Unassigned')
-                                            <span class="badge-method" style="opacity:0.75;">Unassigned</span>
+
+                <button type="submit" class="btn btn-secondary" style="width:100%;justify-content:center;">
+                    Update Rates
+                </button>
+            </form>
+        </div>
+
+        <script>
+            const defaultCoachRates = @json(\App\Models\Payment::defaultCoachRates());
+            const instructorCoachRates = @json($instructorRateMap);
+            const coachFieldMap = {
+                Monthly: 'coach_monthly',
+                Quarterly: 'coach_quarterly',
+                'Semi-Annual': 'coach_semi_annual',
+                Annually: 'coach_annually',
+            };
+
+            function applyCoachRatePreview(selectedInstructorId) {
+                const rates = selectedInstructorId && instructorCoachRates[selectedInstructorId]
+                    ? instructorCoachRates[selectedInstructorId]
+                    : defaultCoachRates;
+
+                Object.entries(coachFieldMap).forEach(([label, fieldName]) => {
+                    const input = document.querySelector(`input[name="${fieldName}"]`);
+                    if (input) {
+                        input.value = rates?.[label] ?? 0;
+                    }
+                });
+            }
+
+            const instructorRateSelect = document.getElementById('instructor-rate-select');
+            if (instructorRateSelect) {
+                instructorRateSelect.addEventListener('change', function () {
+                    applyCoachRatePreview(this.value || '');
+                });
+                applyCoachRatePreview(instructorRateSelect.value || '');
+            }
+        </script>
+
+        {{-- Admin Transactions Table --}}
+        <div>
+            <div class="section-header">
+                <div class="section-title">
+                    Gym Fee Transactions
+                    <span class="sub">(Platform / Admin earnings only — coach fees excluded)</span>
+                </div>
+            </div>
+            <div class="card">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Receipt</th>
+                                <th>Member</th>
+                                <th>Assigned Instructor</th>
+                                <th>Plan</th>
+                                <th>Duration</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Method</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($payments as $payment)
+                            @php
+                                $memberPhoto = $payment['member']['user']['photo']
+                                            ?? $payment['member']['photo']
+                                            ?? null;
+                                $memberName  = $payment['member']['name'] ?? '?';
+                                $receiptNum  = $payment['receipt_number']
+                                            ?? 'TXN-' . str_pad($payment['id'], 5, '0', STR_PAD_LEFT);
+                            @endphp
+                            <tr>
+                                <td class="receipt-number">{{ $receiptNum }}</td>
+                                <td>
+                                    <div class="member-cell">
+                                        @if($memberPhoto)
+                                            <img src="{{ asset('storage/'.$memberPhoto) }}" class="member-cell-avatar" alt="">
                                         @else
-                                            <span class="badge-method" style="background: rgba(96,165,250,0.15); color: var(--info); border-color: rgba(96,165,250,0.35);">{{ $payment['assigned_instructor'] }}</span>
+                                            <div class="member-cell-placeholder">
+                                                {{ strtoupper(substr($memberName, 0, 2)) }}
+                                            </div>
                                         @endif
-                                    </td>
-                                    <td>{{ $payment['fitness_plan'] ?? '—' }}</td>
-                                    <td>
-                                        <span class="badge-plan">{{ $payment['membership_type'] ?? '—' }}</span>
-                                    </td>
-                                    <td class="amount-text">₱{{ number_format($payment['amount'], 0) }}</td>
-                                    <td class="text-muted">{{ \Carbon\Carbon::parse($payment['payment_date'])->format('M d, Y') }}</td>
-                                    <td>
-                                        <span class="badge-method">{{ $payment['method'] ?? 'Cash' }}</span>
-                                    </td>
-                                    <td>
-                                        <form method="POST" action="{{ route('payments.destroy', $payment['id']) }}"
-                                              onsubmit="return confirm('Delete this transaction?')">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="btn btn-danger-soft btn-sm">🗑</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="9" class="empty-state">No gym fee transactions yet.</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                                        <span class="member-cell-name">{{ $memberName }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if(($payment['assigned_instructor'] ?? 'Unassigned') === 'Unassigned')
+                                        <span class="badge-method" style="opacity:0.75;">Unassigned</span>
+                                    @else
+                                        <span class="badge-method" style="background: rgba(96,165,250,0.15); color: var(--info); border-color: rgba(96,165,250,0.35);">{{ $payment['assigned_instructor'] }}</span>
+                                    @endif
+                                </td>
+                                <td>{{ $payment['fitness_plan'] ?? '—' }}</td>
+                                <td>
+                                    <span class="badge-plan">{{ $payment['membership_type'] ?? '—' }}</span>
+                                </td>
+                                <td class="amount-text">₱{{ number_format($payment['amount'], 0) }}</td>
+                                <td class="text-muted">{{ \Carbon\Carbon::parse($payment['payment_date'])->format('M d, Y') }}</td>
+                                <td>
+                                    <span class="badge-method">{{ $payment['method'] ?? 'Cash' }}</span>
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ route('payments.destroy', $payment['id']) }}"
+                                          onsubmit="return confirm('Delete this transaction?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-danger-soft btn-sm">🗑</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="9" class="empty-state">No gym fee transactions yet.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
 {{-- ══ INSTRUCTOR EARNINGS PANEL ══ --}}
 <div id="panel-instructor" style="display:none;">
@@ -548,7 +570,7 @@
 
     <div class="instructor-layout">
 
-        {{-- Instructor leaderboard --}}
+        {{-- Instructor leaderboard: each row opens that instructor's payments --}}
         <div class="record-payment-card">
             <div class="card-title">Instructor Earnings Breakdown</div>
             @forelse($instructorLeaderboard as $row)
@@ -556,7 +578,9 @@
                 $instrPhoto = $row['instructor']['photo'] ?? null;
                 $instrName  = $row['instructor']['name'] ?? '?';
             @endphp
-            <div class="leaderboard-row">
+            <a href="{{ route('payments.instructor-earnings', $row['instructor_id']) }}"
+               class="leaderboard-row leaderboard-link"
+               title="View {{ $instrName }}'s payments">
                 <div class="leaderboard-left">
                     @if($instrPhoto)
                         <img src="{{ asset('storage/'.$instrPhoto) }}" class="leaderboard-avatar" alt="">
@@ -574,7 +598,8 @@
                     <div class="leaderboard-total">₱{{ number_format($row['total'], 0) }}</div>
                     <div class="leaderboard-label">total earned</div>
                 </div>
-            </div>
+                <span class="leaderboard-chevron" aria-hidden="true">›</span>
+            </a>
             @empty
             <div class="empty-state">No instructor fees recorded yet.</div>
             @endforelse
@@ -634,6 +659,11 @@
         document.getElementById('panel-instructor').style.display = tab === 'instructor' ? 'block' : 'none';
         document.getElementById('tab-admin').classList.toggle('active', tab === 'admin');
         document.getElementById('tab-instructor').classList.toggle('active', tab === 'instructor');
+
+        // Keep the URL in sync so refresh and the "back" link keep the same tab
+        var url = new URL(window.location);
+        url.searchParams.set('tab', tab);
+        history.replaceState(null, '', url);
     }
 
     (function () {
@@ -714,6 +744,14 @@
 
         refreshCoachPackageUI();
         recalcAmount();
+    })();
+
+    // Open the tab requested in the URL (e.g. /payments?tab=instructor)
+    (function () {
+        var tab = new URLSearchParams(window.location.search).get('tab');
+        if (tab === 'instructor' || tab === 'admin') {
+            showTab(tab);
+        }
     })();
 </script>
 
