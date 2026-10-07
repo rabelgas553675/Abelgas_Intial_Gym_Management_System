@@ -247,6 +247,18 @@ class Payment extends Model
         return 'RCP-' . strtoupper(uniqid());
     }
 
+    public static function forMember(Member $member)
+    {
+        return static::where('member_id', $member->id)
+            ->orderByDesc('payment_date')
+            ->orderByDesc('id');
+    }
+
+    public static function historyForMember(Member $member)
+    {
+        return static::forMember($member)->get();
+    }
+
     public function isCoachFee(): bool   { return $this->payment_type === 'coach_fee'; }
     public function isGymFee(): bool     { return $this->payment_type === 'gym_fee'; }
 }

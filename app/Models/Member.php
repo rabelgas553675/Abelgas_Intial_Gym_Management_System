@@ -272,6 +272,21 @@ class Member extends Model
     }
 
     /**
+     * True when the total recorded member payments exceed the current expected plan amount.
+     */
+    public function hasPaidInAdvance(): bool
+    {
+        if (! $this->membership_type) {
+            return false;
+        }
+
+        $expected = (float) (Payment::gymRate($this->membership_type) ?: 0);
+        $totalPaid = (float) $this->payments()->where('payment_type', 'gym_fee')->sum('amount');
+
+        return $expected > 0 && $totalPaid > $expected;
+    }
+
+    /**
      * True once the end date is today or earlier.
      */
     public function isExpired(): bool

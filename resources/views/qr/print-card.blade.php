@@ -155,24 +155,38 @@
 <body>
 
   <div class="controls">
-    <h1 style="font-family:'Bebas Neue'; letter-spacing:2px;">Staff QR Directory</h1>
+    <h1 style="font-family:'Bebas Neue'; letter-spacing:2px;">{{ $title ?? 'QR Card' }}</h1>
     <div class="btn-group">
-        <a href="{{ route('attendance.index') }}" class="btn btn-back">← Dashboard</a>
+        <a href="{{ route('attendance.qr-list') }}" class="btn btn-back">← QR List</a>
         <button class="btn btn-print" onclick="window.print()">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <polyline points="6 9 6 2 18 2 18 9"/>
                 <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
                 <rect x="6" y="14" width="12" height="8"/>
             </svg>
-            Print All Cards
+            Print QR Card
         </button>
     </div>
   </div>
 
   <div class="card-grid">
-    @foreach($staffList as $staff)
+    @php
+        $cards = $items ?? collect();
+        if ($cards->isEmpty() && isset($person)) {
+            $cards = collect([$person]);
+        }
+    @endphp
+    @foreach($cards as $card)
+      @php
+        $isMemberCard = $card instanceof \App\Models\Member || isset($card->qr_id);
+        $name = $card->name ?? ($card->user->name ?? 'Unknown');
+        $role = $card->role ?? ($card->user->role ?? 'member');
+        $qrPath = $card->qr_code_path ?? ($card->qrToken?->qr_code_path ?? null);
+        $qrToken = $card->qr_token ?? ($card->qrToken?->qr_token ?? null);
+        $idLabel = $isMemberCard ? 'MEMBER ID' : strtoupper($role) . ' ID';
+        $idValue = $isMemberCard ? ($card->id ?? $card->user_id) : ($card->id ?? $card->user_id);
+      @endphp
       <div class="id-card">
-        {{-- Header --}}
         <div class="card-header">
           <div class="brand">
             <div class="brand-icon">
@@ -182,30 +196,29 @@
             </div>
             <div class="brand-name">APEX</div>
           </div>
-          <span class="role-badge role-{{ strtolower($staff->role) }}">{{ $staff->role }}</span>
+          <span class="role-badge role-{{ strtolower($role) }}">{{ strtoupper($role) }}</span>
         </div>
 
-        {{-- Body --}}
         <div class="card-body">
           <div class="user-info">
-            <div class="user-name">{{ $staff->name }}</div>
-            <div class="user-id">STAFF ID: {{ str_pad($staff->user_id, 4, '0', STR_PAD_LEFT) }}</div>
+            <div class="user-name">{{ $name }}</div>
+            <div class="user-id">{{ $idLabel }}: {{ str_pad((string)$idValue, 4, '0', STR_PAD_LEFT) }}</div>
           </div>
 
-          {{-- QR Code Section --}}
           <div class="qr-section">
-            @if($staff->qr_code_path)
-                <img src="{{ asset('storage/' . $staff->qr_code_path) }}" alt="QR Code" style="background:#fff;padding:8px;border-radius:6px">
+            @if($qrPath)
+                <img src="{{ asset('storage/' . $qrPath) }}" alt="QR Code" style="background:#fff;padding:8px;border-radius:6px">
+            @elseif($card instanceof \App\Models\User && $card->qrToken)
+                <img src="{{ asset('storage/' . $card->qrToken->qr_code_path) }}" alt="QR Code" style="background:#fff;padding:8px;border-radius:6px">
             @else
                 <div class="no-qr">No QR Generated</div>
             @endif
-            <div class="qr-id">{{ $staff->qr_token }}</div>
+            <div class="qr-id">{{ $qrToken ?? 'No QR Token' }}</div>
           </div>
         </div>
 
-        {{-- Footer --}}
         <div class="card-footer">
-          <span class="footer-text">APEX STAFF</span>
+          <span class="footer-text">APEX {{ strtoupper($isMemberCard ? 'Member' : $role) }}</span>
           <div class="footer-dot"></div>
           <span class="footer-text">{{ now()->format('Y') }}</span>
         </div>

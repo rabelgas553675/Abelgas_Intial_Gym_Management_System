@@ -45,8 +45,11 @@ const writeStoredTheme = (theme) => {
 const getTheme = () =>
     document.documentElement.classList.contains('dark') ? THEME_DARK : THEME_LIGHT;
 
+const getThemeToggleButton = () =>
+    document.getElementById('themeToggle') || document.getElementById('theme-toggle');
+
 const updateToggleButton = (theme) => {
-    const button = document.getElementById('themeToggle');
+    const button = getThemeToggleButton();
     if (!button) return;
 
     button.textContent = theme === THEME_DARK ? '☀ Light mode' : '☾ Dark mode';
@@ -98,7 +101,7 @@ Alpine.start();
 
 // Floating toggle button (created once, only if a layout has not provided its own #themeToggle).
 const mountThemeToggle = () => {
-    let button = document.getElementById('themeToggle');
+    let button = getThemeToggleButton();
 
     if (!button) {
         button = document.createElement('button');
@@ -106,6 +109,8 @@ const mountThemeToggle = () => {
         button.type = 'button';
         button.className = 'theme-toggle';
         document.body.appendChild(button);
+    } else if (button.id !== 'themeToggle') {
+        button.id = 'themeToggle';
     }
 
     if (!button.dataset.themeBound) {

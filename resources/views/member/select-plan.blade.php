@@ -438,27 +438,30 @@
     <script>
         (function() {
             document.addEventListener('DOMContentLoaded', function() {
+                var toggleBtn = document.getElementById('theme-toggle') || document.getElementById('themeToggle');
+                if (!toggleBtn) return;
 
-                /* ───────── Theme toggle ───────── */
-                var root = document.documentElement;
-                var toggleBtn = document.getElementById('theme-toggle');
-                var SUN  = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg>';
-                var MOON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-
-                function renderToggle() {
-                    var isLight = root.getAttribute('data-theme') === 'light';
-                    // Button shows the mode you will SWITCH to (same as the dashboard)
-                    toggleBtn.innerHTML = isLight ? MOON + '<span>Dark mode</span>' : SUN + '<span>Light mode</span>';
-                }
+                var syncToggle = function() {
+                    var isDark = document.documentElement.classList.contains('dark');
+                    toggleBtn.textContent = isDark ? '☀ Light mode' : '☾ Dark mode';
+                    toggleBtn.setAttribute('aria-label', 'Switch to ' + (isDark ? 'light' : 'dark') + ' mode');
+                };
 
                 toggleBtn.addEventListener('click', function() {
-                    var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                    if (window.theme && typeof window.theme.toggle === 'function') {
+                        window.theme.toggle();
+                        return;
+                    }
+
+                    var root = document.documentElement;
+                    var next = root.classList.contains('dark') ? 'light' : 'dark';
+                    root.classList.toggle('dark', next === 'dark');
                     root.setAttribute('data-theme', next);
-                    try { localStorage.setItem(window.APEX_THEME_KEY, next); } catch (e) {}
-                    renderToggle();
+                    try { localStorage.setItem('apex-color-theme', next); } catch (e) {}
+                    syncToggle();
                 });
 
-                renderToggle();
+                syncToggle();
 
                 /* ───────── Plan selection ───────── */
                 const coachContainer = document.getElementById('coach-duration-container');

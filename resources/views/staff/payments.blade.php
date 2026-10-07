@@ -302,7 +302,7 @@
 
         <div class="form-group">
           <label class="form-label">Membership Plan</label>
-          <select name="membership_type" class="form-control" required>
+          <select name="membership_type" id="staff_membership_type" class="form-control" required>
             <option value="" disabled {{ old('membership_type') ? '' : 'selected' }}>— Select Plan —</option>
             @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $plan)
               <option value="{{ $plan }}" {{ old('membership_type') == $plan ? 'selected' : '' }}>
@@ -310,7 +310,7 @@
               </option>
             @endforeach
           </select>
-          <div class="pay-hint">The amount is set automatically from the plan.</div>
+          <div class="pay-hint">The total is calculated automatically.</div>
         </div>
 
         <div class="form-group">
@@ -333,6 +333,12 @@
               </option>
             @endforeach
           </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Total Amount</label>
+          <input type="text" id="staff_total_amount" class="form-control" value="₱0" readonly>
+          <input type="hidden" name="amount" id="staff_amount_hidden" value="{{ old('amount', 0) }}">
         </div>
 
         <div class="form-group">
@@ -381,18 +387,39 @@
     // Re-open automatically if the server returned validation errors
     @if($errors->any()) openModal(); @endif
 
-    // Show the coaching package only when an instructor is selected
     var ins  = document.getElementById('staff_instructor');
     var wrap = document.getElementById('staff_coach_wrap');
     var type = document.getElementById('staff_coach_type');
+    var gymSelect = document.getElementById('staff_membership_type');
+    var totalBox = document.getElementById('staff_total_amount');
+    var hiddenAmount = document.getElementById('staff_amount_hidden');
+    var gymRates = @json($gymRates ?? []);
+    var coachRates = @json($coachRates ?? []);
+
     function syncCoach() {
       var on = !!ins.value;
       wrap.style.display = on ? '' : 'none';
       type.required = on;
       if (!on) type.value = '';
+      syncTotal();
     }
+
+    function syncTotal() {
+      var gymType = gymSelect ? gymSelect.value : '';
+      var coachType = type ? type.value : '';
+      var gymTotal = gymType && gymRates[gymType] ? Number(gymRates[gymType]) : 0;
+      var coachTotal = ins && ins.value && coachType && coachRates[coachType] ? Number(coachRates[coachType]) : 0;
+      var total = gymTotal + coachTotal;
+
+      if (totalBox) totalBox.value = '₱' + total.toLocaleString('en-PH');
+      if (hiddenAmount) hiddenAmount.value = total;
+    }
+
     ins.addEventListener('change', syncCoach);
+    if (gymSelect) gymSelect.addEventListener('change', syncTotal);
+    if (type) type.addEventListener('change', syncTotal);
     syncCoach();
+    syncTotal();
   })();
 </script>
 

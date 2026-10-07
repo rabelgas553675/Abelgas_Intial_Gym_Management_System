@@ -236,8 +236,16 @@
                 <a href="{{ route('member.select-plan') }}">Renew now →</a>
             </div>
         </div>
-    </div>
-    @endif
+    </div>    @elseif($member && $member->hasPaidInAdvance())
+    <div class="warning-banner" style="border-color:var(--success);background:rgba(74,222,128,.08);">
+        <span class="icon">✅</span>
+        <div class="text">
+            <strong>Advance Payment Recorded</strong>
+            <div class="sub">
+                This membership has already been paid beyond the current plan amount. The extra payment is recorded in your payment history.
+            </div>
+        </div>
+    </div>    @endif
 
     {{-- Top Row: Subscription + Profile --}}
     <div class="top-row">

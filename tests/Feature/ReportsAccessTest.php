@@ -247,6 +247,68 @@ class ReportsAccessTest extends TestCase
         $page->assertSee($instructor->name);
     }
 
+    public function test_member_payment_history_includes_coach_fee_amounts_for_coach_rows()
+    {
+        $memberUser = User::factory()->create([
+            'role' => 'member',
+            'email' => 'member-coach-history@test.com',
+        ]);
+
+        $member = \App\Models\Member::create([
+            'user_id' => $memberUser->id,
+            'name' => 'Coach History Member',
+            'email' => $memberUser->email,
+            'status' => 'Active',
+            'fitness_plan' => 'Hybrid Training',
+            'membership_type' => 'Monthly',
+            'coach_status' => 'approved',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $instructor = User::factory()->create([
+            'role' => 'instructor',
+            'email' => 'coach-history-instructor@test.com',
+        ]);
+
+        \App\Models\Payment::create([
+            'member_id' => $member->id,
+            'payment_type' => 'gym_fee',
+            'receipt_number' => 'RCP-GYM-001',
+            'amount' => 800,
+            'fitness_plan' => 'Hybrid Training',
+            'membership_type' => 'Monthly',
+            'payment_date' => now(),
+            'status' => 'Paid',
+            'method' => 'Cash',
+            'notes' => 'Gym membership fee',
+        ]);
+
+        \App\Models\Payment::create([
+            'member_id' => $member->id,
+            'instructor_id' => $instructor->id,
+            'payment_type' => 'coach_fee',
+            'receipt_number' => 'RCP-COACH-001',
+            'amount' => 300,
+            'fitness_plan' => 'Hybrid Training',
+            'membership_type' => 'Monthly',
+            'payment_date' => now(),
+            'status' => 'Paid',
+            'method' => 'Cash',
+            'notes' => 'Coach subscription fee',
+        ]);
+
+        $response = $this->actingAs($memberUser)->get('/my/payments');
+
+        $response->assertOk();
+
+        $payments = $response->original->getData()['payments'];
+        $coachPayment = $payments->firstWhere('payment_type', 'coach_fee');
+
+        $this->assertNotNull($coachPayment);
+        $this->assertSame(300.0, (float) $coachPayment->coach_fee_amount);
+    }
+
     public function test_member_select_plan_shows_selected_instructor_override_rate()
     {
         $admin = User::factory()->create([
@@ -356,12 +418,18 @@ class ReportsAccessTest extends TestCase
             'instructor_id' => $instructor->id,
             'membership_type' => 'Monthly',
         ]);
+        $this->assertDatabaseHas('coach_requests', [
+            'member_id' => $member->id,
+            'instructor_id' => $instructor->id,
+            'status' => 'pending',
+        ]);
 
         $member->refresh();
         $this->assertSame('Hybrid Training', $member->fitness_plan);
         $this->assertSame('Quarterly', $member->membership_type);
         $this->assertSame($instructor->id, $member->instructor_id);
         $this->assertSame('Monthly', $member->coach_membership_type);
+        $this->assertSame('pending', $member->coach_status);
     }
 
     public function test_member_can_view_own_attendance_history()
@@ -395,6 +463,86 @@ class ReportsAccessTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Attendance History');
+        $response->assertSee('Hybrid Training');
+    }
+
+    public function test_admin_can_see_member_to_instructor_assignment_on_payment_page()
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email' => 'admin-assignment-view@test.com',
+        ]);
+
+        $instructor = User::factory()->create([
+            'role' => 'instructor',
+            'email' => 'instructor-assignment-view@test.com',
+            'name' => 'Coach Nova',
+        ]);
+
+        $member = \App\Models\Member::create([
+            'user_id' => User::factory()->create(['role' => 'member', 'email' => 'member-assignment-view@test.com'])->id,
+            'name' => 'Assigned Member',
+            'email' => 'assigned-member@test.com',
+            'status' => 'Active',
+            'fitness_plan' => 'Calisthenics',
+            'membership_type' => 'Monthly',
+            'instructor_id' => $instructor->id,
+        ]);
+
+        \App\Models\Payment::create([
+            'member_id' => $member->id,
+            'payment_type' => 'gym_fee',
+            'receipt_number' => 'RCP-ASSIGNED-INSTR-1',
+            'amount' => 800,
+            'fitness_plan' => 'Calisthenics',
+            'membership_type' => 'Monthly',
+            'payment_date' => '2026-10-01',
+            'status' => 'Paid',
+            'method' => 'Cash',
+            'notes' => 'Monthly membership with assigned instructor',
+        ]);
+
+        $response = $this->actingAs($admin)->get('/payments');
+
+        $response->assertOk();
+        $response->assertSee('Assigned Instructor');
+        $response->assertSee('Coach Nova');
+    }
+
+    public function test_member_can_view_own_payment_history()
+    {
+        $user = User::factory()->create([
+            'role' => 'member',
+            'email' => 'member-payment-history@test.com',
+        ]);
+
+        $member = \App\Models\Member::create([
+            'user_id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'status' => 'Active',
+            'fitness_plan' => 'Hybrid Training',
+            'membership_type' => 'Monthly',
+        ]);
+
+        \App\Models\Payment::create([
+            'member_id' => $member->id,
+            'payment_type' => 'gym_fee',
+            'receipt_number' => 'RCP-PAYMENT-HISTORY-1',
+            'amount' => 800,
+            'fitness_plan' => 'Hybrid Training',
+            'membership_type' => 'Monthly',
+            'payment_date' => '2026-10-01',
+            'status' => 'Paid',
+            'method' => 'Cash',
+            'notes' => 'Monthly membership',
+        ]);
+
+        $response = $this->actingAs($user)->get('/my/payments');
+
+        $response->assertOk();
+        $response->assertSee('Payment History');
+        $response->assertSee('RCP-PAYMENT-HISTORY-1');
         $response->assertSee('Hybrid Training');
     }
 
@@ -469,5 +617,61 @@ class ReportsAccessTest extends TestCase
             'payment_type' => 'gym_fee',
             'membership_type' => 'Monthly',
         ]);
+    }
+
+    public function test_manual_payment_records_custom_amount_for_member()
+    {
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email' => 'staff-custom-payment@test.com',
+        ]);
+
+        $member = \App\Models\Member::create([
+            'user_id' => User::factory()->create(['role' => 'member', 'email' => 'member-custom-payment@test.com'])->id,
+            'name' => 'Custom Payment Member',
+            'email' => 'custom-payment-member@test.com',
+            'status' => 'Active',
+            'fitness_plan' => 'Hybrid Training',
+            'membership_type' => 'Monthly',
+        ]);
+
+        $response = $this->actingAs($staff)->post('/payments', [
+            'member_id' => $member->id,
+            'membership_type' => 'Monthly',
+            'amount' => 1500,
+            'payment_date' => '2026-10-07',
+            'method' => 'Cash',
+            'notes' => 'Advance payment recorded manually',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('payments', [
+            'member_id' => $member->id,
+            'payment_type' => 'gym_fee',
+            'amount' => 1500,
+            'method' => 'Cash',
+            'status' => 'Paid',
+        ]);
+    }
+
+    public function test_admin_can_print_selected_user_qr_card()
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email' => 'admin-qr-print@test.com',
+        ]);
+
+        $staff = User::factory()->create([
+            'role' => 'staff',
+            'email' => 'staff-qr-print@test.com',
+        ]);
+
+        \App\Models\UserQrToken::createForUser($staff);
+
+        $response = $this->actingAs($admin)->get('/users/' . $staff->id . '/qr/print');
+
+        $response->assertOk();
+        $response->assertSee($staff->name);
+        $response->assertSee('QR Card');
     }
 }

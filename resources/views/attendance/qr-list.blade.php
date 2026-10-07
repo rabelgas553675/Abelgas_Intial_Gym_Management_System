@@ -512,9 +512,6 @@
             <p>View and print QR codes for members and staff</p>
         </div>
         <div class="qr-header-actions no-print">
-            <button onclick="window.print()" class="btn btn-print">
-                🖨️ Print All
-            </button>
             <a href="{{ route('attendance.scan') }}" class="btn btn-secondary">Scanner</a>
         </div>
     </div>
@@ -613,6 +610,11 @@
                 @if($item->qr_token)
                     <div class="qr-token-hash">{{ substr($item->qr_token, 0, 24) }}...</div>
                 @endif
+
+                @php
+                    $printRoute = $isStaffGroup ? route('users.qr.print', $item) : route('members.qr.print', $item);
+                @endphp
+                <a href="{{ $printRoute }}" class="btn btn-print" style="margin-top:14px;width:100%;justify-content:center;">🖨️ Print QR</a>
             </div>
         @empty
             <div class="empty-state">

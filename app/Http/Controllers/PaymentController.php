@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CoachRequest;
 use App\Models\Member;
 use App\Models\Payment;
 use App\Models\PaymentSetting;
@@ -95,7 +96,7 @@ class PaymentController extends Controller
         // ── Gym fee transactions ──────────────────────────────────────────────
         // Load with NO DB ordering — MergeSort handles all ordering in memory.
         $gymPaymentsRaw = Payment::gymFees()
-            ->with('member:id,name,user_id', 'member.user:id,name,photo')
+            ->with('member:id,name,user_id,instructor_id', 'member.user:id,name,photo', 'member.instructor:id,name')
             ->get()
             ->toArray();
 
@@ -112,9 +113,16 @@ class PaymentController extends Controller
             $coachRows = $coachPaymentsByMember[$memberId] ?? collect();
             $latestCoach = $coachRows->sortByDesc('payment_date')->first();
 
+            $assignedInstructor = $payment['member']['instructor']['name'] ?? null;
+            $payment['assigned_instructor'] = $assignedInstructor ?? (
+                $latestCoach && !empty($latestCoach['instructor_id'])
+                    ? ($latestCoach['instructor']['name'] ?? 'Unknown Instructor')
+                    : 'Unassigned'
+            );
+
             $payment['personal_coaching'] = $latestCoach && !empty($latestCoach['instructor_id'])
                 ? ($latestCoach['instructor']['name'] ?? 'Unknown Instructor')
-                : '—';
+                : ($assignedInstructor ?? '—');
 
             $payment['coach_package'] = $latestCoach['membership_type'] ?? '—';
             $payment['coach_amount'] = $latestCoach['amount'] ?? 0;
@@ -280,7 +288,7 @@ class PaymentController extends Controller
         $request->validate([
             'member_id'             => 'required|exists:members,id',
             'fitness_plan'          => 'nullable|in:Calisthenics,Bodybuilding,Plyometrics,Powerlifting,Endurance,Functional Training,Hybrid Training',
-            'membership_type'       => 'required|in:Monthly,Quarterly,Semi-Annual,Annually',
+            'membership_type'       => 'nullable|in:Monthly,Quarterly,Semi-Annual,Annually',
             'instructor_id'         => 'nullable|exists:users,id',
             'coach_membership_type' => 'nullable|in:Monthly,Quarterly,Semi-Annual,Annually',
             'payment_date'          => 'required|date',
@@ -296,12 +304,15 @@ class PaymentController extends Controller
         }
 
         $member = Member::findOrFail($request->member_id);
-        $gymType = $request->input('membership_type', $request->input('subscription_type', 'Monthly'));
+        $selectedPlan = $request->input('membership_type', $request->input('subscription_type'));
+        $gymType = $selectedPlan ?: 'Monthly';
         $coachType = $request->input('coach_membership_type');
         $fitnessPlan = $request->input('fitness_plan', $member->fitness_plan ?? 'Calisthenics');
 
-        $gymAmount = GreedyScheduler::computeGymFee($gymType);
-        $coachAmount = $request->filled('instructor_id') ? GreedyScheduler::computeCoachFee($coachType, (int) $request->instructor_id) : 0;
+        $hasCoachPackage = $request->filled('instructor_id') && $request->filled('coach_membership_type');
+        $customAmount = $request->filled('amount') && ! $hasCoachPackage ? (float) $request->amount : null;
+        $gymAmount = $customAmount ?? GreedyScheduler::computeGymFee($gymType);
+        $coachAmount = $hasCoachPackage ? GreedyScheduler::computeCoachFee($coachType, (int) $request->instructor_id) : 0;
 
         $start = $member->end_date && $member->end_date->isFuture()
             ? $member->end_date->copy()
@@ -349,6 +360,18 @@ class PaymentController extends Controller
                 'status'          => 'Paid',
                 'notes'           => $request->notes ?: 'Coach subscription payment',
                 'processed_by'    => $user->id,
+            ]);
+
+            CoachRequest::query()
+                ->where('member_id', $member->id)
+                ->where('status', 'pending')
+                ->update(['status' => 'rejected']);
+
+            CoachRequest::create([
+                'member_id'     => $member->id,
+                'instructor_id' => (int) $request->instructor_id,
+                'status'        => 'pending',
+                'message'       => 'Manual payment submitted; awaiting instructor approval.',
             ]);
         }
 

@@ -51,6 +51,21 @@
         </div>
     </div>
 
+    <div class="rate-card" style="margin:20px 0 28px; background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:20px 22px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+            <h2 style="margin:0; font-size:18px; font-weight:700; color:var(--accent);">My Coaching Rate</h2>
+            <span style="font-size:12px; color:var(--muted);">Current package pricing</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px;">
+            @foreach($currentCoachRates ?? [] as $period => $rate)
+                <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 14px;">
+                    <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">{{ $period }}</div>
+                    <div style="font-size:18px; font-weight:700; color:var(--text);">₱{{ number_format((int)$rate, 0) }}</div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
 {{-- Split Panel --}}
 <div class="split-panel">
 

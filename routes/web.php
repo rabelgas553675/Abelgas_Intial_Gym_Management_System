@@ -47,11 +47,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
     // ── QR CODE MANAGEMENT ──────────────────────────────────────
-    Route::get('/users/{user}/qr/print',       [QrCodeController::class, 'printCard'])->name('qr.print');
+    Route::get('/users/{user}/qr/print',       [QrCodeController::class, 'printUserCard'])->name('users.qr.print');
     Route::post('/users/{user}/qr/regenerate', [QrCodeController::class, 'regenerate'])->name('qr.regenerate');
 
     Route::post('/members/{member}/regenerate-qr', [QrCodeController::class, 'regenerate'])->name('members.qr.regenerate');
-    Route::get('/members/{member}/print-card',     [QrCodeController::class, 'printCard'])->name('members.qr.print');
+    Route::get('/members/{member}/print-card',     [QrCodeController::class, 'printMemberCard'])->name('members.qr.print');
 
     // ── MEMBER PORTAL ───────────────────────────────────────────
     Route::prefix('my')->name('member.')->middleware('member')->group(function () {

@@ -211,7 +211,7 @@ class AttendanceController extends Controller
             else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unrecognised QR format. Please re-generate the QR code.',
+                    'message' => 'Invalid QR code. Please scan a valid member or staff QR card.',
                     'status'  => 'invalid',
                 ]);
             }

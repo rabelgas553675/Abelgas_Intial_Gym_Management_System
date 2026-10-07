@@ -67,11 +67,11 @@ class ReportController extends Controller
     private function allowedTypesForUser(User $user): array
     {
         if ($user->isAdmin()) {
-            return ['payment', 'walkin', 'attendance', 'workout', 'member'];
+            return ['payment', 'attendance', 'workout', 'member'];
         }
 
         if ($user->isStaff()) {
-            return ['payment', 'walkin', 'attendance', 'member'];
+            return ['payment', 'attendance', 'member'];
         }
 
         if ($user->isInstructor()) {

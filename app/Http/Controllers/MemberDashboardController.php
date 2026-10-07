@@ -39,10 +39,10 @@ class MemberDashboardController extends Controller
 
         $payments = collect();
         if ($member) {
-            // Load into memory, then MergeSort by payment_date descending
+            // Load every payment type for the member so the dashboard reflects the
+            // same payment history as the dedicated payments page.
             $rawPayments = Payment::query()
                                   ->where('member_id', $member->id)
-                                  ->where('payment_type', 'gym_fee')
                                   ->get()
                                   ->all();
 
@@ -350,33 +350,29 @@ class MemberDashboardController extends Controller
             return view('member.payment-history', ['payments' => collect(), 'member' => null]);
         }
 
-        // Load gym payments and MergeSort by payment_date descending
-        $gymPaymentsRaw = Payment::query()
-            ->where('member_id', $member->id)
-            ->where('payment_type', 'gym_fee')
-            ->get();
+        // Use a single source of truth for all member payments so the history always
+        // matches every gym and coach transaction, including advance/manual entries.
+        $payments = Payment::forMember($member)->get();
+        $payments->each(function ($payment) use ($member) {
+            $payment->coach_fee_amount = 0;
+            $payment->gym_fee_amount = 0;
 
-        // Load coach payments (no sort needed — matched by date below)
-        $coachPayments = Payment::query()
-            ->where('member_id', $member->id)
-            ->where('payment_type', 'coach_fee')
-            ->get();
+            if ($payment->payment_type === 'gym_fee') {
+                $payment->gym_fee_amount = $payment->amount;
 
-        // Attach matching coach payment to each gym payment
-        $gymPaymentsRaw->each(function ($gymPayment) use ($coachPayments) {
-            $match = $coachPayments
-                ->filter(fn ($cp) =>
-                    Carbon::parse($cp->payment_date)->isSameDay($gymPayment->payment_date)
-                )
-                ->first();
+                $matchingCoach = Payment::query()
+                    ->where('member_id', $member->id)
+                    ->where('payment_type', 'coach_fee')
+                    ->whereDate('payment_date', $payment->payment_date)
+                    ->latest('id')
+                    ->first();
 
-            $gymPayment->coach_fee_amount  = $match ? $match->amount : 0;
-            $gymPayment->coach_fee_payment = $match;
+                $payment->coach_fee_amount = $matchingCoach ? $matchingCoach->amount : 0;
+                $payment->coach_fee_payment = $matchingCoach;
+            } elseif ($payment->payment_type === 'coach_fee') {
+                $payment->coach_fee_amount = $payment->amount;
+            }
         });
-
-        // MergeSort by payment_date descending (replaces ->latest())
-        $sorted   = MergeSort::sortBy($gymPaymentsRaw->all(), 'payment_date', 'desc');
-        $payments = collect($sorted);
 
         return view('member.payment-history', ['payments' => $payments, 'member' => $member]);
     }
@@ -392,10 +388,7 @@ class MemberDashboardController extends Controller
             return view('member.subscription-history', ['payments' => collect(), 'member' => null]);
         }
 
-        $payments = Payment::query()
-            ->where('member_id', $member->id)
-            ->orderByDesc('payment_date')
-            ->get();
+        $payments = Payment::forMember($member)->get();
 
         return view('member.subscription-history', ['payments' => $payments, 'member' => $member]);
     }

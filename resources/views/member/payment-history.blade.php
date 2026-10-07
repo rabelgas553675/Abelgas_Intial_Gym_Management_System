@@ -149,19 +149,16 @@
         <div class="stat-card">
             <div class="label">Total Paid</div>
             <div class="value accent">
-                ₱{{ number_format($payments->sum(fn($p) => $p->amount + ($p->coach_fee_amount ?? 0)), 0) }}
+                ₱{{ number_format($payments->sum('amount'), 0) }}
             </div>
         </div>
 
         <div class="stat-card">
             <div class="label">Last Payment</div>
             @if($payments->first())
-                @php
-                    $last      = $payments->first();
-                    $lastTotal = $last->amount + ($last->coach_fee_amount ?? 0);
-                @endphp
+                @php $last = $payments->first(); @endphp
                 <div class="sub">{{ $last->payment_date->format('M d, Y') }}</div>
-                <div class="sub-value">₱{{ number_format($lastTotal, 0) }}</div>
+                <div class="sub-value">₱{{ number_format($last->amount, 0) }}</div>
             @else
                 <div class="value muted">—</div>
             @endif
@@ -188,8 +185,9 @@
                 <tbody>
                     @forelse($payments as $p)
                     @php
-                        $coachFee = $p->coach_fee_amount ?? 0;
-                        $total    = $p->amount + $coachFee;
+                        $gymFee   = $p->payment_type === 'gym_fee' ? $p->amount : 0;
+                        $coachFee = $p->payment_type === 'coach_fee' ? $p->amount : ($p->coach_fee_amount ?? 0);
+                        $total    = $p->amount;
                         $status   = strtolower($p->status ?? 'Paid');
                     @endphp
                     <tr>
@@ -209,7 +207,7 @@
 
                         <td class="amount-text">{{ $p->membership_type }}</td>
 
-                        <td class="amount">₱{{ number_format($p->amount, 0) }}</td>
+                        <td class="amount">₱{{ number_format($gymFee, 0) }}</td>
 
                         <td>
                             @if($coachFee > 0)

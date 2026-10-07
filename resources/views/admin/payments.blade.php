@@ -58,6 +58,12 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23e0a93b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
         background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
         padding-right: 40px; cursor: pointer; min-height: 44px;
+        color: var(--text);
+        background-color: var(--bg-card);
+    }
+    select.form-control option {
+        color: var(--text);
+        background: var(--bg-card);
     }
     .field-error { color: var(--danger); font-size: 12px; margin-top: 4px; }
 
@@ -199,6 +205,20 @@
     </div>
 </div>
 
+@php
+    $selectedInstructor = $selectedInstructorId ? \App\Models\User::find($selectedInstructorId) : null;
+@endphp
+
+@if($selectedInstructor)
+    <div class="card" style="margin-bottom:20px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+        <div>
+            <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);">Selected Instructor</div>
+            <div style="font-size:18px; font-weight:700; color:var(--text);">{{ $selectedInstructor->name }}</div>
+        </div>
+        <div style="font-size:12px; color:var(--muted);">Rates updated for {{ $selectedInstructor->name }}</div>
+    </div>
+@endif
+
 {{-- ══ ADMIN EARNINGS PANEL ══ --}}
 <div id="panel-admin">
 
@@ -256,21 +276,45 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Subscription Period</label>
-                        <select name="subscription_type" class="form-control">
-                            <option value="">— Custom Amount —</option>
+                        <label class="form-label">Membership Plan</label>
+                        <select name="membership_type" id="membership_type" class="form-control">
+                            <option value="">— Select Plan —</option>
                             @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
-                                <option value="{{ $period }}" {{ old('subscription_type') == $period ? 'selected' : '' }}>
-                                    {{ $period }} (₱{{ number_format($rates['gym'][$period] ?? $rates['coach'][$period] ?? 0, 0) }})
+                                <option value="{{ $period }}" {{ old('membership_type') == $period ? 'selected' : '' }}>
+                                    {{ $period }} (₱{{ number_format($rates['gym'][$period] ?? 0, 0) }})
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Amount (₱)</label>
-                        <input type="number" name="amount" class="form-control" step="0.01" min="0"
-                               placeholder="0.00" value="{{ old('amount') }}"/>
+                        <label class="form-label">Instructor (for coach payments)</label>
+                        <select name="instructor_id" id="instructor_id" class="form-control" style="color:var(--text); background:var(--bg-card);">
+                            <option value="">— No personal coaching —</option>
+                            @foreach($instructorOptions as $instructor)
+                                <option value="{{ $instructor->id }}" {{ old('instructor_id') == $instructor->id ? 'selected' : '' }}>
+                                    {{ $instructor->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="coach-package-group" style="display:none;">
+                        <label class="form-label">Coaching Package</label>
+                        <select name="coach_membership_type" id="coach_membership_type" class="form-control">
+                            <option value="">— Select Package —</option>
+                            @foreach(['Monthly','Quarterly','Semi-Annual','Annually'] as $period)
+                                <option value="{{ $period }}" {{ old('coach_membership_type') == $period ? 'selected' : '' }}>
+                                    {{ $period }} (₱{{ number_format($rates['coach'][$period] ?? 0, 0) }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Total Amount (₱)</label>
+                        <input type="text" id="admin_total_amount" class="form-control" value="₱0" readonly>
+                        <input type="hidden" name="amount" id="admin_amount_hidden" value="{{ old('amount', 0) }}">
                         @error('amount')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
                     </div>
 
@@ -305,20 +349,6 @@
                         @error('method')<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>@enderror
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Instructor (for coach payments)</label>
-                        <select name="instructor_id" class="form-control">
-                            <option value="">— Not required for gym fees —</option>
-                            @foreach($instructorLeaderboard as $row)
-                                @if(!empty($row['instructor']))
-                                    <option value="{{ $row['instructor_id'] }}" {{ old('instructor_id') == $row['instructor_id'] ? 'selected' : '' }}>
-                                        {{ $row['instructor']['name'] }}
-                                    </option>
-                                @endif
-                            @endforeach
-                        </select>
-                    </div>
-
                     <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
                         ✓ Record Payment
                     </button>
@@ -327,6 +357,18 @@
                 <form method="POST" action="{{ route('payments.settings') }}" class="mt-4" style="margin-top:22px; border-top:1px solid var(--border); padding-top:18px;">
                     @csrf
                     <div class="card-title" style="margin-bottom:14px; font-size:14px;">⚙ Subscription Rates</div>
+
+                    <div class="form-group" style="margin-bottom:14px;">
+                        <label class="form-label">Instructor to Update</label>
+                        <select id="instructor-rate-select" name="instructor_id" class="form-control" style="color:var(--text); background:var(--bg-card);">
+                            <option value="">Global default rates</option>
+                            @foreach($instructorOptions as $instructor)
+                                <option value="{{ $instructor->id }}" {{ request('instructor_id') == $instructor->id ? 'selected' : '' }}>
+                                    {{ $instructor->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div>
@@ -407,6 +449,7 @@
                                 <tr>
                                     <th>Receipt</th>
                                     <th>Member</th>
+                                    <th>Assigned Instructor</th>
                                     <th>Plan</th>
                                     <th>Duration</th>
                                     <th>Amount</th>
@@ -439,6 +482,13 @@
                                             <span class="member-cell-name">{{ $memberName }}</span>
                                         </div>
                                     </td>
+                                    <td>
+                                        @if(($payment['assigned_instructor'] ?? 'Unassigned') === 'Unassigned')
+                                            <span class="badge-method" style="opacity:0.75;">Unassigned</span>
+                                        @else
+                                            <span class="badge-method" style="background: rgba(96,165,250,0.15); color: var(--info); border-color: rgba(96,165,250,0.35);">{{ $payment['assigned_instructor'] }}</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $payment['fitness_plan'] ?? '—' }}</td>
                                     <td>
                                         <span class="badge-plan">{{ $payment['membership_type'] ?? '—' }}</span>
@@ -458,7 +508,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="empty-state">No gym fee transactions yet.</td>
+                                    <td colspan="9" class="empty-state">No gym fee transactions yet.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -596,15 +646,15 @@
         var totalBox = document.getElementById('admin_total_amount');
         var hiddenAmount = document.getElementById('admin_amount_hidden');
 
-        function populateCoachOptions() {
-            if (!coachSelect) return;
+        function refreshCoachPackageUI() {
+            if (!coachSelect || !instructorSelect) return;
 
-            var selectedInstructorId = instructorSelect ? instructorSelect.value : '';
+            var selectedInstructorId = instructorSelect.value || '';
             var activeRates = selectedInstructorId && instructorCoachRates[selectedInstructorId]
                 ? instructorCoachRates[selectedInstructorId]
                 : defaultCoachRates;
-
             var currentValue = coachSelect.value || '';
+
             coachSelect.innerHTML = '<option value="">— No coaching package —</option>' +
                 ['Monthly','Quarterly','Semi-Annual','Annually'].map(function (period) {
                     return '<option value="' + period + '" ' + (currentValue === period ? 'selected' : '') + '>' + period + ' · ₱' + Number(activeRates[period] || 0).toLocaleString('en-PH') + '</option>';
@@ -613,8 +663,10 @@
             if (!selectedInstructorId) {
                 coachSelect.disabled = true;
                 coachSelect.value = '';
+                document.getElementById('coach-package-group').style.display = 'none';
             } else {
                 coachSelect.disabled = false;
+                document.getElementById('coach-package-group').style.display = '';
                 if (currentValue && activeRates[currentValue]) {
                     coachSelect.value = currentValue;
                 }
@@ -655,12 +707,12 @@
 
         if (instructorSelect) {
             instructorSelect.addEventListener('change', function () {
-                populateCoachOptions();
+                refreshCoachPackageUI();
                 recalcAmount();
             });
         }
 
-        populateCoachOptions();
+        refreshCoachPackageUI();
         recalcAmount();
     })();
 </script>
