@@ -555,7 +555,7 @@
 
         {{-- Search + Filters --}}
         <div class="toolbar-filters">
-            <form method="GET" action="{{ route('members.index') }}">
+            <form method="GET" action="{{ route('members.index') }}" id="memberFilterForm">
 
                 <div class="search-wrapper">
                     <svg width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24">
@@ -586,15 +586,17 @@
                     <option value="Instructor" {{ request('role')=='Instructor' ? 'selected' : '' }}>Instructor</option>
                 </select>
 
-                <div class="filter-actions">
-                    <button type="submit" class="btn-filter">Filter</button>
+                {{-- Filters apply automatically (see script at the bottom). The button only
+                     shows if JavaScript is disabled. --}}
+                <noscript><button type="submit" class="btn-filter">Filter</button></noscript>
 
-                    @if(request('search') || request('plan') || request('status') || request('role'))
+                @if(request('search') || request('plan') || request('status') || request('role'))
+                    <div class="filter-actions">
                         <a href="{{ route('members.index') }}" class="btn-clear">
                             ✕ Clear
                         </a>
-                    @endif
-                </div>
+                    </div>
+                @endif
             </form>
         </div>
 
@@ -794,5 +796,59 @@
     </div>
 
 </div>
+
+<script>
+    // Auto-apply filters: dropdowns submit as soon as they change, and the search
+    // box submits shortly after the user stops typing (or immediately on Enter).
+    // The server-side filtering in MemberController@index is unchanged.
+    (function () {
+        var form   = document.getElementById('memberFilterForm');
+        if (!form) return;
+
+        var search = form.querySelector('input[name="search"]');
+        var KEY    = 'membersSearchFocus';
+        var DELAY  = 450;                       // ms of silence before the search runs
+        var timer  = null;
+        var composing = false;                  // true while an IME (e.g. CJK) is mid-word
+        var applied = search ? search.value.trim() : '';
+
+        // Dropdowns: apply right away
+        form.querySelectorAll('select').forEach(function (sel) {
+            sel.addEventListener('change', function () { form.submit(); });
+        });
+
+        if (!search) return;
+
+        function submitSearch() {
+            clearTimeout(timer);
+            try { sessionStorage.setItem(KEY, '1'); } catch (e) {}
+            form.submit();
+        }
+
+        function schedule() {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                if (search.value.trim() !== applied) submitSearch();   // skip if nothing changed
+            }, DELAY);
+        }
+
+        search.addEventListener('compositionstart', function () { composing = true; });
+        search.addEventListener('compositionend',   function () { composing = false; schedule(); });
+        search.addEventListener('input', function () { if (!composing) schedule(); });
+        search.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); submitSearch(); }
+        });
+
+        // The page reloads after each search, so put the cursor back where the user was typing
+        try {
+            if (sessionStorage.getItem(KEY)) {
+                sessionStorage.removeItem(KEY);
+                search.focus();
+                var end = search.value.length;
+                search.setSelectionRange(end, end);
+            }
+        } catch (e) {}
+    })();
+</script>
 
 @endsection

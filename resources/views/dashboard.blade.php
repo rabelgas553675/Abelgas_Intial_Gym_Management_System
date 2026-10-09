@@ -62,7 +62,7 @@
   <div class="stat-card gold">
     <div class="stat-card-left">
       <div class="stat-label">This Month</div>
-      <div class="stat-value" style="font-size:28px;">₱{{ number_format($thisMonth ?? 0, 0) }}</div>
+      <div class="stat-value">₱{{ number_format($thisMonth ?? 0, 0) }}</div>
       <div class="stat-sub">Total: <span class="stat-up" style="font-weight:700;">₱{{ number_format($totalCollected ?? 0, 0) }}</span></div>
     </div>
     <div class="stat-icon">
@@ -116,14 +116,17 @@
                 @else
                   <div class="row-avatar-ph">{{ strtoupper(substr((string) data_get($member, 'name', ''), 0, 2)) }}</div>
                 @endif
-                <div style="min-width:0;">
-                  <div class="row-name">{{ data_get($member, 'name', '') }}</div>
-                  <div class="row-sub">{{ data_get($member, 'email', '') }}</div>
-                </div>
+                <div class="row-name">{{ data_get($member, 'name', '') }}</div>
               </div>
             </td>
-                        <td style="color:var(--text-soft);">{{ data_get($member, 'email', '') }}</td>
-            <td><span class="badge plain badge-{{ $planKey }}">{{ data_get($member, 'membership_type', '—') }}</span></td>
+            <td style="color:var(--text-soft);">{{ data_get($member, 'email', '') }}</td>
+            <td>
+              @if(data_get($member, 'membership_type'))
+                <span class="badge plain badge-{{ $planKey }}">{{ data_get($member, 'membership_type') }}</span>
+              @else
+                <span style="color:var(--muted);">—</span>
+              @endif
+            </td>
             <td><span class="badge badge-{{ $stKey }}">{{ $status }}</span></td>
             <td style="color:var(--muted);">{{ data_get($member, 'created_at')?->format('M d, Y') ?? '—' }}</td>
             <td><a href="{{ route('members.show', $member) }}" class="btn btn-secondary btn-sm">View</a></td>
@@ -209,7 +212,7 @@
           </div>
         </div>
         <div class="list-right" style="display:flex;align-items:center;gap:10px;">
-          <span class="role-tag role-{{ $roleKey }}">{{ ucfirst($u->role) }}</span>
+          <span class="role-tag role-tag--{{ $roleKey }}">{{ ucfirst($u->role) }}</span>
           <span class="row-sub" style="white-space:nowrap;">{{ $u->created_at->format('M d') }}</span>
         </div>
       </div>
@@ -324,13 +327,13 @@
     font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
     padding: 3px 10px; border-radius: 40px; white-space: nowrap; border: 1px solid transparent;
   }
-  .role-admin      { background: var(--accent-soft); color: var(--accent); border-color: rgba(224,169,59,0.35); }
-  .role-staff      { background: rgba(251,191,36,.15); color: var(--warning); border-color: rgba(251,191,36,.3); }
-  .role-instructor { background: rgba(96,165,250,.15); color: var(--info); border-color: rgba(96,165,250,.3); }
-  .role-member     { background: rgba(167,139,250,.15); color: #a78bfa; border-color: rgba(167,139,250,.3); }
-  html:root[data-theme="light"] .role-staff  { background: rgba(180,83,9,.10); border-color: rgba(180,83,9,.25); }
-  html:root[data-theme="light"] .role-instructor { background: rgba(37,99,235,.10); border-color: rgba(37,99,235,.25); }
-  html:root[data-theme="light"] .role-member { background: rgba(109,79,216,.10); color: #6d4fd8; border-color: rgba(109,79,216,.25); }
+  .role-tag--admin      { background: var(--accent-soft); color: var(--accent); border-color: rgba(224,169,59,0.35); }
+  .role-tag--staff      { background: rgba(251,191,36,.15); color: var(--warning); border-color: rgba(251,191,36,.3); }
+  .role-tag--instructor { background: rgba(96,165,250,.15); color: var(--info); border-color: rgba(96,165,250,.3); }
+  .role-tag--member     { background: rgba(167,139,250,.15); color: #a78bfa; border-color: rgba(167,139,250,.3); }
+  html:root[data-theme="light"] .role-tag--staff  { background: rgba(180,83,9,.10); border-color: rgba(180,83,9,.25); }
+  html:root[data-theme="light"] .role-tag--instructor { background: rgba(37,99,235,.10); border-color: rgba(37,99,235,.25); }
+  html:root[data-theme="light"] .role-tag--member { background: rgba(109,79,216,.10); color: #6d4fd8; border-color: rgba(109,79,216,.25); }
 
   /* ── Responsive ── */
   @media (max-width: 1024px) {

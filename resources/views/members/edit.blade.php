@@ -619,7 +619,7 @@
             <div class="form-row">
                 <div>
                     <label class="field-label">Membership Plan <span style="color:#f87171;">*</span></label>
-                    <select name="membership_type" class="custom-dropdown field-input" required>
+                    <select name="membership_type" id="membership-type" class="custom-dropdown field-input" required>
                         @php
                             $currentPlan = old('membership_type', $member->membership_type);
                             $currentPlan = $currentPlan === 'Annual' ? 'Annually' : $currentPlan; // legacy value
@@ -666,8 +666,8 @@
                     </div>
                 </div>
                 <div>
-                    <label class="field-label">Monthly Fee (₱) <span style="color:#f87171;">*</span></label>
-                    <input type="number" step="0.01" name="fee" value="{{ old('fee', $member->fee) }}"
+                    <label class="field-label" for="member-fee">Plan Fee (₱) <span style="color:#f87171;">*</span></label>
+                    <input type="number" step="0.01" name="fee" id="member-fee" value="{{ old('fee', $member->fee) }}"
                            placeholder="0.00" class="field-input" required/>
                 </div>
             </div>
@@ -690,6 +690,21 @@
 </div>
 
 <script>
+    // Auto-fill the fee when the plan changes. Rates come from the same source the
+    // payment module uses (Payment::gymRates() → admin-configured or default prices).
+    const PLAN_FEES = @json(\App\Models\Payment::gymRates());
+    (function () {
+        const plan = document.getElementById('membership-type');
+        const fee  = document.getElementById('member-fee');
+        if (!plan || !fee) return;
+        plan.addEventListener('change', function () {
+            const rate = PLAN_FEES[plan.value];
+            if (rate !== undefined && rate !== null) {
+                fee.value = Number(rate).toFixed(2);
+            }
+        });
+    })();
+
     function previewPhoto(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();

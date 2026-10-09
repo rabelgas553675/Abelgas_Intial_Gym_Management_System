@@ -309,46 +309,27 @@ class ReportsAccessTest extends TestCase
         $this->assertSame(300.0, (float) $coachPayment->coach_fee_amount);
     }
 
-    public function test_member_select_plan_shows_selected_instructor_override_rate()
+    public function test_member_select_plan_page_no_longer_shows_subscription_pricing()
     {
-        $admin = User::factory()->create([
-            'role' => 'admin',
-            'email' => 'admin-member-rate@test.com',
-        ]);
-
-        $instructor = User::factory()->create([
-            'role' => 'instructor',
-            'email' => 'instructor-member-rate@test.com',
-        ]);
-
         $memberUser = User::factory()->create([
             'role' => 'member',
             'email' => 'member-rate-view@test.com',
         ]);
 
-        $memberProfile = \App\Models\Member::create([
+        \App\Models\Member::create([
             'user_id' => $memberUser->id,
             'name' => $memberUser->name,
             'email' => $memberUser->email,
-            'instructor_id' => $instructor->id,
+            'fitness_plan' => 'Calisthenics',
             'status' => 'Active',
         ]);
 
-        $this->actingAs($admin)->post('/payments/settings', [
-            'gym_monthly' => 800,
-            'gym_quarterly' => 2100,
-            'gym_semi_annual' => 4500,
-            'gym_annually' => 7500,
-            'coach_monthly' => 4600,
-            'coach_quarterly' => 1300,
-            'coach_semi_annual' => 2200,
-            'coach_annually' => 4200,
-            'instructor_id' => $instructor->id,
-        ]);
-
         $response = $this->actingAs($memberUser)->get('/my/select-plan');
+
         $response->assertOk();
-        $response->assertSee('₱4,600');
+        $response->assertSee('Fitness Plan');
+        $response->assertDontSee('₱');
+        $response->assertDontSee('Coach Subscription Duration');
     }
 
     public function test_member_subscribe_redirects_home_instead_of_waiting_page()

@@ -101,6 +101,15 @@
     }
 
     .navbar-right{display:flex;align-items:center;gap:14px;flex-shrink:0;}
+    .role-chip{
+      font-size:10px;font-weight:800;padding:5px 14px;border-radius:6px;
+      letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;
+    }
+    /* Gold badge for instructor (same as the admin & staff badge) */
+    .role-instructor{
+      background:linear-gradient(135deg,var(--accent-2),var(--accent-dark));
+      color:#1a1a1a;box-shadow:0 0 14px rgba(224,169,59,0.25);
+    }
     .user-chip{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#e4e5e8;white-space:nowrap;}
     .user-avatar{
       width:30px;height:30px;border-radius:50%;
@@ -259,6 +268,10 @@
     html:root[data-theme="light"] .brand-icon svg{stroke:var(--accent-2);}
     html:root[data-theme="light"] .brand-name,
     html:root[data-theme="light"] .user-chip{color:#f1f1f3;}
+    html:root[data-theme="light"] .role-instructor{
+      background:linear-gradient(135deg,var(--accent-2),var(--accent-dark)) !important;
+      color:#111 !important;border:1px solid rgba(0,0,0,0.15);box-shadow:none;
+    }
     html:root[data-theme="light"] .nav-item{color:#c6c8ce !important;}
     html:root[data-theme="light"] .nav-item svg{stroke:#c6c8ce;}
     html:root[data-theme="light"] .nav-item:hover{color:#fff !important;background:rgba(255,255,255,0.07);}
@@ -331,6 +344,7 @@
       html:root[data-theme="light"] .nav-item.active{border-left-color:var(--accent-2);background:var(--accent-soft);}
 
       .navbar-right{gap:8px;}
+      .role-chip{display:none;}
       .user-chip{gap:0;}
       .btn-logout-top span.logout-text{display:none;}
       .btn-logout-top{padding:8px;}
@@ -447,6 +461,7 @@
   </div>
 
   <div class="navbar-right">
+    <span class="role-chip role-instructor">{{ strtoupper(auth()->user()->role) }}</span>
     <div class="user-chip">
       <div class="user-avatar">
         @if(auth()->user()->photo)

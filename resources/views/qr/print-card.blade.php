@@ -3,169 +3,226 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>QR Cards - Staff List</title>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>{{ $title ?? 'QR Card' }} – APEX Fitness Gym</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-        --primary: #c8ff00;
-        --primary-dark: #80cc00;
-        --surface: #0a0a0a;
-        --border: #222;
-        --muted: #555;
+      --accent: #e0a93b;          /* APEX gold – matches the rest of the app */
+      --accent-soft: rgba(224,169,59,.14);
+      --card-bg: #0c0c0c;
+      --card-bg-2: #151515;
+      --line: #262626;
+      --text: #f4f1ea;
+      --muted: #9a9486;           /* readable on the dark card (old #555/#333 were not) */
     }
 
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{
-      background:#f0f0f0;
-      font-family:'DM Sans',sans-serif;
-      padding:40px 20px;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #ece9e2;
+      font-family: 'DM Sans', sans-serif;
+      color: #111;
+      padding: 40px 20px 60px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;   /* keep the dark card when printing */
     }
 
-    .controls{
+    /* ───────── Top controls ───────── */
+    .controls {
       max-width: 1100px;
-      margin: 0 auto 30px auto;
-      display:flex;justify-content: space-between; align-items: center;
+      margin: 0 auto 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
     }
+    .controls h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 34px;
+      letter-spacing: 2px;
+      font-weight: 400;
+    }
+    .controls h1 span { color: var(--accent); }
     .btn-group { display: flex; gap: 12px; }
-    .btn{
-      padding:10px 24px;border-radius:8px;border:none;cursor:pointer;
-      font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
-      text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+    .btn {
+      padding: 11px 22px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      font: 600 14px 'DM Sans', sans-serif;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform .15s ease, box-shadow .15s ease;
     }
-    .btn-print{background:#111;color:#fff;}
-    .btn-back {background:#fff;color:#111;border:1px solid #ddd;}
+    .btn:hover { transform: translateY(-1px); }
+    .btn-print { background: var(--accent); color: #111; box-shadow: 0 6px 16px rgba(224,169,59,.35); }
+    .btn-back  { background: #fff; color: #111; border-color: #d9d5ca; }
 
-    /* GRID LAYOUT */
+    /* ───────── Grid (cards are centered, even when there's only one) ───────── */
     .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 30px;
+      grid-template-columns: repeat(auto-fit, 340px);
+      justify-content: center;
+      gap: 32px;
       max-width: 1100px;
       margin: 0 auto;
     }
 
-    /* ID CARD */
-    .id-card{
-      width:340px;
-      background: var(--surface);
-      border-radius:20px;
-      overflow:hidden;
-      box-shadow:0 10px 30px rgba(0,0,0,0.2);
-      position:relative;
-      margin: 0 auto;
+    /* ───────── ID card ───────── */
+    .id-card {
+      --role: var(--accent);
+      width: 340px;
+      background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--role) 14%, transparent), transparent 55%),
+        linear-gradient(180deg, var(--card-bg-2) 0%, var(--card-bg) 55%);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(0,0,0,.28);
+      position: relative;
+    }
+    .role-admin      { --role: #e0a93b; }
+    .role-staff      { --role: #fb923c; }
+    .role-instructor { --role: #60a5fa; }
+    .role-member     { --role: #4ade80; }
+
+    /* Header */
+    .card-header {
+      padding: 22px 24px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+    .card-header::after {
+      content: '';
+      position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+      background: linear-gradient(90deg, var(--role), transparent);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: var(--role);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-icon svg { width: 19px; height: 19px; }
+    .brand-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 24px; letter-spacing: 3px; color: var(--text);
+      line-height: 1;
+    }
+    .brand-name small {
+      display: block;
+      font: 600 8px 'DM Sans', sans-serif;
+      letter-spacing: 2.5px; color: var(--muted); margin-top: 3px;
+    }
+    .role-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 5px 12px; border-radius: 999px;
+      color: var(--role);
+      background: color-mix(in srgb, var(--role) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--role) 40%, transparent);
     }
 
-    /* Card header */
-    .card-header{
-      background:linear-gradient(135deg,#1a1a1a 0%,#0d0d0d 100%);
-      padding:22px 24px 18px;
-      border-bottom:1px solid #222;
-      position:relative;
+    /* Body */
+    .card-body { padding: 24px 24px 22px; }
+
+    .user-info { text-align: center; margin-bottom: 20px; }
+    .user-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 30px; font-weight: 400; letter-spacing: 2px;
+      color: var(--text); line-height: 1.1;
+      word-break: break-word;
     }
-    .card-header::after{
-      content:'';position:absolute;bottom:0;left:0;right:0;
-      height:3px;
-      background:linear-gradient(90deg, var(--primary), var(--primary-dark));
-    }
-    .brand{
-      display:flex;align-items:center;gap:10px;
-    }
-    .brand-icon{
-      width:32px;height:32px;background: var(--primary);border-radius:7px;
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;
-    }
-    .brand-icon svg{width:18px;height:18px;}
-    .brand-name{
-      font-family:'Bebas Neue',sans-serif;font-size:20px;
-      color: var(--primary);letter-spacing:3px;
+    .user-id {
+      display: inline-block; margin-top: 8px;
+      font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+      color: var(--role);
+      background: color-mix(in srgb, var(--role) 10%, transparent);
+      padding: 4px 12px; border-radius: 6px;
     }
 
-    /* Role badge */
-    .role-badge{
-      position:absolute;top:22px;right:24px;
-      font-size:9px;font-weight:700;padding:3px 10px;border-radius:4px;
-      letter-spacing:1.5px;text-transform:uppercase;
+    /* QR */
+    .qr-section {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px 16px 14px;
+      text-align: center;
+      box-shadow: inset 0 0 0 1px #eee;
     }
-    .role-admin     {background:rgba(200,255,0,0.12);color:#c8ff00;border:1px solid rgba(200,255,0,0.3);}
-    .role-staff     {background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);}
-    .role-instructor{background:rgba(255,107,53,0.12);color:#ff6b35;border:1px solid rgba(255,107,53,0.3);}
-
-    /* Card body */
-    .card-body{padding:24px;}
-
-    .user-info {
-        text-align: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #1e1e1e;
-    }
-    .user-name{
-      font-size:18px;font-weight:700;color:#f0f0f0;text-transform:uppercase;
-      letter-spacing:1px;margin-bottom:4px;
-    }
-    .user-id{
-      font-size:10px;color: var(--muted);letter-spacing:1px;
-    }
-
-    /* QR section */
-    .qr-section{
-      background:#fff;
-      border-radius:12px;
-      padding:16px;
-      text-align:center;
-    }
-    .qr-section img {
-      width:160px;height:160px;
-      display:block;margin:0 auto;
-    }
+    .qr-section img { width: 170px; height: 170px; display: block; margin: 0 auto; }
     .no-qr {
-        width:160px;height:160px;display:flex;align-items:center;
-        justify-content:center;color:#ccc;font-size:12px;margin:0 auto;
+      width: 170px; height: 170px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: center;
+      color: #999; font-size: 12px; text-align: center;
+      border: 2px dashed #ddd; border-radius: 10px;
     }
-    .qr-id{
-      margin-top:10px;
-      font-family:'Bebas Neue',sans-serif;
-      font-size:14px;letter-spacing:2px;
-      color:#111;
+    .qr-id {
+      margin-top: 10px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px; letter-spacing: 2.5px; color: #111;
+      word-break: break-all;
+    }
+    .scan-hint {
+      text-align: center; margin-top: 14px;
+      font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
+      color: var(--muted);
     }
 
-    /* Card footer */
-    .card-footer{
-      background:#0d0d0d;padding:12px 24px;
-      display:flex;align-items:center;justify-content:space-between;
-      border-top:1px solid #1a1a1a;
+    /* Footer */
+    .card-footer {
+      padding: 13px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid var(--line);
+      background: rgba(0,0,0,.35);
     }
-    .footer-text{font-size:9px;color:#333;letter-spacing:1px;text-transform:uppercase;}
-    .footer-dot{width:6px;height:6px;border-radius:50%;background: var(--primary);}
+    .footer-text {
+      font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .footer-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--role); }
 
-    /* Print styles */
+    /* ───────── Print ───────── */
+    @page { margin: 12mm; }
     @media print {
-      body{background:#fff;padding:0;}
-      .controls{display:none;}
-      .card-grid { display: block; }
-      .id-card{
-        box-shadow:none;
-        border:1px solid #ddd;
-        page-break-inside:avoid;
-        margin-bottom: 20px;
+      body { background: #fff; padding: 0; }
+      .controls { display: none !important; }
+      .card-grid {
+        grid-template-columns: repeat(2, 340px);
+        gap: 20px;
+        justify-content: center;
       }
+      .id-card {
+        box-shadow: none;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .card-grid { grid-template-columns: 1fr; }
+      .id-card { width: 100%; }
     }
   </style>
 </head>
 <body>
 
   <div class="controls">
-    <h1 style="font-family:'Bebas Neue'; letter-spacing:2px;">{{ $title ?? 'QR Card' }}</h1>
+    <h1>{{ $title ?? 'QR Card' }}</h1>
     <div class="btn-group">
-        <a href="{{ route('attendance.qr-list') }}" class="btn btn-back">← QR List</a>
-        <button class="btn btn-print" onclick="window.print()">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <polyline points="6 9 6 2 18 2 18 9"/>
-                <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
-                <rect x="6" y="14" width="12" height="8"/>
-            </svg>
-            Print QR Card
-        </button>
+      <a href="{{ route('attendance.qr-list') }}" class="btn btn-back">← QR List</a>
+      <button type="button" class="btn btn-print" onclick="window.print()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Print QR Card
+      </button>
     </div>
   </div>
 
@@ -176,17 +233,22 @@
             $cards = collect([$person]);
         }
     @endphp
+
     @foreach($cards as $card)
       @php
-        $isMemberCard = $card instanceof \App\Models\Member || isset($card->qr_id);
-        $name = $card->name ?? ($card->user->name ?? 'Unknown');
-        $role = $card->role ?? ($card->user->role ?? 'member');
-        $qrPath = $card->qr_code_path ?? ($card->qrToken?->qr_code_path ?? null);
+        $isMemberCard = $card instanceof \App\Models\Member;
+        $name    = $card->name ?? ($card->user->name ?? 'Unknown');
+        $role    = strtolower($isMemberCard ? 'member' : ($card->role ?? ($card->user->role ?? 'staff')));
+        $roleClass = in_array($role, ['admin', 'staff', 'instructor', 'member']) ? $role : 'staff';
+
+        $qrPath  = $card->qr_code_path ?? ($card->qrToken?->qr_code_path ?? null);
         $qrToken = $card->qr_token ?? ($card->qrToken?->qr_token ?? null);
+
         $idLabel = $isMemberCard ? 'MEMBER ID' : strtoupper($role) . ' ID';
-        $idValue = $isMemberCard ? ($card->id ?? $card->user_id) : ($card->id ?? $card->user_id);
+        $idValue = $card->id ?? $card->user_id;
       @endphp
-      <div class="id-card">
+
+      <div class="id-card role-{{ $roleClass }}">
         <div class="card-header">
           <div class="brand">
             <div class="brand-icon">
@@ -194,31 +256,31 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
             </div>
-            <div class="brand-name">APEX</div>
+            <div class="brand-name">APEX<small>FITNESS GYM</small></div>
           </div>
-          <span class="role-badge role-{{ strtolower($role) }}">{{ strtoupper($role) }}</span>
+          <span class="role-badge">{{ strtoupper($role) }}</span>
         </div>
 
         <div class="card-body">
           <div class="user-info">
             <div class="user-name">{{ $name }}</div>
-            <div class="user-id">{{ $idLabel }}: {{ str_pad((string)$idValue, 4, '0', STR_PAD_LEFT) }}</div>
+            <div class="user-id">{{ $idLabel }} · {{ str_pad((string) $idValue, 4, '0', STR_PAD_LEFT) }}</div>
           </div>
 
           <div class="qr-section">
             @if($qrPath)
-                <img src="{{ asset('storage/' . $qrPath) }}" alt="QR Code" style="background:#fff;padding:8px;border-radius:6px">
-            @elseif($card instanceof \App\Models\User && $card->qrToken)
-                <img src="{{ asset('storage/' . $card->qrToken->qr_code_path) }}" alt="QR Code" style="background:#fff;padding:8px;border-radius:6px">
+              <img src="{{ asset('storage/' . $qrPath) }}" alt="QR Code for {{ $name }}">
             @else
-                <div class="no-qr">No QR Generated</div>
+              <div class="no-qr">No QR<br>Generated</div>
             @endif
             <div class="qr-id">{{ $qrToken ?? 'No QR Token' }}</div>
           </div>
+
+          <div class="scan-hint">Scan at the entrance to check in</div>
         </div>
 
         <div class="card-footer">
-          <span class="footer-text">APEX {{ strtoupper($isMemberCard ? 'Member' : $role) }}</span>
+          <span class="footer-text">APEX {{ $isMemberCard ? 'Member' : ucfirst($role) }}</span>
           <div class="footer-dot"></div>
           <span class="footer-text">{{ now()->format('Y') }}</span>
         </div>

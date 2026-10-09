@@ -31,6 +31,15 @@
     .nav-item svg{width:16px;height:16px;stroke:var(--muted);transition:stroke 0.15s;flex-shrink:0;}
     .nav-item:hover svg{stroke:var(--text);}
     .navbar-right{display:flex;align-items:center;gap:16px;}
+    .role-chip{
+      font-size:10px;font-weight:800;padding:5px 14px;border-radius:6px;
+      letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;
+    }
+    /* Gold badge for member (same as the admin, staff & instructor badge) */
+    .role-member{
+      background:linear-gradient(135deg,var(--accent-2),var(--accent-dark));
+      color:#1a1a1a;box-shadow:0 0 14px rgba(224,169,59,0.25);
+    }
     .user-chip{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;white-space:nowrap;}
     .user-chip .avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--border);}
     .user-chip .avatar-placeholder{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);border:1px solid rgba(224,169,59,0.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);}
@@ -88,6 +97,7 @@
       .nav-item svg{width:18px;height:18px;}
       .navbar-right{gap:8px;order:2;}
       .user-chip .user-name{display:none;}
+      .role-chip{display:none;}
       .btn-logout-top span{display:none;}
       .btn-logout-top{padding:8px;width:38px;height:38px;justify-content:center;}
       .page-content{padding:20px 14px;}
@@ -178,6 +188,7 @@
 
   <!-- Right side: User info + Logout -->
   <div class="navbar-right">
+    <span class="role-chip role-member">{{ strtoupper(auth()->user()->role) }}</span>
     <div class="user-chip">
       @if(auth()->user()->photo)
         <img src="{{ asset('storage/'.auth()->user()->photo) }}" class="avatar" alt="Avatar"/>
@@ -274,4 +285,4 @@
 </script>
 
 </body>
-</html> 
+</html>

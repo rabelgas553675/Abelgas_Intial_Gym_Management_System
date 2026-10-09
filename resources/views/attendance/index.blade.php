@@ -419,6 +419,20 @@
     border-color: var(--border);
   }
 
+  /* Auto timed-out after 12 hours */
+  .status-auto {
+    background: color-mix(in srgb, var(--warning) 15%, transparent);
+    color: var(--warning);
+    border-color: color-mix(in srgb, var(--warning) 25%, transparent);
+  }
+
+  .auto-note {
+    display: block;
+    font-size: 10px;
+    color: var(--warning);
+    margin-top: 2px;
+  }
+
   .method-manual {
     background: color-mix(in srgb, var(--warning) 15%, transparent);
     color: var(--warning);
@@ -589,7 +603,7 @@
   <div class="attendance-header">
     <div class="attendance-header-left">
       <h1>Attendance <span>Log</span></h1>
-      <p>Full attendance records with filters</p>
+      <p>Full attendance records with filters · sessions auto time-out after 12 hours</p>
     </div>
     <div class="attendance-header-actions">
       <button onclick="document.getElementById('addManualModal').style.display='flex'"
@@ -726,6 +740,9 @@
         @php
           $isStaff = !$log->member_id && $log->staff_user_id;
 
+          // true only when the auto_timed_out column exists and is set
+          $isAuto = (bool) ($log->auto_timed_out ?? false);
+
           $rowRole      = 'Member';
           $rowRoleColor = 'var(--success)';
           $displayName  = $log->member?->name;
@@ -777,26 +794,41 @@
           </td>
 
           <td>{{ $log->time_in?->format('h:i A') ?? '—' }}</td>
+
+          {{-- Time Out --}}
           <td>
             @if($log->time_out)
-              {{ $log->time_out->format('h:i A') }}
+              <span @if($isAuto) title="Auto timed-out after 12 hours" @endif>
+                {{ $log->time_out->format('h:i A') }}
+              </span>
+              @if($isAuto)
+                <span class="auto-note">auto · 12h limit</span>
+              @endif
             @else
               <span class="status-badge status-inside">Inside</span>
             @endif
           </td>
+
           <td style="color:var(--muted);">{{ $log->duration_formatted }}</td>
           <td>
             <span class="method-badge {{ $log->entry_method === 'manual' ? 'method-manual' : 'method-qr' }}">
               {{ $log->entry_method === 'manual' ? 'Manual' : 'QR Scan' }}
             </span>
           </td>
+
+          {{-- Status --}}
           <td>
             @if($log->time_out)
-              <span class="status-badge status-done">Done</span>
+              @if($isAuto)
+                <span class="status-badge status-auto" title="Auto timed-out after 12 hours">Auto</span>
+              @else
+                <span class="status-badge status-done">Done</span>
+              @endif
             @else
               <span class="status-badge status-inside">Inside</span>
             @endif
           </td>
+
           <td>
             <div class="action-buttons">
               @if(!$log->time_out)
@@ -834,7 +866,7 @@
     <div class="modal-content">
       <button onclick="document.getElementById('addManualModal').style.display='none'" class="modal-close">✕</button>
       <div class="modal-title">Add Manual Entry</div>
-      <div class="modal-subtitle">Record attendance manually</div>
+      <div class="modal-subtitle">Record attendance manually (max 12 hours per session)</div>
       <form method="POST" action="{{ route('attendance.add-manual') }}">
         @csrf
         <div style="margin-bottom:16px;">

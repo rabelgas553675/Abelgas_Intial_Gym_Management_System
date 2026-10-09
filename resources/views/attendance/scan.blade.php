@@ -54,16 +54,53 @@
 
     /* Manual Entry Panel */
     .manual-entry-panel { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 18px; }
-    .manual-entry-panel .panel-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-    .manual-entry-panel select { width: 100%; padding: 9px 12px; background: #1a1a2e; color: #fff; border: 1px solid rgba(255,255,255,.18); border-radius: 8px; font-size: 13px; margin-bottom: 10px; font-family: 'DM Sans', sans-serif; appearance: auto; min-height: 44px; }
-    .manual-entry-panel select option { background: #1a1a2e; color: #fff; }
-    .manual-entry-panel select optgroup { background: #0f0f1a; }
+    .manual-entry-panel .panel-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
     .manual-btn-group { display: flex; gap: 8px; }
     .manual-btn-group button { flex: 1; padding: 9px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; transition: opacity .2s; min-height: 44px; }
     .manual-btn-group button:disabled { opacity: .4; cursor: not-allowed; }
     .btn-timein { background: #4ade80; color: #111; }
     .btn-timeout { background: #60a5fa; color: #111; }
     .manual-msg { margin-top: 8px; font-size: 12px; min-height: 16px; }
+
+    /* ===== Person picker (search + results list) ===== */
+    .person-picker { margin-bottom: 14px; }
+    .manual-select-hidden { display: none !important; }   /* hidden <select> only stores the chosen value */
+
+    .person-search-wrap { position: relative; }
+    .person-search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: rgba(255,255,255,.45); fill: none; stroke-width: 2; pointer-events: none; }
+    .manual-search { width: 100%; box-sizing: border-box; padding: 11px 12px 11px 38px; background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; min-height: 46px; transition: border-color .2s, background .2s; }
+    .manual-search::placeholder { color: rgba(255,255,255,.4); }
+    .manual-search:focus { border-color: var(--accent); background: rgba(255,255,255,.1); }
+
+    .person-results { margin-top: 8px; background: #12121f; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; max-height: 250px; overflow-y: auto; padding: 0 0 6px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.25) transparent; }
+    .person-results[hidden] { display: none; }
+    .person-results::-webkit-scrollbar { width: 6px; }
+    .person-results::-webkit-scrollbar-thumb { background: rgba(255,255,255,.22); border-radius: 6px; }
+
+    .person-group { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px 7px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.5); background: #12121f; border-bottom: 1px solid rgba(255,255,255,.06); margin-bottom: 4px; }
+    .person-group span:last-child { color: rgba(255,255,255,.3); letter-spacing: 0; }
+
+    .person-item { display: flex; align-items: center; gap: 10px; margin: 2px 6px; padding: 8px 10px; min-height: 46px; box-sizing: border-box; border-radius: 9px; border: 1px solid transparent; cursor: pointer; transition: background .15s, border-color .15s; }
+    .person-item:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.1); }
+    .person-item.active { background: color-mix(in srgb, var(--accent) 14%, transparent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+
+    .person-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .person-avatar.member { background: rgba(74,222,128,.14); color: #4ade80; border: 1px solid rgba(74,222,128,.28); }
+    .person-avatar.staff  { background: rgba(96,165,250,.14); color: #60a5fa; border: 1px solid rgba(96,165,250,.28); }
+
+    .person-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .person-role { flex-shrink: 0; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 999px; letter-spacing: .5px; text-transform: uppercase; }
+    .person-role.member { background: rgba(74,222,128,.12); color: #4ade80; border: 1px solid rgba(74,222,128,.28); }
+    .person-role.staff  { background: rgba(96,165,250,.12); color: #60a5fa; border: 1px solid rgba(96,165,250,.28); }
+    .person-warn { flex-shrink: 0; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 999px; color: #fbbf24; background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.3); }
+    .person-empty { padding: 24px 14px; text-align: center; color: rgba(255,255,255,.45); font-size: 13px; }
+
+    .person-selected { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 8px 8px 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+    .person-selected[hidden] { display: none; }
+    .person-selected .label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,.5); flex-shrink: 0; }
+    .person-selected .value { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .person-selected button { flex-shrink: 0; background: rgba(255,255,255,.08); border: none; color: rgba(255,255,255,.75); font-size: 16px; line-height: 1; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; }
+    .person-selected button:hover { background: rgba(255,255,255,.16); color: #fff; }
 
     /* Counters */
     .scanner-counters { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.1); gap: 8px; flex-wrap: wrap; }
@@ -151,7 +188,8 @@
         .manual-input-group input { font-size: 14px; padding: 8px 12px; min-height: 40px; }
         .manual-submit-btn { min-height: 40px; min-width: 40px; font-size: 16px; padding: 0 14px; }
         .manual-entry-panel { padding: 14px; }
-        .manual-entry-panel select { font-size: 14px; padding: 8px 10px; min-height: 40px; }
+        .manual-search { font-size: 14px; min-height: 42px; }
+        .person-results { max-height: 220px; }
         .manual-btn-group button { font-size: 12px; padding: 8px; min-height: 40px; }
         .scanner-counters { flex-wrap: wrap; gap: 8px; }
         .counter-item { flex: 0 0 33.33%; }
@@ -186,7 +224,11 @@
         .manual-hint { font-size: 10px; }
         .manual-entry-panel { padding: 12px; }
         .manual-entry-panel .panel-label { font-size: 10px; }
-        .manual-entry-panel select { font-size: 13px; padding: 6px 8px; min-height: 36px; }
+        .manual-search { font-size: 13px; min-height: 40px; padding-left: 34px; }
+        .person-item { min-height: 42px; padding: 6px 8px; }
+        .person-avatar { width: 26px; height: 26px; font-size: 11px; }
+        .person-name { font-size: 12px; }
+        .person-role { font-size: 9px; padding: 2px 7px; }
         .manual-btn-group button { font-size: 11px; padding: 6px; min-height: 36px; }
         .manual-msg { font-size: 11px; }
         .counter-value { font-size: 16px; }
@@ -216,7 +258,8 @@
         .reader-wrapper #reader { min-height: 120px; }
         .manual-input-group input { font-size: 12px; padding: 4px 8px; min-height: 32px; }
         .manual-submit-btn { min-height: 32px; min-width: 32px; font-size: 12px; padding: 0 10px; }
-        .manual-entry-panel select { font-size: 12px; min-height: 32px; }
+        .manual-search { font-size: 12px; min-height: 36px; }
+        .person-role { display: none; }
         .manual-btn-group button { font-size: 10px; min-height: 32px; }
         .counter-value { font-size: 14px; }
         .attendance-table { min-width: 450px; }
@@ -306,25 +349,47 @@
                 <div class="manual-entry-panel">
                     <div class="panel-label">Manual Attendance Entry</div>
 
-                    <select id="manualMemberId">
-                        <option value="">— Select Person —</option>
-                        <optgroup label="Members">
-                            @foreach($allMembers as $m)
-                                <option value="{{ $m->id }}">
-                                    {{ $m->name }} (Member) {{ $m->status === 'Expired' ? '⚠️' : '' }}
-                                </option>
-                            @endforeach
-                        </optgroup>
-                        <optgroup label="Staff / Instructors / Admin">
-                            @forelse($allStaff ?? [] as $s)
-                                <option value="staff-{{ data_get($s, 'id', '') }}">
-                                    {{ data_get($s, 'name', '') }} ({{ ucfirst(data_get($s, 'role', '')) }})
-                                </option>
-                            @empty
-                                <option disabled>No Staff Records Found</option>
-                            @endforelse
-                        </optgroup>
-                    </select>
+                    {{-- Searchable person picker --}}
+                    <div class="person-picker" id="personPicker">
+                        <div class="person-search-wrap">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="text" id="manualSearch" class="manual-search"
+                                   placeholder="Search member or staff…" autocomplete="off" />
+                        </div>
+
+                        {{-- Results list (built by JS) --}}
+                        <div class="person-results" id="personResults" role="listbox" hidden></div>
+
+                        {{-- Chosen person --}}
+                        <div class="person-selected" id="personSelected" hidden>
+                            <span class="label">Selected</span>
+                            <span class="value" id="personSelectedName"></span>
+                            <button type="button" id="personSelectedClear" title="Clear selection" aria-label="Clear selection">×</button>
+                        </div>
+
+                        {{-- Hidden select: source of the people list AND holder of the chosen value --}}
+                        <select id="manualMemberId" class="manual-select-hidden" tabindex="-1" aria-hidden="true">
+                            <option value="">— Select Person —</option>
+                            <optgroup label="Members">
+                                @foreach($allMembers as $m)
+                                    <option value="{{ $m->id }}">
+                                        {{ $m->name }} (Member) {{ $m->status === 'Expired' ? '⚠️' : '' }}
+                                    </option>
+                                @endforeach
+                            </optgroup>
+                            <optgroup label="Staff / Instructors / Admin">
+                                @forelse($allStaff ?? [] as $s)
+                                    <option value="staff-{{ data_get($s, 'id', '') }}">
+                                        {{ data_get($s, 'name', '') }} ({{ ucfirst(data_get($s, 'role', '')) }})
+                                    </option>
+                                @empty
+                                    <option disabled>No Staff Records Found</option>
+                                @endforelse
+                            </optgroup>
+                        </select>
+                    </div>
 
                     <div class="manual-btn-group">
                         <button class="btn-timein" id="timeInBtn" onclick="manualRecord('timein')">↓ Time In</button>
@@ -591,7 +656,6 @@ async function startQrScanner() {
     return;
   }
 
-  const qr = new Html5Qrcode('reader');
   const scanConfig = { fps: 10, qrbox: { width: 240, height: 240 } };
 
   const onScanSuccess = (decodedText) => {
@@ -602,39 +666,46 @@ async function startQrScanner() {
     processQR(decodedText);
   };
 
+  // html5-qrcode 2.3.x leaves its internal state "under transition" after a failed
+  // start(), so retrying on the SAME instance only throws "Cannot transition to a
+  // new state, already under transition" and hides the real problem. Use a fresh
+  // instance for every attempt, and report the FIRST error (the real cause).
+  let firstError = null;
+
+  async function tryStart(cameraConfig) {
+    const qr = new Html5Qrcode('reader');
+    try {
+      await qr.start(cameraConfig, scanConfig, onScanSuccess, () => {});
+      return true;
+    } catch (err) {
+      if (!firstError) firstError = err;
+      console.warn('Camera start attempt failed:', cameraConfig, err);
+      try { await qr.clear(); } catch (_) {}
+      const reader = document.getElementById('reader');
+      if (reader) reader.innerHTML = '';
+      return false;
+    }
+  }
+
   // html5-qrcode requires the camera config to have EXACTLY ONE key
   // (either facingMode or a deviceId string) — an empty object is invalid.
-  const attempts = [
-    { facingMode: { ideal: 'environment' } },
-    { facingMode: 'user' }
-  ];
+  if (await tryStart({ facingMode: { ideal: 'environment' } })) return;
+  if (await tryStart({ facingMode: 'user' })) return;
 
-  let lastError = null;
-
-  for (const cfg of attempts) {
-    try {
-      await qr.start(cfg, scanConfig, onScanSuccess, () => {});
-      return;
-    } catch (err) {
-      lastError = err;
-      console.warn('Camera start attempt failed:', cfg, err);
-    }
-  }
-
-  // Last resort: pick the first available device by id
+  // Last resort: try the available devices by id
   try {
     const cameras = await Html5Qrcode.getCameras();
-    if (cameras && cameras.length) {
-      const back = cameras.find(c => /back|rear|environment/i.test(c.label)) || cameras[0];
-      await qr.start(back.id, scanConfig, onScanSuccess, () => {});
-      return;
+    const ordered = (cameras || []).slice().sort((x, y) =>
+      (/back|rear|environment/i.test(y.label) ? 1 : 0) - (/back|rear|environment/i.test(x.label) ? 1 : 0));
+    for (const cam of ordered) {
+      if (await tryStart(cam.id)) return;
     }
   } catch (err) {
-    lastError = err;
+    if (!firstError) firstError = err;
   }
 
-  console.error('Html5Qrcode failed to start:', lastError);
-  showCameraError(getCameraErrorMessage(lastError));
+  console.error('Html5Qrcode failed to start:', firstError);
+  showCameraError(getCameraErrorMessage(firstError));
 }
 
 startQrScanner();
@@ -653,6 +724,185 @@ function processManual() {
 document.getElementById('manualInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') processManual();
 });
+
+// ── Searchable person picker (Manual Attendance Entry) ─────────────────────
+// The hidden <select id="manualMemberId"> is both the source of the people list
+// and the holder of the chosen value, so manualRecord() keeps working unchanged.
+const manualSelect       = document.getElementById('manualMemberId');
+const manualSearch       = document.getElementById('manualSearch');
+const personPicker       = document.getElementById('personPicker');
+const personResults      = document.getElementById('personResults');
+const personSelected     = document.getElementById('personSelected');
+const personSelectedName = document.getElementById('personSelectedName');
+const personSelectedClear = document.getElementById('personSelectedClear');
+
+// "Carlos Bautista (Member) ⚠️"  →  { name, role, expired }
+function parsePerson(text) {
+  const expired = text.includes('⚠️');
+  const clean   = text.replace('⚠️', '').replace(/\s+/g, ' ').trim();
+  const m       = clean.match(/^(.*)\s+\(([^)]+)\)$/);
+  return { name: m ? m[1] : clean, role: m ? m[2] : '', expired };
+}
+
+const manualSource = Array.from(manualSelect.querySelectorAll('optgroup')).map(group => ({
+  label:   group.label,
+  isStaff: /staff/i.test(group.label),
+  people:  Array.from(group.querySelectorAll('option'))
+    .filter(o => o.value && !o.disabled)
+    .map(o => {
+      const text = o.textContent.replace(/\s+/g, ' ').trim();
+      return Object.assign({ value: o.value, text }, parsePerson(text));
+    })
+}));
+
+let pickerItems = [];   // [{ el, person }]
+let activeIdx   = -1;
+
+function openResults()  { personResults.hidden = false; }
+function closeResults() { personResults.hidden = true; }
+
+function setActive(i) {
+  if (pickerItems[activeIdx]) pickerItems[activeIdx].el.classList.remove('active');
+  activeIdx = i;
+  if (pickerItems[i]) {
+    pickerItems[i].el.classList.add('active');
+    pickerItems[i].el.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function renderPeople(query) {
+  const tokens = (query || '').toLowerCase().split(/\s+/).filter(Boolean);
+
+  personResults.innerHTML = '';
+  pickerItems = [];
+  activeIdx   = -1;
+  let total   = 0;
+
+  manualSource.forEach(group => {
+    const found = group.people.filter(p => {
+      const hay = p.text.toLowerCase();
+      return tokens.every(t => hay.includes(t));
+    });
+    if (!found.length) return;
+
+    const head = document.createElement('div');
+    head.className = 'person-group';
+    const hl = document.createElement('span'); hl.textContent = group.label;
+    const hc = document.createElement('span'); hc.textContent = found.length;
+    head.append(hl, hc);
+    personResults.appendChild(head);
+
+    found.forEach(p => {
+      const kind = group.isStaff ? 'staff' : 'member';
+
+      const el = document.createElement('div');
+      el.className = 'person-item';
+      el.setAttribute('role', 'option');
+
+      const av = document.createElement('div');
+      av.className   = 'person-avatar ' + kind;
+      av.textContent = (p.name || '?').charAt(0).toUpperCase();
+
+      const nm = document.createElement('div');
+      nm.className   = 'person-name';
+      nm.textContent = p.name;
+      nm.title       = p.name;
+
+      el.append(av, nm);
+
+      if (p.expired) {
+        const warn = document.createElement('span');
+        warn.className   = 'person-warn';
+        warn.textContent = 'Expired';
+        el.appendChild(warn);
+      }
+
+      const rl = document.createElement('span');
+      rl.className   = 'person-role ' + kind;
+      rl.textContent = p.role;
+      el.appendChild(rl);
+
+      // mousedown (not click) so the search box doesn't lose focus first
+      el.addEventListener('mousedown', e => { e.preventDefault(); choosePerson(p); });
+      el.addEventListener('mousemove', () => {
+        const idx = pickerItems.findIndex(x => x.el === el);
+        if (idx !== activeIdx) setActive(idx);
+      });
+
+      personResults.appendChild(el);
+      pickerItems.push({ el, person: p });
+      total++;
+    });
+  });
+
+  if (!total) {
+    const empty = document.createElement('div');
+    empty.className   = 'person-empty';
+    empty.textContent = 'No matches found';
+    personResults.appendChild(empty);
+    return;
+  }
+
+  setActive(0);
+}
+
+function choosePerson(p) {
+  manualSelect.value = p.value;
+  personSelectedName.textContent = p.text;
+  personSelected.hidden = false;
+  manualSearch.value = '';
+  closeResults();
+}
+
+function resetManualSearch() {
+  manualSearch.value = '';
+  manualSelect.value = '';
+  personSelected.hidden = true;
+  closeResults();
+}
+
+manualSearch.addEventListener('focus', () => {
+  openResults();
+  renderPeople(manualSearch.value);
+});
+
+manualSearch.addEventListener('input', () => {
+  // typing again means the person is choosing someone else
+  manualSelect.value = '';
+  personSelected.hidden = true;
+  openResults();
+  renderPeople(manualSearch.value);
+});
+
+manualSearch.addEventListener('keydown', e => {
+  const n = pickerItems.length;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (personResults.hidden) { openResults(); renderPeople(manualSearch.value); return; }
+    if (n) setActive((activeIdx + 1) % n);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (n) setActive((activeIdx - 1 + n) % n);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (!personResults.hidden && pickerItems[activeIdx]) choosePerson(pickerItems[activeIdx].person);
+  } else if (e.key === 'Escape') {
+    if (!personResults.hidden) closeResults(); else resetManualSearch();
+  }
+});
+
+personSelectedClear.addEventListener('click', () => {
+  resetManualSearch();
+  manualSearch.focus();
+});
+
+// Close the list when clicking anywhere outside the picker
+document.addEventListener('click', e => {
+  if (!personPicker.contains(e.target)) closeResults();
+});
+
+renderPeople('');
 
 // ── Core AJAX ──────────────────────────────────────────────────────────────
 function processQR(qrData) {
@@ -709,7 +959,7 @@ function manualRecord(action) {
       if (action === 'timein') appendLogRow(data, 'timein');
       else                     updateLogRowTimeout(data);
       playBeep(true);
-      document.getElementById('manualMemberId').value = '';
+      resetManualSearch();   // clears the search box, the chip and the selection
     } else {
       playBeep(false);
     }

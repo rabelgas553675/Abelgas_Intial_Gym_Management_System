@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\WorkoutPlan;
 use App\Models\UserQrToken;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -48,22 +49,47 @@ class UserController extends Controller
     {
         $request->validate([
             'name'     => 'required|string|max:255',
-            'email'    => 'required|email:rfc|unique:users',
+            'email'    => 'required|email:rfc|unique:users|unique:members,email',
             'password' => 'required|min:6',
             'role'     => 'required|in:admin,staff,instructor,member',
         ]);
 
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => bcrypt($request->password),
-            'role'     => $request->role,
-        ]);
+        DB::transaction(function () use ($request) {
+            $user = User::create([
+                'name'     => $request->name,
+                'email'    => $request->email,
+                'password' => bcrypt($request->password),
+                'role'     => $request->role,
+            ]);
 
-        // Generate a QR token for any role that needs one to scan into attendance
-        if (in_array($user->role, ['admin', 'staff', 'instructor'])) {
-            UserQrToken::createForUser($user);
-        }
+            // Generate a QR token for any role that needs one to scan into attendance
+            if (in_array($user->role, ['admin', 'staff', 'instructor'])) {
+                UserQrToken::createForUser($user);
+            }
+
+            // Members also need a profile row, otherwise they never appear on the
+            // Members page and can't subscribe to a plan.
+            if ($user->role === 'member') {
+                [$first, $last] = array_pad(explode(' ', trim($user->name), 2), 2, null);
+
+                $member = Member::create([
+                    'user_id'         => $user->id,
+                    'name'            => $user->name,
+                    'first_name'      => $first,
+                    'last_name'       => $last,
+                    'email'           => $user->email,
+                    'membership_type' => null,
+                    'start_date'      => null,
+                    'end_date'        => null,
+                    'fee'             => 0,
+                    'status'          => 'Pending',
+                    'instructor_id'   => null,
+                    'coach_status'    => 'none',
+                ]);
+
+                Member::generateQrCode($member);
+            }
+        });
 
         return back()->with('success', 'User added successfully!');
     }

@@ -360,37 +360,36 @@ class MemberDashboardController extends Controller
      */
     public function selectPlan()
     {
-        $user        = Auth::user();
-        $instructors = User::query()->where('role', 'instructor')->get();
-        $member      = $this->getMember();
+        $user   = Auth::user();
+        $member = $this->getMember();
 
-        return view('member.select-plan', compact('user', 'member', 'instructors'));
+        return view('member.select-plan', compact('user', 'member'));
     }
 
     /**
-     * Update subscription details only — no payment created.
+     * Change the member's fitness plan — and nothing else.
+     *
+     * Only `fitness_plan` is read from the request and written to the member.
+     * It never creates a payment, renews or re-dates the membership, changes the
+     * membership type/fee, or touches the assigned coach. Any other field sent
+     * with the request (e.g. membership_type, instructor_id) is ignored.
      */
     public function updateSubscription(Request $request)
     {
-        $request->validate([
-            'fitness_plan'    => 'required|in:Calisthenics,Bodybuilding,Plyometrics,Powerlifting,Endurance,Functional Training,Hybrid Training',
-            'membership_type' => 'required|in:Monthly,Quarterly,Semi-Annual,Annually',
-            'instructor_id'   => 'nullable|exists:users,id',
+        $data = $request->validate([
+            'fitness_plan' => 'required|in:Calisthenics,Bodybuilding,Plyometrics,Powerlifting,Endurance,Functional Training,Hybrid Training',
         ]);
 
         $member = $this->getMember();
 
         if (!$member) {
-            return back()->with('error', 'No subscription found to update.');
+            return back()->with('error', 'No membership found to update.');
         }
 
-        $member->update([
-            'fitness_plan'    => $request->fitness_plan,
-            'membership_type' => $request->membership_type,
-            'instructor_id'   => $request->instructor_id,
-        ]);
+        $member->update(['fitness_plan' => $data['fitness_plan']]);
 
-        return back()->with('success', 'Subscription updated successfully!');
+        return redirect()->route('member.dashboard')
+                         ->with('success', 'Fitness plan updated successfully!');
     }
 
     /**

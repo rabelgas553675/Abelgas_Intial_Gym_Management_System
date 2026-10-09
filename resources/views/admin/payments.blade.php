@@ -286,6 +286,7 @@
 
                 <div class="form-group">
                     <label class="form-label">Member</label>
+                    @include('partials.member-search')
                     <select name="member_id" class="form-control" required>
                         <option value="" disabled selected>— Select Member —</option>
                         @foreach($members as $member)

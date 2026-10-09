@@ -1,23 +1,13 @@
 @extends('layouts.instructor')
-<<<<<<< HEAD
-@section('title', 'My Earnings – IRONFORGE')
-=======
 @section('title', 'My Earnings – APEX')
->>>>>>> 77ebe7c4ad72fe3a31873f5e62749429642c4d98
 @section('active', 'payments')
 
 @section('content')
 
-<<<<<<< HEAD
-<div style="margin-bottom:32px;">
-  <h1 style="font-size:32px;font-weight:700;margin-bottom:6px;">
-    My <span style="color:var(--accent);">Earnings</span>`
-=======
 {{-- Page Header --}}
 <div style="margin-bottom:28px;">
   <h1 style="font-size:28px;font-weight:700;margin-bottom:4px;">
     My <span style="color:var(--accent);">Earnings</span>
->>>>>>> 77ebe7c4ad72fe3a31873f5e62749429642c4d98
   </h1>
   <p style="color:var(--muted);font-size:14px;">Coach subscription fees automatically allocated from member subscriptions</p>
 </div>

@@ -4,55 +4,70 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use App\Models\User;
-use Illuminate\Http\Request;
+use App\Models\UserQrToken;
 
 class QrCodeController extends Controller
 {
     /**
-     * Handle the Reset/Regenerate button on the Member show page.
-     *
-     * Note: The parameter name ($member) should match the placeholder
-     * in your route, e.g., Route::post('/qr/regenerate/{member}', ...)
+     * Regenerate a MEMBER's QR code.
+     * Route: POST /members/{member}/regenerate-qr  (members.qr.regenerate)
      */
     public function regenerate(Member $member)
     {
-        // This calls the static method we added to the Member model
         Member::generateQrCode($member);
 
         return back()->with('success', 'QR Code generated/reset successfully!');
     }
 
+    /**
+     * Regenerate a STAFF / INSTRUCTOR / ADMIN QR code.
+     * Route: POST /users/{user}/qr/regenerate  (users.qr.regenerate)
+     */
+    public function regenerateUser(User $user)
+    {
+        UserQrToken::createForUser($user);
+
+        return back()->with('success', 'QR Code generated/reset successfully!');
+    }
+
+    /**
+     * Print card for a staff / instructor / admin user.
+     * Route: GET /users/{user}/qr/print  (users.qr.print)
+     */
     public function printUserCard(User $user)
     {
         $qrRecord = $user->qrToken()->first();
 
         return view('qr.print-card', [
-            'person' => $user,
-            'user' => $user,
-            'member' => null,
-            'qrRecord' => $qrRecord,
-            'items' => collect([$user]),
+            'person'      => $user,
+            'user'        => $user,
+            'member'      => null,
+            'qrRecord'    => $qrRecord,
+            'items'       => collect([$user]),
             'singlePrint' => true,
-            'title' => 'QR Card',
-        ]);
-    }
-
-    public function printMemberCard(Member $member)
-    {
-        return view('qr.print-card', [
-            'person' => $member,
-            'member' => $member,
-            'user' => $member->user,
-            'qrRecord' => null,
-            'items' => collect([$member]),
-            'singlePrint' => true,
-            'title' => 'QR Card',
+            'title'       => 'QR Card',
         ]);
     }
 
     /**
-     * Handle the Print Card button.
-     * Displays a dedicated view optimized for printing the membership card.
+     * Print card for a member.
+     * Route: GET /members/{member}/print-card  (members.qr.print)
+     */
+    public function printMemberCard(Member $member)
+    {
+        return view('qr.print-card', [
+            'person'      => $member,
+            'member'      => $member,
+            'user'        => $member->user,
+            'qrRecord'    => null,
+            'items'       => collect([$member]),
+            'singlePrint' => true,
+            'title'       => 'QR Card',
+        ]);
+    }
+
+    /**
+     * Kept for the existing members.qr.print route.
      */
     public function printCard(Member $member)
     {
