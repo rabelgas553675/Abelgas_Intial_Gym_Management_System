@@ -11,4 +11,8 @@ su -s /bin/sh www-data -c 'php artisan storage:link' || true
 # Laravel scheduler (runs attendance:auto-timeout every 5 minutes)
 su -s /bin/sh www-data -c 'php artisan schedule:work' > /dev/null 2>&1 &
 
+# Make sure only one Apache MPM is loaded (fixes AH00534)
+rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*
+a2enmod mpm_prefork > /dev/null 2>&1 || true
+
 exec apache2-foreground

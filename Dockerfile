@@ -20,6 +20,10 @@ RUN apt-get update && apt-get install -y \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
+# Keep only mpm_prefork (required by mod_php) - fixes "More than one MPM loaded"
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.* \
+ && a2enmod mpm_prefork
+
 # Apache: enable rewrite, listen on 10000, serve Laravel's /public folder
 RUN a2enmod rewrite \
  && sed -i 's/Listen 80/Listen 10000/g' /etc/apache2/ports.conf \
