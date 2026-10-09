@@ -1,107 +1,68 @@
-# --------- STAGE 1: Build frontend ---------
+# ---------- STAGE 1: build frontend (Vite + Tailwind) ----------
 FROM node:20 AS node_builder
-
 WORKDIR /app
-
 COPY package*.json ./
 RUN npm install
-
 COPY . .
 RUN npm run build
 
 
-# --------- STAGE 2: PHP + Apache ---------
+# ---------- STAGE 2: PHP + Apache ----------
 FROM php:8.4-apache
 
-# Install system packages + REQUIRED PHP extensions (including gd)
+# System packages + PHP extensions (gd is required for QR codes)
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    curl \
-    libpq-dev \
-    libzip-dev \
-    libonig-dev \
-    libxml2-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    zip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-        pdo \
-        pdo_mysql \
-        pdo_pgsql \
-        zip \
-        mbstring \
-        xml \
-        exif \
-        pcntl \
-        gd \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    git unzip curl zip \
+    libpq-dev libzip-dev libonig-dev libxml2-dev \
+    libpng-dev libjpeg-dev libfreetype6-dev \
+ && docker-php-ext-configure gd --with-freetype --with-jpeg \
+ && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip mbstring xml exif pcntl gd \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache rewrite
-RUN a2enmod rewrite
-
-# Use port 10000 (Render)
-RUN sed -i 's/Listen 80/Listen 10000/g' /etc/apache2/ports.conf \
- && sed -i 's/<VirtualHost \*:80>/<VirtualHost *:10000>/g' /etc/apache2/sites-available/000-default.conf
-
-# Set Laravel public as document root
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf \
+# Apache: enable rewrite, listen on 10000, serve Laravel's /public folder
+RUN a2enmod rewrite \
+ && sed -i 's/Listen 80/Listen 10000/g' /etc/apache2/ports.conf \
+ && sed -i 's/<VirtualHost \*:80>/<VirtualHost *:10000>/g' /etc/apache2/sites-available/000-default.conf \
+ && sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf \
  && sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/apache2.conf
 
-# Allow .htaccess
-RUN printf '<Directory /var/www/html/public>\n\
-    AllowOverride All\n\
-    Require all granted\n\
-</Directory>\n' > /etc/apache2/conf-available/laravel.conf \
+# Allow .htaccess (Laravel routing)
+RUN echo '<Directory /var/www/html/public>' > /etc/apache2/conf-available/laravel.conf \
+ && echo '    AllowOverride All' >> /etc/apache2/conf-available/laravel.conf \
+ && echo '    Require all granted' >> /etc/apache2/conf-available/laravel.conf \
+ && echo '</Directory>' >> /etc/apache2/conf-available/laravel.conf \
  && a2enconf laravel
 
-# Install Composer
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy Laravel app
+# App code
 COPY . .
 
-# Copy built frontend assets from Node stage
+# Built frontend assets from stage 1
 COPY --from=node_builder /app/public/build ./public/build
 
-# Ensure .env exists (prevents Laravel crash)
+# Temporary .env so artisan can boot during the build
+# (Railway variables override it at runtime)
 RUN cp .env.example .env || true
 
-# Generate app key safely
-RUN php artisan key:generate || true
-
-# Install PHP dependencies WITHOUT scripts (prevents crash)
+# PHP dependencies (production only)
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
-
-# Run Laravel package discovery safely
 RUN php artisan package:discover --ansi || true
+RUN php artisan config:clear && php artisan route:clear && php artisan view:clear
 
-# Clear caches
-RUN php artisan config:clear \
- && php artisan route:clear \
- && php artisan view:clear
-
-# Storage link
-RUN php artisan storage:link || true
-
-# Ensure required directories
-RUN mkdir -p storage/framework/cache \
-    storage/framework/sessions \
-    storage/framework/views \
-    bootstrap/cache \
-    public/uploads
-
-# Fix permissions (build-time)
-RUN chown -R www-data:www-data /var/www/html \
+# Required folders + permissions
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views \
+    storage/logs storage/app/public bootstrap/cache public/uploads \
+ && chown -R www-data:www-data /var/www/html \
  && chmod -R 775 storage bootstrap/cache public/uploads
 
-# Expose port
-EXPOSE 10000
+# Start script (strip Windows line endings so it runs on Linux)
+COPY start.sh /usr/local/bin/start.sh
+RUN sed -i 's/\r$//' /usr/local/bin/start.sh && chmod +x /usr/local/bin/start.sh
 
-# 🔥 CRITICAL: Fix permissions at runtime
-CMD chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && apache2-foreground
+EXPOSE 10000
+CMD ["/usr/local/bin/start.sh"]
