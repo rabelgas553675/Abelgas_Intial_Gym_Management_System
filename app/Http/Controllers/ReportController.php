@@ -462,48 +462,53 @@ class ReportController extends Controller
         ];
     }
 
+    /**
+     * Builds the CSV that Excel opens.
+     *  - Starts with a UTF-8 BOM so Excel reads the file as UTF-8 (no more garbled "₱").
+     *  - Amount is exported as a plain number (e.g. 1000.00) so Excel can total it.
+     */
     private function buildCsv(string $type, array $report): string
     {
         $columns = match ($type) {
-            'payment' => ['Member', 'Type', 'Date', 'Method', 'Amount'],
-            'walkin' => ['Receipt #', 'Customer', 'Date', 'Method', 'Status', 'Amount'],
+            'payment' => ['Member', 'Type', 'Date', 'Method', 'Amount (PHP)'],
+            'walkin' => ['Receipt #', 'Customer', 'Date', 'Method', 'Status', 'Amount (PHP)'],
             'attendance' => ['Name', 'Role', 'Date', 'Time In', 'Time Out', 'Duration'],
             'workout' => ['Member', 'Session', 'Date', 'Status', 'Instructor'],
             'member' => ['Name', 'Email', 'Date Joined', 'Plan', 'Status'],
             default => ['Name', 'Details'],
         };
 
+        // "₱1,000" -> "1000.00"
+        $money = function ($value): string {
+            $number = preg_replace('/[^0-9.\-]/', '', (string) $value);
+
+            return $number === '' ? '' : number_format((float) $number, 2, '.', '');
+        };
+
         $buffer = fopen('php://temp', 'r+');
-        fputcsv($buffer, $columns);
+        fputcsv($buffer, $columns, ',', '"', '');
 
         foreach ($report['rows'] as $row) {
             if ($type === 'payment') {
-                fputcsv($buffer, [$row['name'], $row['type'], $row['date'], $row['method'], $row['amount']]);
-                continue;
+                $line = [$row['name'], $row['type'], $row['date'], $row['method'], $money($row['amount'])];
+            } elseif ($type === 'walkin') {
+                $line = [$row['receipt'], $row['name'], $row['date'], $row['method'], $row['status'], $money($row['amount'])];
+            } elseif ($type === 'attendance') {
+                $line = [$row['name'], $row['role'], $row['date'], $row['time_in'], $row['time_out'], $row['duration']];
+            } elseif ($type === 'member') {
+                $line = [$row['name'], $row['email'], $row['date'], $row['plan'], $row['status']];
+            } else {
+                $line = [$row['name'], $row['title'], $row['date'], $row['status'], $row['instructor']];
             }
 
-            if ($type === 'walkin') {
-                fputcsv($buffer, [$row['receipt'], $row['name'], $row['date'], $row['method'], $row['status'], $row['amount']]);
-                continue;
-            }
-
-            if ($type === 'attendance') {
-                fputcsv($buffer, [$row['name'], $row['role'], $row['date'], $row['time_in'], $row['time_out'], $row['duration']]);
-                continue;
-            }
-
-            if ($type === 'member') {
-                fputcsv($buffer, [$row['name'], $row['email'], $row['date'], $row['plan'], $row['status']]);
-                continue;
-            }
-
-            fputcsv($buffer, [$row['name'], $row['title'], $row['date'], $row['status'], $row['instructor']]);
+            fputcsv($buffer, $line, ',', '"', '');
         }
 
         rewind($buffer);
         $csv = stream_get_contents($buffer);
         fclose($buffer);
 
-        return $csv ?: "";
+        // UTF-8 BOM so Excel detects the encoding
+        return "\xEF\xBB\xBF" . ($csv ?: '');
     }
 }

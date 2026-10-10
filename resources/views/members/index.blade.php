@@ -1,10 +1,18 @@
 @extends(auth()->user()->isAdmin() ? 'layouts.admin' : 'layouts.staff')
 
 @section('title', 'Members – APEX')
-@section('page_title', 'Members')
+@section('page_title', in_array(request('role'), ['Staff', 'Instructor']) ? request('role') : 'Members')
 @section('active_nav', 'members')
 
 @section('content')
+
+@php
+    // Label changes with the Role filter: Member (default) / Staff / Instructor
+    $roleFilter = in_array(request('role'), ['Staff', 'Instructor']) ? request('role') : null;
+    $roleLabel  = $roleFilter ?? 'Member';
+    $rolePlural = $roleFilter === 'Staff' ? 'staff'
+                : ($roleFilter === 'Instructor' ? 'instructors' : 'members');
+@endphp
 
 <style>
     /* ═══════════════════════════════════════════════════════════
@@ -562,7 +570,7 @@
                         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                     </svg>
                     <input type="text" name="search" value="{{ request('search') }}"
-                           placeholder="Search members...">
+                           placeholder="Search {{ $rolePlural }}...">
                 </div>
 
                 <select name="plan" class="filter-select">
@@ -581,7 +589,7 @@
                 </select>
 
                 <select name="role" class="filter-select">
-                    <option value="">All Roles</option>
+                    <option value="">Member</option>
                     <option value="Staff"      {{ request('role')=='Staff'      ? 'selected' : '' }}>Staff</option>
                     <option value="Instructor" {{ request('role')=='Instructor' ? 'selected' : '' }}>Instructor</option>
                 </select>
@@ -627,7 +635,7 @@
             <thead>
                 <tr>
                     <th class="col-index">#</th>
-                    <th class="col-name">Member</th>
+                    <th class="col-name">{{ $roleLabel }}</th>
                     <th class="col-phone">Contact</th>
                     <th class="col-plan">Plan</th>
                     <th class="col-role">Role</th>
@@ -777,7 +785,7 @@
                             <circle cx="9" cy="7" r="4"/>
                             <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
                         </svg>
-                        No members found.
+                        No {{ $rolePlural }} found.
                     </td>
                 </tr>
                 @endforelse
