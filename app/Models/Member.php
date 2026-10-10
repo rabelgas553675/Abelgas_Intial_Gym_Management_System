@@ -135,6 +135,78 @@ class Member extends Model
     }
 
     // ─────────────────────────────────────────
+    //  Portal account ↔ member record
+    // ─────────────────────────────────────────
+
+    /**
+     * Get (or repair) the Member record that belongs to a portal User.
+     *
+     * A user with role "member" can end up WITHOUT a usable members row when the
+     * account was created outside MemberController@store (seeder, register page,
+     * user-management screen, import …). That breaks the profile, plan selection,
+     * payments and the QR code. This method heals it, in this order:
+     *
+     *   1. members.user_id = user.id          → use it
+     *   2. members.email   = user.email
+     *        - user_id is empty               → link it to this user
+     *        - user_id is another user        → refuse (never steal someone's record)
+     *   3. nothing found                      → create a fresh "Pending" member
+     *
+     * Whatever is returned is guaranteed to have a QR code.
+     * Returns null for non-member roles, or when the email is owned by another user.
+     */
+    public static function forUser(User $user): ?self
+    {
+        if ($user->role !== 'member') {
+            return null;
+        }
+
+        $member = static::query()->where('user_id', '=', $user->id, 'and')->first();
+
+        if (!$member) {
+            $byEmail = static::where('email', '=', $user->email, 'and')->first();
+
+            if ($byEmail) {
+                if ($byEmail->user_id && (int) $byEmail->user_id !== (int) $user->id) {
+                    report(new \RuntimeException(
+                        "Member #{$byEmail->id} ({$byEmail->email}) is linked to user #{$byEmail->user_id}, not user #{$user->id}."
+                    ));
+                    return null;
+                }
+
+                $byEmail->update(['user_id' => $user->id]);
+                $member = $byEmail;
+            }
+        }
+
+        if (!$member) {
+            $parts = explode(' ', trim((string) $user->name), 2);
+
+            $member = static::create([
+                'user_id'         => $user->id,
+                'name'            => $user->name,
+                'first_name'      => $parts[0] ?? $user->name,
+                'last_name'       => $parts[1] ?? '',
+                'email'           => $user->email,
+                'phone'           => $user->phone,
+                'gender'          => $user->gender,
+                'birthdate'       => $user->birthdate,
+                'address'         => $user->address,
+                'photo'           => $user->photo,
+                'membership_type' => null,
+                'start_date'      => null,
+                'end_date'        => null,
+                'fee'             => 0,
+                'status'          => 'Pending',
+                'instructor_id'   => null,
+                'coach_status'    => 'none',
+            ]);
+        }
+
+        return $member->ensureQrCode();
+    }
+
+    // ─────────────────────────────────────────
     //  QR Code Generation
     // ─────────────────────────────────────────
 
@@ -163,6 +235,28 @@ class Member extends Model
             'qr_code_path' => $path,
             'qr_token'     => $token,
         ]);
+    }
+
+    /**
+     * Make sure this member has a QR (record + file on disk).
+     * Does nothing when a valid QR already exists, so the token is never rotated by accident.
+     * A failure is logged, never thrown — a QR problem must not take a page down.
+     */
+    public function ensureQrCode(): static
+    {
+        $fileMissing = $this->qr_code_path
+            && !file_exists(storage_path('app/public/' . $this->qr_code_path));
+
+        if (!$this->qr_code_path || !$this->qr_token || $fileMissing) {
+            try {
+                static::generateQrCode($this);
+                $this->refresh();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return $this;
     }
 
     // ─────────────────────────────────────────

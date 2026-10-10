@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>@yield('title', 'APEX FITNESS GYM')</title>
   <link rel="icon" type="image/png" href="{{ asset('favicon.svg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,7 +47,6 @@
       --shadow-card:0 1px 2px rgba(20,16,8,.05), 0 4px 16px rgba(20,16,8,.06);
     }
 
-    /* Legacy token names aliased to the global tokens. */
     :root,
     html:root[data-theme]{
       --bg:var(--bg-page);--surface:var(--bg-card);--surface2:var(--bg-card-secondary);
@@ -56,16 +55,24 @@
     *{box-sizing:border-box;margin:0;padding:0;}
     html{-webkit-text-size-adjust:100%;}
     body{background:var(--bg-page);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh;overflow-x:hidden;}
+    body.menu-open{overflow:hidden;}
     img{max-width:100%;}
 
-    /* ── NAVBAR ── */
+    /* ── NAVBAR ──
+       backdrop-filter lives on ::before (NOT on .navbar): a backdrop-filter makes the
+       element the containing block for position:fixed children, which broke the
+       mobile drawer (it was sized/positioned against the 60px bar, not the screen). */
     .navbar{
-      background:rgba(20,21,24,0.92);backdrop-filter:blur(10px);
+      background:rgba(20,21,24,0.92);
       border-bottom:1px solid rgba(255,255,255,0.07);
       padding:0 36px;height:var(--navbar-h);display:flex;align-items:center;
       justify-content:space-between;position:sticky;top:0;z-index:200;gap:12px;
     }
-    .navbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;min-width:0;}
+    .navbar::before{
+      content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
+      -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    }
+    .navbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:1;min-width:0;}
     .brand-icon{
       width:34px;height:34px;
       background:linear-gradient(145deg,#4a4b52,#2c2d33);
@@ -75,7 +82,7 @@
     .brand-icon svg{width:18px;height:18px;fill:none;stroke:#e6e6e8;stroke-width:2.5;}
     .brand-name{
       font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;color:#e4e5e8;
-      letter-spacing:2.5px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      letter-spacing:2.5px;line-height:1;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis;
     }
 
     .navbar-nav{display:flex;align-items:center;gap:2px;}
@@ -105,7 +112,6 @@
       font-size:10px;font-weight:800;padding:5px 14px;border-radius:6px;
       letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;
     }
-    /* Gold badge for instructor (same as the admin & staff badge) */
     .role-instructor{
       background:linear-gradient(135deg,var(--accent-2),var(--accent-dark));
       color:#1a1a1a;box-shadow:0 0 14px rgba(224,169,59,0.25);
@@ -125,6 +131,11 @@
     }
     .btn-logout-top:hover{background:rgba(248,113,113,0.12);border-color:#f87171;}
     .btn-logout-top svg{width:14px;height:14px;stroke:currentColor;fill:none;}
+    .navbar-logout-form{margin:0;}
+
+    /* Account block + brand header inside the mobile drawer */
+    .nav-account{display:none;}
+    .nav-brand-head{display:none;}
 
     /* ── MOBILE NAV TOGGLE ── */
     .nav-toggle{
@@ -136,7 +147,7 @@
     .nav-toggle .icon-close{display:none;}
     .nav-toggle.open .icon-menu{display:none;}
     .nav-toggle.open .icon-close{display:block;}
-    .nav-scrim{display:none;position:fixed;inset:0;top:var(--navbar-h);background:rgba(0,0,0,0.6);z-index:150;}
+    .nav-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;}
     .nav-scrim.show{display:block;}
 
     /* ── PAGE ── */
@@ -165,7 +176,7 @@
     .alert-success{background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);color:var(--success);}
     .alert-danger{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:var(--danger);}
 
-    /* ── STAT CARDS (glow style) ── */
+    /* ── STAT CARDS ── */
     .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:28px;}
     .stat-card{
       --glow:224,169,59;
@@ -267,7 +278,8 @@
     html:root[data-theme="light"] .brand-icon{background:linear-gradient(145deg,#2a2a2c,#0b0b0c);border-color:rgba(224,169,59,0.45);}
     html:root[data-theme="light"] .brand-icon svg{stroke:var(--accent-2);}
     html:root[data-theme="light"] .brand-name,
-    html:root[data-theme="light"] .user-chip{color:#f1f1f3;}
+    html:root[data-theme="light"] .user-chip,
+    html:root[data-theme="light"] .nav-account-name{color:#f1f1f3;}
     html:root[data-theme="light"] .role-instructor{
       background:linear-gradient(135deg,var(--accent-2),var(--accent-dark)) !important;
       color:#111 !important;border:1px solid rgba(0,0,0,0.15);box-shadow:none;
@@ -325,18 +337,37 @@
 
     @media (max-width:768px){
       .navbar{padding:0 14px;gap:8px;}
+      .navbar-brand{flex:1 1 auto;gap:8px;}
       .brand-name{font-size:13px;letter-spacing:2px;}
       .brand-icon{width:28px;height:28px;}
-      .nav-toggle{display:flex;order:3;}
 
+      /* Toggle sits ABOVE the drawer so it can always close it */
+      .nav-toggle{display:flex;order:3;position:relative;z-index:160;}
+
+      /* Drawer: full-height panel on the right, hidden (and unfocusable) until opened */
       .navbar-nav{
-        position:fixed;top:var(--navbar-h);left:0;right:0;
-        background:#131417;border-bottom:1px solid rgba(255,255,255,0.08);
+        position:fixed;top:0;right:0;bottom:0;
+        height:100vh;height:100dvh;width:min(80vw,300px);
+        background:#131417;border-left:1px solid rgba(255,255,255,0.08);
+        box-shadow:-12px 0 32px rgba(0,0,0,0.45);
         flex-direction:column;align-items:stretch;gap:0;
-        max-height:0;overflow:hidden;z-index:150;transition:max-height 0.25s ease;
+        padding:0;
+        transform:translateX(100%);visibility:hidden;
+        transition:transform 0.25s ease, visibility 0s 0.25s;
+        z-index:150;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
       }
-      .navbar-nav.open{max-height:calc(100vh - var(--navbar-h));overflow-y:auto;}
-      .nav-item{padding:14px 20px;border-radius:0;border-bottom:1px solid rgba(255,255,255,0.08);border-left:3px solid transparent;width:100%;}
+      .navbar-nav.open{transform:translateX(0);visibility:visible;transition:transform 0.25s ease, visibility 0s;}
+
+      /* Logo + name at the top of the drawer; right padding leaves room for the close button */
+      .nav-brand-head{
+        display:flex;align-items:center;gap:10px;flex-shrink:0;
+        min-height:var(--navbar-h);padding:0 64px 0 20px;
+        border-bottom:1px solid rgba(255,255,255,0.08);text-decoration:none;
+      }
+      .nav-brand-head .brand-icon{width:34px;height:34px;}
+      .nav-brand-head .brand-name{font-size:13px;letter-spacing:2px;}
+
+      .nav-item{padding:14px 20px;border-radius:0;border-bottom:1px solid rgba(255,255,255,0.08);border-left:3px solid transparent;width:100%;flex-shrink:0;}
       .nav-item.active{border-left-color:var(--accent-2);background:var(--accent-soft);}
       .nav-item.active::after{display:none;}
       html:root[data-theme="light"] .navbar-nav{background:#111112;border-bottom-color:rgba(255,255,255,0.08);}
@@ -344,10 +375,20 @@
       html:root[data-theme="light"] .nav-item.active{border-left-color:var(--accent-2);background:var(--accent-soft);}
 
       .navbar-right{gap:8px;}
-      .role-chip{display:none;}
+      /* Role chip ("INSTRUCTOR") stays visible on mobile, just more compact */
+      .navbar-right .role-chip{display:inline-block;font-size:9px;padding:4px 9px;letter-spacing:1px;}
       .user-chip{gap:0;}
       .btn-logout-top span.logout-text{display:none;}
       .btn-logout-top{padding:8px;}
+
+      /* Logout stays in the top bar as an icon; the drawer has no account block */
+      .nav-account{
+        display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;
+        padding:16px 20px 20px;background:rgba(255,255,255,0.03);border-top:1px solid rgba(255,255,255,0.08);
+      }
+      .nav-account-info{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;}
+      .nav-account-name{font-size:14px;font-weight:600;color:#e4e5e8;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      .nav-account .btn-logout-top{padding:9px 14px;}
 
       .page-content{padding:18px 14px;}
       .stat-grid{grid-template-columns:1fr 1fr;gap:10px;}
@@ -359,11 +400,36 @@
       .section-header .btn{width:100%;justify-content:center;}
     }
 
+    /* Small phones: brand name stays visible; logout moves into the drawer */
     @media (max-width:480px){
       .stat-grid{grid-template-columns:1fr;}
-      .brand-name{display:none;}
       .details-content{padding:18px;}
       .member-item{flex-wrap:wrap;}
+
+      .navbar{padding:0 12px;gap:6px;}
+      .navbar-brand{gap:7px;}
+      .brand-name{display:block;font-size:11.5px;letter-spacing:1.2px;}
+      .navbar-right{gap:6px;}
+
+      .nav-brand-head{padding-right:60px;}
+      .nav-brand-head .brand-name{font-size:12px;letter-spacing:1.5px;}
+      .navbar-nav{width:84vw;max-width:320px;}
+
+      .nav-account{
+        display:flex;align-items:center;justify-content:space-between;gap:12px;
+        padding:16px 20px;background:rgba(255,255,255,0.03);
+      }
+      .nav-account-info{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;}
+      .nav-account-name{font-size:14px;font-weight:600;color:#e4e5e8;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      .nav-account .btn-logout-top{padding:9px 14px;}
+    }
+
+    @media (max-width:389px){
+      .navbar-right .role-chip{display:none !important;}
+      .brand-name{font-size:11px;letter-spacing:1px;}
+    }
+    @media (max-width:340px){
+      .brand-name{font-size:10px;letter-spacing:.6px;}
     }
   </style>
 </head>
@@ -380,7 +446,7 @@
 {{-- NAVBAR --}}
 <nav class="navbar">
 
-  <a href="{{ route('instructor.dashboard') }}" class="navbar-brand">
+  <a href="{{ route('instructor.dashboard') }}" class="navbar-brand" aria-label="APEX FITNESS GYM">
     <div class="brand-icon">
       <svg viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
@@ -389,12 +455,22 @@
     <span class="brand-name">APEX FITNESS GYM</span>
   </a>
 
-  <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+  <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navbarNav">
     <svg class="icon-menu" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     <svg class="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   </button>
 
   <div class="navbar-nav" id="navbarNav">
+
+    {{-- Brand header: only shown inside the drawer on mobile --}}
+    <a href="{{ route('instructor.dashboard') }}" class="nav-brand-head" aria-label="APEX FITNESS GYM">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <span class="brand-name">APEX FITNESS GYM</span>
+    </a>
 
     <a href="{{ route('instructor.dashboard') }}"
        class="nav-item {{ $active === 'dashboard' ? 'active' : '' }}">
@@ -472,9 +548,9 @@
       </div>
       <span class="user-name-text">{{ auth()->user()->name }}</span>
     </div>
-    <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+    <form method="POST" action="{{ route('logout') }}" class="navbar-logout-form">
       @csrf
-      <button type="submit" class="btn-logout-top">
+      <button type="submit" class="btn-logout-top" aria-label="Logout">
         <svg viewBox="0 0 24 24" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
           <polyline points="16 17 21 12 16 7"/>
@@ -506,26 +582,24 @@
     var scrim = document.getElementById('navScrim');
     if(!toggle || !nav) return;
 
-    function closeNav(){
-      nav.classList.remove('open');
-      toggle.classList.remove('open');
-      toggle.setAttribute('aria-expanded','false');
-      scrim.classList.remove('show');
-    }
-    function toggleNav(){
-      var isOpen = nav.classList.toggle('open');
-      toggle.classList.toggle('open', isOpen);
-      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      scrim.classList.toggle('show', isOpen);
+    function setOpen(open){
+      nav.classList.toggle('open', open);
+      toggle.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      scrim.classList.toggle('show', open);
+      document.body.classList.toggle('menu-open', open);
     }
 
-    toggle.addEventListener('click', toggleNav);
-    scrim.addEventListener('click', closeNav);
+    toggle.addEventListener('click', function(){ setOpen(!nav.classList.contains('open')); });
+    scrim.addEventListener('click', function(){ setOpen(false); });
     nav.querySelectorAll('a').forEach(function(link){
-      link.addEventListener('click', closeNav);
+      link.addEventListener('click', function(){ setOpen(false); });
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') setOpen(false);
     });
     window.addEventListener('resize', function(){
-      if(window.innerWidth > 768) closeNav();
+      if(window.innerWidth > 768) setOpen(false);
     });
   })();
 </script>

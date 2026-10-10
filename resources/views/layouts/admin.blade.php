@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>@yield('title', 'APEX FITNESS GYM')</title>
   <link rel="icon" type="image/png" href="{{ asset('favicon.svg') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,23 +26,19 @@
   @vite(['resources/css/app.css', 'resources/js/app.js'])
   <style>
     /* Colours for backgrounds, cards, borders and text come from the GLOBAL theme
-       tokens in resources/css/app.css (--bg-page, --bg-card, --border, --text-primary,
-       --text-secondary, ...). This layout only defines the CHARCOAL & GOLD accent
-       palette (same values as layouts/staff.blade.php). */
+       tokens in resources/css/app.css. This layout only defines the CHARCOAL & GOLD accent palette. */
     :root{
-      --accent:#e0a93b;            /* gold */
+      --accent:#e0a93b;
       --accent-2:#f3c866;
       --accent-dark:#b8862a;
       --accent-soft:rgba(224,169,59,0.12);
-      --accent2:var(--accent-2);   /* legacy name still used by some admin views */
+      --accent2:var(--accent-2);
       --text-soft:#d2d3d8;
       --success:#4ade80;--danger:#f87171;--warning:#fbbf24;--info:#60a5fa;
       --radius:10px;
       --navbar-h:60px;--topbar-h:52px;
     }
 
-    /* Light mode: darker gold + readable semantic colours (mirrors the staff layout).
-       `html:root[...]` outranks the legacy :root[data-theme="light"] rules in app.css. */
     html:root[data-theme="light"]{
       --accent:#a97a17;--accent-2:#e0a93b;--accent-dark:#b8862a;
       --accent-soft:rgba(184,134,42,0.12);
@@ -52,9 +48,6 @@
       --shadow-card:0 1px 2px rgba(20,16,8,.05), 0 4px 16px rgba(20,16,8,.06);
     }
 
-    /* Legacy token names still used by admin page views -> aliased to the global tokens.
-       Higher specificity than the legacy [data-theme="light"] block in app.css so the
-       global values always win, in both modes. */
     :root,
     html:root[data-theme]{
       --bg:var(--bg-page);--surface:var(--bg-card);--surface2:var(--bg-card-secondary);
@@ -63,17 +56,25 @@
     *{box-sizing:border-box;margin:0;padding:0;}
     html{-webkit-text-size-adjust:100%;}
     body{background:var(--bg-page);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:15px;min-height:100vh;overflow-x:hidden;}
+    body.menu-open{overflow:hidden;}
     img{max-width:100%;}
 
-    /* ── NAVBAR (always charcoal/black, like the staff navbar) ── */
+    /* ── NAVBAR ──
+       backdrop-filter lives on ::before (NOT on .navbar): a backdrop-filter makes the
+       element the containing block for position:fixed children, which broke the
+       mobile drawer (it was sized/positioned against the 60px bar, not the screen). */
     .navbar{
-      background:rgba(20,21,24,0.92);backdrop-filter:blur(10px);
+      background:rgba(20,21,24,0.92);
       border-bottom:1px solid rgba(255,255,255,0.07);
       padding:0 36px;height:var(--navbar-h);display:flex;align-items:center;
       justify-content:space-between;position:sticky;top:0;z-index:200;
       gap:12px;
     }
-    .navbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;min-width:0;}
+    .navbar::before{
+      content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
+      -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+    }
+    .navbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:1;min-width:0;}
     .brand-icon{
       width:34px;height:34px;
       background:linear-gradient(145deg,#4a4b52,#2c2d33);
@@ -84,7 +85,7 @@
     .brand-name{
       font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;color:#e4e5e8;
       letter-spacing:2.5px;line-height:1;white-space:nowrap;
-      overflow:hidden;text-overflow:ellipsis;
+      min-width:0;overflow:hidden;text-overflow:ellipsis;
     }
 
     .navbar-nav{display:flex;align-items:center;gap:2px;}
@@ -107,7 +108,6 @@
       font-size:10px;font-weight:800;padding:5px 14px;border-radius:6px;
       letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;
     }
-    /* Gold badge for admin & staff (same as the staff layout's STAFF badge) */
     .role-admin,.role-staff{
       background:linear-gradient(135deg,var(--accent-2),var(--accent-dark));
       color:#1a1a1a;box-shadow:0 0 14px rgba(224,169,59,0.25);
@@ -121,8 +121,6 @@
     }
     .user-avatar img{width:100%;height:100%;object-fit:cover;}
 
-    /* Clickable user chip → profile page (admin). Same pill + gold underline as .nav-item.active.
-       Height is 34px (30px avatar + 2×2px) so the underline lands exactly where nav items' do. */
     .user-chip--link{
       padding:2px 12px 2px 4px;border-radius:8px;text-decoration:none;position:relative;
       transition:all 0.15s;
@@ -142,6 +140,11 @@
     }
     .btn-logout-top:hover{background:rgba(248,113,113,0.12);border-color:#f87171;}
     .btn-logout-top svg{width:14px;height:14px;stroke:currentColor;fill:none;}
+    .navbar-logout-form{margin:0;}
+
+    /* Account block + brand header inside the mobile drawer */
+    .nav-account{display:none;}
+    .nav-brand-head{display:none;}
 
     /* ── MOBILE NAV TOGGLE ── */
     .nav-toggle{
@@ -155,12 +158,12 @@
     .nav-toggle.open .icon-close{display:block;}
 
     .nav-scrim{
-      display:none;position:fixed;inset:0;top:var(--navbar-h);
+      display:none;position:fixed;inset:0;
       background:rgba(0,0,0,0.6);z-index:150;
     }
     .nav-scrim.show{display:block;}
 
-    /* ── TOPBAR (page title + actions) ── */
+    /* ── TOPBAR ── */
     .page-topbar{
       background:rgba(0,0,0,0.25);border-bottom:1px solid var(--border);
       padding:0 36px;min-height:var(--topbar-h);display:flex;align-items:center;
@@ -171,21 +174,19 @@
 
     /* ── CONTENT ── */
     .page-content{max-width:1300px;margin:0 auto;padding:28px 36px;}
-    /* Optional helper for headings like "Welcome, <span>Name</span>" */
     .page-content h1 span,.gold-text{color:var(--accent);}
 
     /* ── BUTTONS ── */
     .btn{padding:8px 18px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:all 0.15s;}
     .btn-primary{background:linear-gradient(135deg,var(--accent-2),var(--accent-dark));color:#1a1a1a;font-weight:700;}
     .btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);}
-    /* Near-black button → fixed light text so it stays visible in light mode */
     .btn-secondary{background:#0e0e10;color:#ffffff;border-color:var(--border);}
     .btn-secondary:hover{color:var(--accent-2);border-color:rgba(224,169,59,0.45);}
     .btn-danger-soft{background:rgba(248,113,113,0.1);color:var(--danger);border:1px solid rgba(248,113,113,0.2);}
     .btn-danger-soft:hover{background:rgba(248,113,113,0.2);}
     .btn-sm{padding:5px 12px;font-size:12px;}
 
-    /* ── STAT CARDS (glow style, same as the staff dashboard) ── */
+    /* ── STAT CARDS ── */
     .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:28px;}
     .stat-card{
       --glow:224,169,59;
@@ -263,18 +264,14 @@
     .access-denied h2{font-size:22px;font-weight:600;color:var(--text-primary);margin-bottom:8px;}
     .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
 
-    /* ═══════════════════════════════════════════
-       LIGHT MODE — GOLD & BLACK (mirrors layouts/staff.blade.php)
-       ═══════════════════════════════════════════ */
-
-    /* ── Navbar: black bar, light text, gold active (FIXED — same as staff) ── */
+    /* ═══ LIGHT MODE — GOLD & BLACK ═══ */
     html:root[data-theme="light"] .navbar{background:rgba(15,15,16,0.96);border-color:rgba(255,255,255,0.08);}
     html:root[data-theme="light"] .brand-icon{background:linear-gradient(145deg,#2a2a2c,#0b0b0c);border-color:rgba(224,169,59,0.45);}
     html:root[data-theme="light"] .brand-icon svg{stroke:var(--accent-2);}
     html:root[data-theme="light"] .brand-name,
-    html:root[data-theme="light"] .user-chip{color:#f1f1f3;}
+    html:root[data-theme="light"] .user-chip,
+    html:root[data-theme="light"] .nav-account-name{color:#f1f1f3;}
 
-    /* !important on nav link colours: legacy app.css rules for .nav-item otherwise win */
     html:root[data-theme="light"] .nav-item{color:#c6c8ce !important;}
     html:root[data-theme="light"] .nav-item svg{stroke:#c6c8ce;}
     html:root[data-theme="light"] .nav-item:hover{color:#fff !important;background:rgba(255,255,255,0.07);}
@@ -283,27 +280,22 @@
     html:root[data-theme="light"] .nav-item.active svg{stroke:var(--accent-2);}
     html:root[data-theme="light"] .nav-item.active::after{background:var(--accent-2);}
 
-   html:root[data-theme="light"] .role-admin,
-   html:root[data-theme="light"] .role-staff{
-   background:linear-gradient(135deg,var(--accent-2),var(--accent-dark)) !important;
-   color:#111 !important;
-   border:1px solid rgba(0,0,0,0.15);
-   display:block;
-   box-shadow:none;
-}
+    /* NOTE: no display:block here — it would override the responsive show/hide rules for .role-chip */
+    html:root[data-theme="light"] .role-admin,
+    html:root[data-theme="light"] .role-staff{
+      background:linear-gradient(135deg,var(--accent-2),var(--accent-dark)) !important;
+      color:#111 !important;border:1px solid rgba(0,0,0,0.15);box-shadow:none;
+    }
     html:root[data-theme="light"] .user-avatar{
       background:rgba(224,169,59,0.14);border-color:rgba(224,169,59,0.45);color:var(--accent-2);
     }
-    html:root[data-theme="light"] .btn-logout-top{
-      background:transparent;border-color:rgba(248,113,113,0.45);color:#f87171;
-    }
+    html:root[data-theme="light"] .btn-logout-top{background:transparent;border-color:rgba(248,113,113,0.45);color:#f87171;}
     html:root[data-theme="light"] .btn-logout-top:hover{background:rgba(248,113,113,0.12);}
     html:root[data-theme="light"] .nav-toggle{border-color:rgba(255,255,255,0.15);color:#fff;}
 
     html:root[data-theme="light"] .page-topbar{background:rgba(255,255,255,0.6);}
     html:root[data-theme="light"] .page-title{border-left:3px solid var(--accent-2);padding-left:12px;}
 
-    /* ── Stat cards ── */
     html:root[data-theme="light"] .stat-card{background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow-card);}
     html:root[data-theme="light"] .stat-card.green{--glow:17,17,17;}
     html:root[data-theme="light"] .stat-card.orange{--glow:180,83,9;}
@@ -312,18 +304,15 @@
     html:root[data-theme="light"] .stat-card.gold{--glow:184,134,42;}
     html:root[data-theme="light"] :is(.card,.form-card,.plan-card){box-shadow:var(--shadow-card);}
 
-    /* ── Tables ── */
     html:root[data-theme="light"] th{background:var(--black);color:var(--accent-2);}
     html:root[data-theme="light"] tr:hover td{background:rgba(184,134,42,0.06);}
 
-    /* ── Buttons ── */
     html:root[data-theme="light"] .btn-primary{color:#111;box-shadow:0 1px 2px rgba(20,16,8,.15);}
     html:root[data-theme="light"] .btn-primary:hover{box-shadow:0 6px 18px rgba(184,134,42,.35);}
     html:root[data-theme="light"] .btn-secondary{background:var(--black);color:#fff;border-color:var(--black);}
     html:root[data-theme="light"] .btn-secondary:hover{color:var(--accent-2);border-color:var(--accent-2);}
     html:root[data-theme="light"] .btn-danger-soft{background:rgba(220,38,38,.07);border-color:rgba(220,38,38,.25);}
 
-    /* ── Badges ── */
     html:root[data-theme="light"] .badge-active,
     html:root[data-theme="light"] .badge-paid{background:rgba(21,128,61,.10);}
     html:root[data-theme="light"] .badge-pending,
@@ -332,19 +321,15 @@
     html:root[data-theme="light"] .badge-monthly{background:rgba(37,99,235,.10);}
     html:root[data-theme="light"] :is(.badge-annually,.badge-annual,.badge-yearly){background:rgba(184,134,42,.14);color:var(--gold);}
 
-    /* ── Forms ── */
     html:root[data-theme="light"] .form-control:focus{border-color:var(--accent-dark);}
     html:root[data-theme="light"] input[type="date"]{color-scheme:light !important;}
 
-    /* Floating theme toggle (created by app.js) */
     html:root[data-theme="light"] .theme-toggle{
       background:var(--black);color:var(--accent-2);
       border-color:rgba(224,169,59,.4);box-shadow:var(--shadow-card);
     }
 
-    /* ═══════════════════════════════════════════
-       RESPONSIVE — TABLET (≤ 1024px)
-       ═══════════════════════════════════════════ */
+    /* ═══════════ RESPONSIVE — TABLET (≤ 1024px) ═══════════ */
     @media (max-width:1024px){
       .navbar{padding:0 20px;}
       .nav-item{padding:8px 10px;}
@@ -357,38 +342,62 @@
       .user-chip--link.active::after{left:2px;right:2px;}
     }
 
-    /* ═══════════════════════════════════════════
-       RESPONSIVE — MOBILE (≤ 768px)
-       ═══════════════════════════════════════════ */
+    /* ═══════════ RESPONSIVE — MOBILE (≤ 768px) ═══════════ */
     @media (max-width:768px){
       .navbar{padding:0 14px;gap:8px;}
+      .navbar-brand{flex:1 1 auto;gap:8px;}
       .brand-name{font-size:13px;letter-spacing:2px;}
       .brand-icon{width:28px;height:28px;}
 
-      .nav-toggle{display:flex;order:3;}
+      /* Toggle sits ABOVE the drawer so it can always close it */
+      .nav-toggle{display:flex;order:3;position:relative;z-index:160;}
 
+      /* Drawer: full-height panel on the right, hidden (and unfocusable) until opened */
       .navbar-nav{
-        position:fixed;top:var(--navbar-h);left:0;right:0;
-        background:#131417;border-bottom:1px solid rgba(255,255,255,0.08);
+        position:fixed;top:0;right:0;bottom:0;
+        height:100vh;height:100dvh;width:min(80vw,300px);
+        background:#131417;border-left:1px solid rgba(255,255,255,0.08);
+        box-shadow:-12px 0 32px rgba(0,0,0,0.45);
         flex-direction:column;align-items:stretch;gap:0;
-        max-height:0;overflow:hidden;z-index:150;
-        transition:max-height 0.25s ease;
+        padding:0;
+        transform:translateX(100%);visibility:hidden;
+        transition:transform 0.25s ease, visibility 0s 0.25s;
+        z-index:150;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
       }
-      .navbar-nav.open{max-height:calc(100vh - var(--navbar-h));overflow-y:auto;}
-      .nav-item{padding:14px 20px;border-radius:0;border-bottom:1px solid rgba(255,255,255,0.08);border-left:3px solid transparent;width:100%;}
+      .navbar-nav.open{transform:translateX(0);visibility:visible;transition:transform 0.25s ease, visibility 0s;}
+
+      /* Logo + name at the top of the drawer; right padding leaves room for the close button */
+      .nav-brand-head{
+        display:flex;align-items:center;gap:10px;flex-shrink:0;
+        min-height:var(--navbar-h);padding:0 64px 0 20px;
+        border-bottom:1px solid rgba(255,255,255,0.08);text-decoration:none;
+      }
+      .nav-brand-head .brand-icon{width:34px;height:34px;}
+      .nav-brand-head .brand-name{font-size:13px;letter-spacing:2px;}
+
+      .nav-item{padding:14px 20px;border-radius:0;border-bottom:1px solid rgba(255,255,255,0.08);border-left:3px solid transparent;width:100%;flex-shrink:0;}
       .nav-item.active{border-left-color:var(--accent-2);background:var(--accent-soft);}
       .nav-item.active::after{display:none;}
 
-      /* Light mode: dropdown stays black so the light nav text remains readable */
       html:root[data-theme="light"] .navbar-nav{background:#111112;border-bottom-color:rgba(255,255,255,0.08);}
       html:root[data-theme="light"] .nav-item{border-bottom-color:rgba(255,255,255,0.08);}
       html:root[data-theme="light"] .nav-item.active{border-left-color:var(--accent-2);background:var(--accent-soft);}
 
       .navbar-right{gap:8px;}
-      .role-chip{display:none;}
+      /* Role chip stays visible on mobile (compact) */
+      .navbar-right .role-chip{display:inline-block;font-size:9px;padding:4px 9px;letter-spacing:1px;}
       .user-chip{gap:0;}
       .btn-logout-top span.logout-text{display:none;}
       .btn-logout-top{padding:8px;}
+
+      /* Logout stays in the top bar as an icon; the drawer has no account block */
+      .nav-account{
+        display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;
+        padding:16px 20px 20px;background:rgba(255,255,255,0.03);border-top:1px solid rgba(255,255,255,0.08);
+      }
+      .nav-account-info{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;}
+      .nav-account-name{font-size:14px;font-weight:600;color:#e4e5e8;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      .nav-account .btn-logout-top{padding:9px 14px;}
 
       .page-topbar{padding:12px 14px;}
       .page-title{font-size:14px;padding:4px 0;}
@@ -409,9 +418,37 @@
       .section-header .btn{width:100%;justify-content:center;}
     }
 
+    /* ═══════════ SMALL PHONES (≤ 480px): brand name stays visible ═══════════ */
     @media (max-width:480px){
       .stat-grid{grid-template-columns:1fr;}
-      .brand-name{display:none;}
+
+      .navbar{padding:0 12px;gap:6px;}
+      .navbar-brand{gap:7px;}
+      .brand-name{display:block;font-size:11.5px;letter-spacing:1.2px;}
+      .brand-icon{width:28px;height:28px;}
+      .navbar-right{gap:6px;}
+
+      .nav-brand-head{padding-right:60px;}
+      .nav-brand-head .brand-name{font-size:12px;letter-spacing:1.5px;}
+      .navbar-nav{width:84vw;max-width:320px;}
+
+      /* Logout stays in the top bar as an icon */
+      .nav-account{
+        display:flex;align-items:center;justify-content:space-between;gap:12px;
+        padding:16px 20px;background:rgba(255,255,255,0.03);
+      }
+      .nav-account-info{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;}
+      .nav-account-name{font-size:14px;font-weight:600;color:#e4e5e8;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+      .nav-account .btn-logout-top{padding:9px 14px;}
+    }
+
+    /* Very small phones (≤ 389px): chip moves into the drawer, shrink the brand a little */
+    @media (max-width:389px){
+      .navbar-right .role-chip{display:none !important;}
+      .brand-name{font-size:11px;letter-spacing:1px;}
+    }
+    @media (max-width:340px){
+      .brand-name{font-size:10px;letter-spacing:.6px;}
     }
   </style>
 </head>
@@ -424,7 +461,7 @@
 <nav class="navbar">
 
   {{-- Brand --}}
-  <a href="{{ auth()->user()->isStaff() ? route('staff.dashboard') : route('dashboard') }}" class="navbar-brand">
+  <a href="{{ auth()->user()->isStaff() ? route('staff.dashboard') : route('dashboard') }}" class="navbar-brand" aria-label="APEX FITNESS GYM">
     <div class="brand-icon">
       <svg viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
@@ -434,13 +471,23 @@
   </a>
 
   {{-- Mobile nav toggle --}}
-  <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+  <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navbarNav">
     <svg class="icon-menu" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     <svg class="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   </button>
 
   {{-- Nav links — role-aware --}}
   <div class="navbar-nav" id="navbarNav">
+
+    {{-- Brand header: only shown inside the drawer on mobile --}}
+    <a href="{{ auth()->user()->isStaff() ? route('staff.dashboard') : route('dashboard') }}" class="nav-brand-head" aria-label="APEX FITNESS GYM">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <span class="brand-name">APEX FITNESS GYM</span>
+    </a>
 
     @if(auth()->user()->isStaff())
       {{-- ── STAFF NAV ── --}}
@@ -462,7 +509,6 @@
         </svg>
         Members
       </a>
-      {{-- Attendance for Staff --}}
       <a href="{{ route('attendance.scan') }}"
          class="nav-item {{ $activeNav === 'attendance' ? 'active' : '' }}">
         <svg viewBox="0 0 24 24" stroke-width="2">
@@ -518,7 +564,6 @@
         </svg>
         Members
       </a>
-      {{-- Attendance for Admin --}}
       <a href="{{ route('attendance.scan') }}"
          class="nav-item {{ $activeNav === 'attendance' ? 'active' : '' }}">
         <svg viewBox="0 0 24 24" stroke-width="2">
@@ -553,7 +598,6 @@
         </svg>
         Manage Users
       </a>
-      {{-- Audit Trail (strict admin only) --}}
       @if(auth()->user()->isAdmin())
       <a href="{{ route('admin.audit.index') }}"
          class="nav-item {{ $activeNav === 'audit' ? 'active' : '' }}">
@@ -588,9 +632,9 @@
       </div>
       <span class="user-name-text">{{ auth()->user()->name }}</span>
     </{{ $chipIsLink ? 'a' : 'div' }}>
-    <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+    <form method="POST" action="{{ route('logout') }}" class="navbar-logout-form">
       @csrf
-      <button type="submit" class="btn-logout-top">
+      <button type="submit" class="btn-logout-top" aria-label="Logout">
         <svg viewBox="0 0 24 24" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
           <polyline points="16 17 21 12 16 7"/>
@@ -632,28 +676,24 @@
     var scrim = document.getElementById('navScrim');
     if(!toggle || !nav) return;
 
-    function closeNav(){
-      nav.classList.remove('open');
-      toggle.classList.remove('open');
-      toggle.setAttribute('aria-expanded','false');
-      scrim.classList.remove('show');
-    }
-    function toggleNav(){
-      var isOpen = nav.classList.toggle('open');
-      toggle.classList.toggle('open', isOpen);
-      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      scrim.classList.toggle('show', isOpen);
+    function setOpen(open){
+      nav.classList.toggle('open', open);
+      toggle.classList.toggle('open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      scrim.classList.toggle('show', open);
+      document.body.classList.toggle('menu-open', open);
     }
 
-    toggle.addEventListener('click', toggleNav);
-    scrim.addEventListener('click', closeNav);
-    // Close the drawer after tapping a nav link
+    toggle.addEventListener('click', function(){ setOpen(!nav.classList.contains('open')); });
+    scrim.addEventListener('click', function(){ setOpen(false); });
     nav.querySelectorAll('a').forEach(function(link){
-      link.addEventListener('click', closeNav);
+      link.addEventListener('click', function(){ setOpen(false); });
     });
-    // Reset state if the viewport is resized back to desktop width
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') setOpen(false);
+    });
     window.addEventListener('resize', function(){
-      if(window.innerWidth > 768) closeNav();
+      if(window.innerWidth > 768) setOpen(false);
     });
   })();
 </script>

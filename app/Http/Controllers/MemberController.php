@@ -23,6 +23,22 @@ use Carbon\Carbon;
 class MemberController extends Controller
 {
     /**
+     * The Member record of the logged-in portal user.
+     *
+     * Uses Member::forUser() so a member account that is missing / not linked to a
+     * members row (and its QR code) is repaired automatically instead of crashing
+     * with "call to a member function … on null".
+     */
+    private function currentMember(): Member
+    {
+        $member = Member::forUser(Auth::user());
+
+        abort_if(!$member, 404, 'No member record is linked to this account.');
+
+        return $member;
+    }
+
+    /**
      * List members (admin/staff view).
      *
      * DSA integration:
@@ -462,7 +478,7 @@ class MemberController extends Controller
 
     public function selectPlan()
     {
-        $member      = Auth::user()->member;
+        $member      = $this->currentMember();
         $instructors = User::where('role', '=', 'instructor', 'and')->get();
         return view('member.select-plan', compact('member', 'instructors'));
     }
@@ -485,7 +501,7 @@ class MemberController extends Controller
             'coach_membership_type' => 'nullable|required_if:instructor_id,!=,null|in:Monthly,Quarterly,Semi-Annual,Annually',
         ]);
 
-        $member = Auth::user()->member;
+        $member = $this->currentMember();
 
         // ── GreedyScheduler: compute fees ─────────────────────────────────────
         $coachPlan   = $request->filled('instructor_id') ? $request->coach_membership_type : null;
@@ -600,7 +616,7 @@ class MemberController extends Controller
      */
     public function paymentHistory()
     {
-        $member      = Auth::user()->member;
+        $member      = $this->currentMember();
         $rawPayments = Payment::where('member_id', '=', $member->id, 'and')->get()->toArray();
 
         // MergeSort by payment_date descending (replaces ->latest('payment_date'))
@@ -611,7 +627,7 @@ class MemberController extends Controller
 
     public function receipt(Payment $payment)
     {
-        if ($payment->member_id !== Auth::user()->member->id) {
+        if ($payment->member_id !== $this->currentMember()->id) {
             abort(403);
         }
         $member = $payment->member;

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="csrf-token" content="{{ csrf_token() }}"/>
 
   {{-- Apply the saved theme before first paint (same key/logic as resources/js/app.js). Default: dark. --}}
@@ -33,7 +33,7 @@
       --surface2: #212227;
       --surface3: #2a2b31;
       --border:   rgba(255,255,255,0.07);
-      --accent:   #e0a93b;          /* gold */
+      --accent:   #e0a93b;
       --accent-2: #f3c866;
       --accent-dark: #b8862a;
       --accent-soft: rgba(224,169,59,0.12);
@@ -48,7 +48,7 @@
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
     body {
       background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg) 380px) fixed, var(--bg);
@@ -61,13 +61,16 @@
 
     body.menu-open { overflow: hidden; }
 
-    /* ── TOP NAVBAR ── */
+    /* ── TOP NAVBAR ──
+       NOTE: backdrop-filter must NOT be set on .topnav itself. A backdrop-filter
+       turns the element into the containing block for position:fixed children,
+       which broke the mobile drawer (it sized/positioned against the 60px bar
+       instead of the viewport). The blur lives on a ::before layer instead. */
     .topnav {
       position: sticky;
       top: 0;
       z-index: 100;
       background: rgba(20,21,24,0.92);
-      backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
       height: 60px;
       display: flex;
@@ -76,6 +79,15 @@
       padding: 0 36px;
       gap: 12px;
     }
+    .topnav::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
 
     .topnav-brand {
       display: flex;
@@ -83,6 +95,7 @@
       gap: 10px;
       text-decoration: none;
       min-width: 0;
+      flex-shrink: 1;
     }
 
     .topnav-logo {
@@ -103,6 +116,7 @@
       color: #e4e5e8;
       letter-spacing: 2.5px;
       white-space: nowrap;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
     }
@@ -135,11 +149,7 @@
       transition: stroke 0.15s;
     }
 
-    .nav-link:hover {
-      color: var(--text);
-      background: rgba(255,255,255,0.04);
-    }
-
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
     .nav-link:hover svg { stroke: var(--text); }
 
     .nav-link.active {
@@ -147,10 +157,8 @@
       background: rgba(255,255,255,0.05);
       font-weight: 600;
     }
-
     .nav-link.active svg { stroke: var(--accent); }
 
-    /* active underline (desktop only, see media query) */
     .nav-link.active { position: relative; }
     .nav-link.active::after {
       content: '';
@@ -208,8 +216,6 @@
 
     .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* Clickable user chip → staff profile. Same pill + gold underline as .nav-link.active.
-       34px tall (30px avatar + 2×2px) so the underline lands where the nav links' does. */
     .user-chip--link {
       padding: 2px 12px 2px 4px;
       border-radius: 8px;
@@ -251,10 +257,20 @@
 
     .btn-logout svg { width: 14px; height: 14px; stroke: var(--danger); flex-shrink: 0; }
     .btn-logout:hover { background: rgba(248,113,113,0.12); border-color: var(--danger); }
+    .topnav-logout-form { margin: 0; }
 
-    /* Hamburger toggle - hidden on desktop */
+    /* Account block inside the mobile drawer (only visible on small phones) */
+    .nav-account { display: none; }
+
+    /* Brand header at the top of the mobile drawer (hidden on desktop) */
+    .nav-brand-head { display: none; }
+
+    /* Hamburger toggle - hidden on desktop.
+       position + z-index keep it ABOVE the slide-in drawer so it can always close it. */
     .topnav-toggle {
       display: none;
+      position: relative;
+      z-index: 110;
       align-items: center;
       justify-content: center;
       width: 38px; height: 38px;
@@ -275,7 +291,7 @@
     }
     .topnav-overlay.open { display: block; }
 
-    /* ── PAGE TITLE BAR (optional: @section('page_title', 'Dashboard')) ── */
+    /* ── PAGE TITLE BAR ── */
     .page-titlebar {
       background: rgba(0,0,0,0.25);
       border-bottom: 1px solid var(--border);
@@ -296,7 +312,6 @@
       padding: 36px 36px;
     }
 
-    /* Optional helper for "Welcome back, <span>Admin</span>" headings */
     .page-wrap h1 span, .gold-text { color: var(--accent); }
 
     /* ── ALERTS ── */
@@ -320,7 +335,6 @@
       margin-bottom: 28px;
     }
 
-    /* Glowing stat cards — set --glow (rgb triplet) per colour variant */
     .stat-card {
       --glow: 74,222,128;
       background: linear-gradient(145deg, rgba(var(--glow),0.10), rgba(26,27,31,0.95) 70%);
@@ -365,7 +379,6 @@
     .icon-blue   { --glow: 96,165,250; }
     .icon-yellow { --glow: 224,169,59; }
 
-    /* split panel (for member detail views) */
     .split-panel {
       display: grid;
       grid-template-columns: 360px 1fr;
@@ -391,9 +404,7 @@
       margin-bottom: 12px;
     }
 
-    .members-search {
-      position: relative;
-    }
+    .members-search { position: relative; }
 
     .members-search svg {
       position: absolute;
@@ -410,7 +421,7 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text);
-      font-size: 13px;
+      font-size: 16px;
       font-family: 'DM Sans', sans-serif;
       outline: none;
       transition: border-color 0.15s;
@@ -513,7 +524,7 @@
     .btn-sm { padding: 6px 14px; font-size: 12px; }
     .btn-danger { background: rgba(248,113,113,0.1); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
 
-    /* forms */
+    /* forms — 16px on inputs prevents iOS Safari auto-zoom on focus */
     .form-label {
       display: block;
       font-size: 11px;
@@ -532,7 +543,7 @@
       border-radius: 8px;
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
+      font-size: 16px;
       outline: none;
       transition: border-color 0.15s;
     }
@@ -562,8 +573,7 @@
     .badge-quarterly               { background: rgba(167,139,250,0.15); color: #a78bfa; }
     .badge-annually, .badge-annual { background: rgba(224,169,59,0.15);  color: var(--accent); }
 
-    /* table — wrap any <table> in the content with <div class="table-responsive"> for
-       horizontal scroll on narrow screens instead of squeezed/broken columns */
+    /* table */
     .table-responsive {
       width: 100%;
       overflow-x: auto;
@@ -587,7 +597,6 @@
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: rgba(255,255,255,0.02); }
 
-    /* section header */
     .section-header {
       display: flex;
       align-items: center;
@@ -598,7 +607,6 @@
     }
     .section-title { font-size: 17px; font-weight: 700; }
 
-    /* card */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -610,15 +618,11 @@
        RESPONSIVE BREAKPOINTS
        ══════════════════════════════════════════════ */
 
-    /* Tablet / laptop (≤1100px): stack the split panel */
     @media (max-width: 1100px) {
-      .split-panel {
-        grid-template-columns: 1fr;
-      }
+      .split-panel { grid-template-columns: 1fr; }
       .members-list { max-height: 320px; }
     }
 
-    /* Tablet (≤1024px): tighten navbar + content spacing */
     @media (max-width: 1024px) {
       .topnav { padding: 0 20px; }
       .topnav-links { gap: 0; }
@@ -630,42 +634,83 @@
     /* Mobile (≤860px): collapse nav links into a hamburger drawer */
     @media (max-width: 860px) {
       .topnav { height: 56px; }
-      .topnav-name { font-size: 13px; max-width: 46vw; }
+      .topnav-brand { flex: 1 1 auto; }
+      .topnav-name { font-size: 13px; }
 
       .topnav-toggle { display: flex; order: 3; }
 
+      /* Drawer: full-height panel on the right, hidden (and unfocusable) until opened */
       .topnav-links {
         position: fixed;
         top: 0;
         right: 0;
+        bottom: 0;
         height: 100vh;
+        height: 100dvh;
         width: min(80vw, 300px);
         background: var(--surface);
         border-left: 1px solid var(--border);
+        box-shadow: -12px 0 32px rgba(0,0,0,0.45);
         flex-direction: column;
         align-items: stretch;
+        justify-content: flex-start;
         gap: 3px;
-        padding: 74px 14px 20px;
+        padding: 0 14px 20px;
         transform: translateX(100%);
-        transition: transform 0.25s ease;
+        visibility: hidden;
+        transition: transform 0.25s ease, visibility 0s linear 0.25s;
         z-index: 95;
         overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
       }
-      .topnav-links.open { transform: translateX(0); }
+      .topnav-links.open {
+        transform: translateX(0);
+        visibility: visible;
+        transition: transform 0.25s ease, visibility 0s;
+      }
 
-      .nav-link { width: 100%; padding: 13px 14px; font-size: 15px; border-radius: 10px; }
+      .nav-link { width: 100%; flex-shrink: 0; padding: 13px 14px; font-size: 15px; border-radius: 10px; }
       .nav-link svg { width: 18px; height: 18px; }
       .nav-link.active::after { display: none; }
       .nav-link.active { border-left: 3px solid var(--accent); }
 
+      /* Logo + name at the top of the drawer; right padding leaves room for the close button */
+      .nav-brand-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        min-height: 56px;
+        padding: 0 54px 0 6px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.09);
+        text-decoration: none;
+      }
+      .nav-brand-head .topnav-name { font-size: 13px; }
+
+      /* Divider line under each menu item (drawer is dark in both themes) */
+      .nav-link { position: relative; }
+      .nav-link::before {
+        content: '';
+        position: absolute;
+        left: 14px; right: 14px; bottom: -2px;
+        height: 1px;
+        background: rgba(255,255,255,0.09);
+        pointer-events: none;
+      }
+      .nav-link:last-of-type::before { display: none; }
+
       .topnav-right { gap: 8px; order: 2; }
       .user-chip span,
-      .user-chip { font-size: 0; gap: 0; } /* collapse text, keep avatar visible */
+      .user-chip { font-size: 0; gap: 0; }
       .user-chip--link { padding: 2px; }
       .user-chip--link.active::after { display: none; }
       .user-avatar { font-size: 13px; }
-      .staff-badge { display: none; }
-      .btn-logout { padding: 8px; width: 38px; height: 38px; }
+
+      /* "STAFF" badge stays visible on mobile, just more compact */
+      .topnav-right .staff-badge { display: inline-block; font-size: 9px; padding: 4px 9px; letter-spacing: 1px; }
+      .btn-logout { padding: 8px; width: 38px; height: 38px; justify-content: center; }
       .btn-logout span { display: none; }
 
       .page-wrap { padding: 20px 14px; }
@@ -674,14 +719,32 @@
       .stat-card { padding: 18px 18px; }
     }
 
-    /* Small phones (≤480px) */
+    /* Small phones (≤480px): brand name stays visible; logout moves into the drawer */
     @media (max-width: 480px) {
-      .topnav { padding: 0 12px; height: 52px; }
-      .topnav-name { font-size: 12px; letter-spacing: 1.5px; max-width: 38vw; }
+      .topnav { padding: 0 12px; height: 52px; gap: 6px; }
+      .topnav-brand { gap: 7px; }
+      .topnav-name { font-size: 11.5px; letter-spacing: 1.2px; }
       .topnav-logo { width: 28px; height: 28px; }
-      .topnav-links { width: 84vw; }
+      .topnav-links { width: 84vw; max-width: 320px; }
+      .nav-brand-head { min-height: 52px; }
+      .nav-brand-head .topnav-name { font-size: 12px; letter-spacing: 1.5px; }
+      .topnav-right { gap: 6px; }
+      .topnav-logout-form { display: none; }
       .page-titlebar { padding: 12px 12px; }
       .page-wrap { padding: 14px 10px; }
+
+      .nav-account {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: auto;
+        padding: 16px 6px 0;
+        border-top: 1px solid var(--border);
+      }
+      .nav-account-user { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+      .nav-account-name { font-size: 14px; font-weight: 600; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .nav-account .btn-logout { width: 100%; height: auto; padding: 11px 14px; }
+      .nav-account .btn-logout span { display: inline; }
 
       .stat-grid { grid-template-columns: 1fr; }
       .stat-value { font-size: 26px; }
@@ -691,15 +754,20 @@
       th, td { padding: 10px 12px; font-size: 13px; }
     }
 
+    /* Very small phones: badge moves into the drawer, brand shrinks a bit */
+    @media (max-width: 389px) {
+      .topnav-right .staff-badge { display: none !important; }
+      .topnav-name { font-size: 11px; letter-spacing: 1px; }
+    }
+    @media (max-width: 340px) {
+      .topnav-name { font-size: 10px; letter-spacing: .6px; }
+    }
+
     /* ═══════════════════════════════════════════════════════════════
        STAFF LIGHT THEME — GOLD & BLACK
        Applies only when <html data-theme="light"> (set by app.js).
-       `html:root[...]` outranks the legacy :root[data-theme="light"]
-       rules in app.css, so no !important is needed for those.
-       Dark mode is untouched: no existing rule above is edited.
        ═══════════════════════════════════════════════════════════════ */
 
-    /* ── Tokens ── */
     html:root[data-theme="light"] {
       color-scheme: light;
 
@@ -725,7 +793,6 @@
       color: var(--text);
     }
 
-    /* ── Header / navigation: black bar, gold accents ── */
     html:root[data-theme="light"] .topnav {
       background: rgba(15,15,16,.96);
       border-color: rgba(255,255,255,.08);
@@ -741,15 +808,9 @@
 
     html:root[data-theme="light"] .nav-link { color: #c6c8ce; }
     html:root[data-theme="light"] .nav-link svg { stroke: #c6c8ce; }
-    html:root[data-theme="light"] .nav-link:hover {
-      color: #fff;
-      background: rgba(255,255,255,.07);
-    }
+    html:root[data-theme="light"] .nav-link:hover { color: #fff; background: rgba(255,255,255,.07); }
     html:root[data-theme="light"] .nav-link:hover svg { stroke: #fff; }
-    html:root[data-theme="light"] .nav-link.active {
-      color: #fff;
-      background: rgba(255,255,255,.07);
-    }
+    html:root[data-theme="light"] .nav-link.active { color: #fff; background: rgba(255,255,255,.07); }
     html:root[data-theme="light"] .nav-link.active svg { stroke: var(--accent-2); }
     html:root[data-theme="light"] .nav-link.active::after { background: var(--accent-2); }
     html:root[data-theme="light"] .user-chip--link:hover,
@@ -785,9 +846,10 @@
         background: #111112;
         border-left-color: rgba(255,255,255,.08);
       }
+      html:root[data-theme="light"] .nav-account { border-top-color: rgba(255,255,255,.1); }
+      html:root[data-theme="light"] .nav-account-name { color: #f1f1f3; }
     }
 
-    /* ── Cards & panels ── */
     html:root[data-theme="light"] :is(
       .card, .form-card, .members-panel, .details-panel, .payments-container,
       .form-panel, .profile-side-card, .profile-main-card, .table-section
@@ -797,9 +859,8 @@
       box-shadow: var(--shadow-card);
     }
 
-    /* ── Stat cards (green → black, gold stays gold) ── */
     html:root[data-theme="light"] .stat-card {
-      background: var(--surface);            /* shorthand: also clears the dark gradient */
+      background: var(--surface);
       border: 1px solid var(--border);
       box-shadow: var(--shadow-card);
     }
@@ -818,11 +879,9 @@
       border-color: rgba(var(--glow),.22);
     }
     html:root[data-theme="light"] .stat-card .stat-label { color: var(--muted); }
-    /* the gold value has an inline style, so !important is required */
     html:root[data-theme="light"] .stat-card.gold .stat-value { color: var(--gold) !important; }
     html:root[data-theme="light"] .payment-amount { color: var(--gold); }
 
-    /* ── Tables ── */
     html:root[data-theme="light"] th {
       background: var(--black);
       color: var(--accent-2);
@@ -833,7 +892,6 @@
     html:root[data-theme="light"] .transaction-id { color: var(--muted); }
     html:root[data-theme="light"] .method-chip { background: var(--surface2); color: var(--text); }
 
-    /* ── Buttons: gold gradient, black text ── */
     html:root[data-theme="light"] :is(.btn-primary, .view-profile-btn, .pf-submit-btn, .pf2-btn-primary) {
       color: #111;
       box-shadow: 0 1px 2px rgba(20,16,8,.15);
@@ -861,11 +919,7 @@
     html:root[data-theme="light"] .avatar-upload-btn { box-shadow: 0 2px 8px rgba(20,16,8,.2); }
     html:root[data-theme="light"] .avatar-upload-btn svg { stroke: #111; }
 
-    /* ── Inputs: white, soft border, gold focus ring ──
-       FIX: use `background-color`, NOT the `background` shorthand.
-       The shorthand also resets background-image/repeat/position/size, which
-       clobbered the select arrow set in .pf-select (no-repeat, right 14px center,
-       14px) and caused the chevron to tile across the whole field. */
+    /* Use `background-color`, NOT the `background` shorthand: the shorthand would reset the select arrow image. */
     html:root[data-theme="light"] :is(.form-control, .pf-control, .members-search) {
       background-color: var(--surface);
       border-color: var(--border);
@@ -883,7 +937,6 @@
       background: var(--surface);
       color: var(--text);
     }
-    /* beats the inline style="color-scheme:dark" on the profile date input */
     html:root[data-theme="light"] input[type="date"] { color-scheme: light !important; }
     html:root[data-theme="light"] :is(.pf-select, .pf2-select) {
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a97a17' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -891,7 +944,6 @@
     html:root[data-theme="light"] .pf-date-btn { background: var(--accent-soft); color: var(--accent); }
     html:root[data-theme="light"] .pf-date-btn:hover { background: rgba(184,134,42,.22); }
 
-    /* ── Gold-tinted borders/gradients ── */
     html:root[data-theme="light"] :is(
       .member-avatar-placeholder, .payment-avatar-placeholder, .payment-avatar,
       .role-chip, .member-item.active-item
@@ -904,7 +956,6 @@
     }
     html:root[data-theme="light"] .members-list::-webkit-scrollbar-track { background: var(--surface); }
 
-    /* ── Status pills & badges (semantic colours kept: green = active/paid) ── */
     html:root[data-theme="light"] :is(.pill-active, .badge-active, .badge-paid, .payment-status, .active-chip) {
       background: rgba(21,128,61,.10);
       border-color: rgba(21,128,61,.25);
@@ -929,11 +980,9 @@
       color: var(--gold);
     }
 
-    /* ── Alerts ── */
     html:root[data-theme="light"] :is(.alert-success, .alert-success-box, .pf2-alert-success) { color: var(--success); }
     html:root[data-theme="light"] :is(.alert-danger, .alert-danger-box) { color: var(--danger); }
 
-    /* ── Floating theme toggle (created by app.js) ── */
     html:root[data-theme="light"] .theme-toggle {
       background: var(--black);
       color: var(--accent-2);
@@ -946,7 +995,7 @@
 
 {{-- TOP NAVBAR --}}
 <nav class="topnav">
-  <a href="{{ route('staff.dashboard') }}" class="topnav-brand">
+  <a href="{{ route('staff.dashboard') }}" class="topnav-brand" aria-label="APEX FITNESS GYM">
     <div class="topnav-logo">
       <svg fill="none" stroke-width="2.5" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
@@ -956,6 +1005,16 @@
   </a>
 
   <div class="topnav-links" id="topnavLinks">
+    {{-- Brand header: only shown inside the drawer on mobile --}}
+    <a href="{{ route('staff.dashboard') }}" class="nav-brand-head" aria-label="APEX FITNESS GYM">
+      <div class="topnav-logo">
+        <svg fill="none" stroke-width="2.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <span class="topnav-name">APEX FITNESS GYM</span>
+    </a>
+
     <a href="{{ route('staff.dashboard') }}"
        class="nav-link {{ request()->routeIs('staff.dashboard') ? 'active' : '' }}">
       <svg viewBox="0 0 24 24" stroke-width="2">
@@ -1008,6 +1067,23 @@
       Reports
     </a>
 
+    {{-- Account block: only shown inside the drawer on small phones (≤480px) --}}
+    <div class="nav-account">
+      <div class="nav-account-user">
+        <span class="nav-account-name">{{ auth()->user()->name }}</span>
+        <span class="staff-badge">Staff</span>
+      </div>
+      <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+        @csrf
+        <button type="submit" class="btn-logout">
+          <svg viewBox="0 0 24 24" stroke-width="2" fill="none">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          <span>Logout</span>
+        </button>
+      </form>
+    </div>
   </div>
 
   <div class="topnav-right">
@@ -1027,9 +1103,9 @@
       <span>{{ auth()->user()->name }}</span>
     </a>
 
-    <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+    <form method="POST" action="{{ route('logout') }}" class="topnav-logout-form">
       @csrf
-      <button type="submit" class="btn-logout">
+      <button type="submit" class="btn-logout" aria-label="Logout">
         <svg viewBox="0 0 24 24" stroke-width="2" fill="none">
           <path stroke-linecap="round" stroke-linejoin="round"
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -1082,36 +1158,27 @@
     var iconOpen  = document.getElementById('navIconOpen');
     var iconClose = document.getElementById('navIconClose');
 
-    function closeMenu() {
-      links.classList.remove('open');
-      overlay.classList.remove('open');
-      document.body.classList.remove('menu-open');
-      toggle.setAttribute('aria-expanded', 'false');
-      iconOpen.style.display = '';
-      iconClose.style.display = 'none';
-    }
-
-    function openMenu() {
-      links.classList.add('open');
-      overlay.classList.add('open');
-      document.body.classList.add('menu-open');
-      toggle.setAttribute('aria-expanded', 'true');
-      iconOpen.style.display = 'none';
-      iconClose.style.display = '';
+    function setOpen(open) {
+      links.classList.toggle('open', open);
+      overlay.classList.toggle('open', open);
+      document.body.classList.toggle('menu-open', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      iconOpen.style.display = open ? 'none' : '';
+      iconClose.style.display = open ? '' : 'none';
     }
 
     toggle.addEventListener('click', function () {
-      links.classList.contains('open') ? closeMenu() : openMenu();
+      setOpen(!links.classList.contains('open'));
     });
-
-    overlay.addEventListener('click', closeMenu);
-
+    overlay.addEventListener('click', function () { setOpen(false); });
     links.querySelectorAll('.nav-link').forEach(function (link) {
-      link.addEventListener('click', closeMenu);
+      link.addEventListener('click', function () { setOpen(false); });
     });
-
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
     window.addEventListener('resize', function () {
-      if (window.innerWidth > 860) closeMenu();
+      if (window.innerWidth > 860) setOpen(false);
     });
   })();
 </script>

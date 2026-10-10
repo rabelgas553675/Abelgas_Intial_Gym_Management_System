@@ -5,66 +5,67 @@
 @section('content')
 
 {{-- Page Header --}}
-<div style="margin-bottom:28px;">
-  <h1 style="font-size:28px;font-weight:700;margin-bottom:4px;">
+<div class="dash-head">
+  <h1>
     Welcome, <span style="color:var(--accent);">{{ explode(' ', auth()->user()->name)[0] }}</span>
   </h1>
-  <p style="color:var(--muted);font-size:14px;">Manage and monitor your assigned members</p>
+  <p>Manage and monitor your assigned members</p>
 </div>
 
-    {{-- Stat Cards --}}
-    <div class="stat-grid">
-        <div class="stat-card">
-            <div class="stat-card-left">
-                <div class="stat-label">Total Members</div>
-                <div class="stat-value">{{ count($members) }}</div>
-            </div>
-            <div class="stat-icon icon-green">
-                <svg viewBox="0 0 24 24" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                </svg>
-            </div>
+{{-- Stat Cards --}}
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-card-left">
+            <div class="stat-label">Total Members</div>
+            <div class="stat-value">{{ count($members) }}</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-card-left">
-                <div class="stat-label">Active</div>
-                <div class="stat-value">{{ $active }}</div>
-            </div>
-            <div class="stat-icon icon-orange">
-                <svg viewBox="0 0 24 24" stroke-width="1.5">
-                    <circle cx="12" cy="12" r="8" stroke="var(--success)"/>
-                    <circle cx="12" cy="12" r="3" fill="var(--success)" stroke="none"/>
-                </svg>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-left">
-                <div class="stat-label">Expiring Soon</div>
-                <div class="stat-value" style="color:var(--warning);">{{ $nearDue }}</div>
-            </div>
-            <div class="stat-icon icon-yellow">
-                <svg viewBox="0 0 24 24" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                </svg>
-            </div>
+        <div class="stat-icon icon-green">
+            <svg viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
         </div>
     </div>
+    <div class="stat-card">
+        <div class="stat-card-left">
+            <div class="stat-label">Active</div>
+            <div class="stat-value">{{ $active }}</div>
+        </div>
+        <div class="stat-icon icon-orange">
+            <svg viewBox="0 0 24 24" stroke-width="1.5">
+                <circle cx="12" cy="12" r="8" stroke="var(--success)"/>
+                <circle cx="12" cy="12" r="3" fill="var(--success)" stroke="none"/>
+            </svg>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-left">
+            <div class="stat-label">Expiring Soon</div>
+            <div class="stat-value" style="color:var(--warning);">{{ $nearDue }}</div>
+        </div>
+        <div class="stat-icon icon-yellow">
+            <svg viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+        </div>
+    </div>
+</div>
 
-    <div class="rate-card" style="margin:20px 0 28px; background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:20px 22px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
-            <h2 style="margin:0; font-size:18px; font-weight:700; color:var(--accent);">My Coaching Rate</h2>
-            <span style="font-size:12px; color:var(--muted);">Current package pricing</span>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px;">
-            @foreach($currentCoachRates ?? [] as $period => $rate)
-                <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:12px 14px;">
-                    <div style="font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">{{ $period }}</div>
-                    <div style="font-size:18px; font-weight:700; color:var(--text);">₱{{ number_format((int)$rate, 0) }}</div>
-                </div>
-            @endforeach
-        </div>
+{{-- Coaching rates --}}
+<div class="rate-card">
+    <div class="rate-card-head">
+        <h2>My Coaching Rate</h2>
+        <span>Current package pricing</span>
     </div>
+    <div class="rate-grid">
+        @foreach($currentCoachRates ?? [] as $period => $rate)
+            <div class="rate-item">
+                <div class="rate-item-label">{{ $period }}</div>
+                <div class="rate-item-value">₱{{ number_format((int) $rate, 0) }}</div>
+            </div>
+        @endforeach
+    </div>
+</div>
 
 {{-- Split Panel --}}
 <div class="split-panel">
@@ -74,10 +75,10 @@
     <div class="members-panel-header">
       <div class="members-panel-title">Members List</div>
       <div class="members-search">
-        <svg viewBox="0 0 24 24" stroke-width="2">
+        <svg viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
-        <input type="text" id="memberSearch" placeholder="Search members..." oninput="filterMembers(this.value)"/>
+        <input type="search" id="memberSearch" placeholder="Search members..." aria-label="Search members" autocomplete="off"/>
       </div>
     </div>
 
@@ -91,13 +92,14 @@
           $memberPhoto = $member->user?->photo ?? $member->photo ?? null;
         @endphp
         <div class="member-item"
+             role="button" tabindex="0"
+             data-id="{{ $member->id }}"
              data-name="{{ strtolower($member->name) }}"
              data-email="{{ strtolower($member->email) }}"
-             onclick="showMemberDetail({{ $member->id }}, this)"
              id="item-{{ $member->id }}">
           <div class="member-item-left">
             @if($memberPhoto)
-              <img src="{{ asset('storage/'.$memberPhoto) }}" class="member-avatar"/>
+              <img src="{{ asset('storage/'.$memberPhoto) }}" class="member-avatar" alt="" loading="lazy"/>
             @else
               <div class="member-avatar-placeholder">{{ strtoupper(substr($member->name, 0, 2)) }}</div>
             @endif
@@ -109,10 +111,9 @@
           <span class="status-pill {{ $pillClass }}">{{ $pillLabel }}</span>
         </div>
       @empty
-        <div style="padding:40px;text-align:center;color:var(--muted);font-size:14px;">
-          No members assigned yet.
-        </div>
+        <div class="list-message">No members assigned yet.</div>
       @endforelse
+      <div class="list-message" id="noResults" style="display:none;">No members match your search.</div>
     </div>
   </div>
 
@@ -129,11 +130,11 @@
       <div style="font-size:14px;margin-top:4px;">Select a member to view details</div>
     </div>
 
-    <div class="details-content" id="detailsContent" style="padding:0;">
+    <div class="details-content" id="detailsContent">
 
       <div class="details-hero">
         <div class="details-avatar" id="detailsAvatar"></div>
-        <div>
+        <div class="details-hero-text">
           <div class="details-name" id="detailsName"></div>
           <div id="detailsBadge"></div>
         </div>
@@ -150,7 +151,7 @@
                 <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
               </svg>
             </div>
-            <div>
+            <div class="contact-text">
               <div class="contact-label">Email</div>
               <div class="contact-value" id="detailsEmail"></div>
             </div>
@@ -162,7 +163,7 @@
                 <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
               </svg>
             </div>
-            <div>
+            <div class="contact-text">
               <div class="contact-label">Phone</div>
               <div class="contact-value" id="detailsPhone"></div>
             </div>
@@ -248,11 +249,39 @@
 <style>
   /* Charcoal & gold — colours come from the tokens in layouts/instructor.blade.php */
 
-  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+  /* ── Safety net: no grid/flex child may push the page wider than the screen ── */
+  .stat-grid > *, .split-panel > *, .rate-grid > *,
+  .contact-grid > *, .sub-grid > * { min-width: 0; }
 
-  .split-panel { grid-template-columns: 1fr 1.2fr; gap: 24px; margin-bottom: 28px; align-items: stretch; }
+  /* ── Header ── */
+  .dash-head { margin-bottom: 28px; }
+  .dash-head h1 { font-size: clamp(20px, 4vw, 28px); font-weight: 700; margin-bottom: 4px; overflow-wrap: anywhere; }
+  .dash-head p { color: var(--muted); font-size: 14px; }
 
-  .members-panel { display: flex; flex-direction: column; max-height: 600px; border-radius: 16px; }
+  /* ── Stat cards ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .stat-card .stat-value { font-size: clamp(22px, 3vw, 32px); }
+
+  /* ── Rate card ── */
+  .rate-card {
+    margin: 20px 0 28px; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px 22px;
+  }
+  .rate-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .rate-card-head h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--accent); }
+  .rate-card-head span { font-size: 12px; color: var(--muted); }
+  .rate-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+  .rate-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .rate-item-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .rate-item-value { font-size: 18px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
+
+  /* ── Split panel ── */
+  .split-panel {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 24px; margin-bottom: 28px; align-items: stretch;
+  }
+
+  .members-panel { display: flex; flex-direction: column; max-height: 600px; border-radius: 16px; overflow: hidden; }
   .members-panel-header {
     padding: 16px 20px; display: flex; justify-content: space-between;
     align-items: center; flex-wrap: wrap; gap: 10px;
@@ -262,19 +291,31 @@
   .members-search {
     display: flex; align-items: center; background: var(--surface2);
     border: 1px solid var(--border); border-radius: 40px;
-    padding: 4px 14px 4px 10px; gap: 6px; flex: 1 1 180px; min-width: 120px;
+    padding: 2px 14px 2px 12px; gap: 8px;
+    flex: 1 1 180px; min-width: 120px; height: 44px; align-self: auto;
   }
-  .members-search svg { position: static; transform: none; width: 16px; height: 16px; stroke: var(--muted); flex-shrink: 0; }
-  .members-search input { background: transparent; border: none; padding: 8px 0; font-size: 13px; color: var(--text); width: 100%; outline: none; }
+  .members-search svg { position: static; transform: none; width: 16px; height: 16px; stroke: var(--muted); fill: none; flex-shrink: 0; }
+  .members-search input {
+    background: transparent; border: none; padding: 8px 0; font-size: 13px; color: var(--text);
+    width: 100%; min-width: 0; outline: none; box-shadow: none; -webkit-appearance: none; appearance: none;
+  }
+  .members-search input::-webkit-search-cancel-button { -webkit-appearance: none; }
   .members-search input::placeholder { color: var(--muted); }
   .members-search:focus-within { border-color: var(--accent); }
 
-  .members-list { flex: 1; overflow-y: auto; padding: 8px 0; max-height: none; }
+  .members-list { flex: 1; overflow-y: auto; padding: 8px 0; max-height: none; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .members-list::-webkit-scrollbar { width: 6px; }
   .members-list::-webkit-scrollbar-thumb { background: var(--accent-dark); border-radius: 3px; }
+  .list-message { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14px; }
 
-  .member-item { padding: 12px 20px; margin-bottom: 0; border-radius: 0; border: none; border-left: 3px solid transparent; }
+  .member-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 20px; margin-bottom: 0; border-radius: 0; border: none;
+    border-left: 3px solid transparent; cursor: pointer; min-height: 56px;
+    -webkit-tap-highlight-color: transparent;
+  }
   .member-item:hover { background: var(--surface2); border-left-color: var(--accent); }
+  .member-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .member-item.active-item { background: var(--accent-soft); border-left-color: var(--accent); }
   .member-item-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 
@@ -284,11 +325,16 @@
     border: 1px solid rgba(224,169,59,0.3); display: flex; align-items: center;
     justify-content: center; font-size: 12px; font-weight: 700; color: var(--accent); flex-shrink: 0;
   }
-  .member-item-info { line-height: 1.3; }
+  .member-item-info { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+  .member-item-name, .member-item-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 
-  .status-pill { font-size: 10px; padding: 4px 12px; border-radius: 40px; text-transform: uppercase; letter-spacing: .3px; }
+  .status-pill {
+    font-size: 10px; padding: 4px 12px; border-radius: 40px; text-transform: uppercase;
+    letter-spacing: .3px; flex-shrink: 0; white-space: nowrap;
+  }
 
-  .details-panel { border-radius: 16px; overflow: hidden; min-height: 400px; }
+  /* ── Details panel ── */
+  .details-panel { border-radius: 16px; overflow: hidden; min-height: 400px; scroll-margin-top: 80px; }
   .details-empty { height: 100%; min-height: 320px; padding: 20px; text-align: center; }
   .details-content { display: none; flex-direction: column; padding: 0; }
   .details-content.visible { display: flex; }
@@ -298,13 +344,15 @@
     display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
     background: linear-gradient(135deg, rgba(224,169,59,0.08), transparent);
   }
+  .details-hero-text { min-width: 0; flex: 1 1 160px; }
   .details-avatar {
     width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
     background: var(--accent-soft); border: 2px solid var(--accent);
     display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 24px; color: var(--accent); overflow: hidden;
   }
-  .details-name { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .details-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .details-name { font-size: 22px; font-weight: 800; margin-bottom: 8px; overflow-wrap: anywhere; }
   .details-body { padding: 22px 28px; }
 
   .section-label { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
@@ -314,7 +362,8 @@
     background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
     transition: border-color .3s ease;
   }
-  .contact-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; flex-wrap: wrap; }
+  .contact-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+  .contact-text { min-width: 0; flex: 1; }
   .contact-item:hover, .sub-item:hover, .days-container:hover { border-color: rgba(224,169,59,0.5); }
   .contact-icon {
     width: 32px; height: 32px; border-radius: 8px; background: var(--accent-soft);
@@ -322,13 +371,13 @@
   }
   .contact-label, .sub-label, .days-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
   .contact-label { margin-bottom: 2px; }
-  .contact-value { font-size: 13px; font-weight: 600; color: var(--text); word-break: break-word; }
+  .contact-value { font-size: 13px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
 
   .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
   .sub-item { padding: 14px; }
   .sub-item.full-width { grid-column: span 2; }
   .sub-label { margin-bottom: 5px; }
-  .sub-value { font-size: 14px; font-weight: 700; color: var(--text); }
+  .sub-value { font-size: 14px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; }
   .sub-value.accent { color: var(--accent); }
 
   .days-container { padding: 14px; margin-bottom: 20px; }
@@ -339,93 +388,172 @@
 
   .view-profile-btn {
     display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-    padding: 13px; margin-top: 0; background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+    min-height: 46px; padding: 13px; margin-top: 0;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
     color: #1a1a1a; font-size: 14px; font-weight: 800; border-radius: 10px; text-decoration: none;
   }
   html:root[data-theme="light"] .view-profile-btn { color: #111; }
   .view-profile-btn svg { stroke: currentColor; }
 
+  /* ═══════════ RESPONSIVE ═══════════ */
+
   @media (max-width: 1024px) {
-    .split-panel { grid-template-columns: 1fr; }
-    .members-panel { max-height: 420px; }
+    .split-panel { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .members-panel { max-height: 440px; }
     .details-panel { min-height: 320px; }
   }
+
   @media (max-width: 768px) {
-    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .stat-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .dash-head { margin-bottom: 20px; }
+    .rate-card { padding: 16px; margin: 16px 0 22px; }
   }
+
   @media (max-width: 640px) {
-    .stat-grid { grid-template-columns: 1fr; }
-    .members-panel-header { flex-direction: column; align-items: stretch; gap: 8px; }
-    .member-item { padding: 10px 14px; flex-wrap: wrap; gap: 6px; }
-    .member-item-left { min-width: 120px; }
+    /* Header stacks: title on top, full-width search below.
+       IMPORTANT: reset flex so the search box does not stretch vertically
+       (flex-basis acts as HEIGHT in a column layout — that caused the tall search box). */
+    .members-panel-header { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px; }
+    .members-search { flex: 0 0 auto; width: 100%; height: 44px; min-width: 0; }
+    .members-search input { font-size: 16px; } /* prevents iOS zoom on focus */
+
+    .member-item { padding: 10px 14px; }
+    .member-item-email { font-size: 12px; }
     .details-hero { padding: 16px; gap: 12px; }
     .details-avatar { width: 56px; height: 56px; font-size: 20px; }
     .details-name { font-size: 18px; }
     .details-body { padding: 16px; }
     .sub-grid { grid-template-columns: 1fr; }
     .sub-item.full-width { grid-column: span 1; }
+    .rate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  }
+
+  @media (max-width: 420px) {
+    .stat-grid { grid-template-columns: minmax(0, 1fr); }
+    .status-pill { padding: 3px 9px; font-size: 9px; }
+    .member-avatar, .member-avatar-placeholder { width: 32px; height: 32px; font-size: 11px; }
+    .members-panel { max-height: 380px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   }
 </style>
 
 <script>
-function showMemberDetail(id, el) {
-  document.querySelectorAll('.member-item').forEach(i => i.classList.remove('active-item'));
-  el.classList.add('active-item');
+(function () {
+  'use strict';
 
-  const md = document.querySelector(`.md[data-id="${id}"]`);
-  if (!md) return;
+  var detailsPanel   = document.getElementById('detailsPanel');
+  var detailsEmpty   = document.getElementById('detailsEmpty');
+  var detailsContent = document.getElementById('detailsContent');
+  var memberList     = document.getElementById('membersList');
+  var searchInput    = document.getElementById('memberSearch');
+  var noResults      = document.getElementById('noResults');
+  var isStacked      = window.matchMedia('(max-width: 1024px)');
 
-  const avatar = document.getElementById('detailsAvatar');
-  const initials = md.dataset.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-  avatar.innerHTML = md.dataset.photo
-    ? `<img src="${md.dataset.photo}" style="width:100%;height:100%;object-fit:cover;"/>`
-    : initials;
+  function setText(id, value) { document.getElementById(id).textContent = value; }
 
-  document.getElementById('detailsName').textContent = md.dataset.name;
+  function showMemberDetail(id, el, userInitiated) {
+    document.querySelectorAll('.member-item').forEach(function (i) { i.classList.remove('active-item'); });
+    el.classList.add('active-item');
 
-  document.getElementById('detailsBadge').innerHTML =
-    `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;
-                  border-radius:100px;font-size:12px;font-weight:700;
-                  background:${md.dataset.statusBg};color:${md.dataset.statusColor};
-                  border:1px solid color-mix(in srgb, ${md.dataset.statusColor} 27%, transparent);">
-       <span style="width:6px;height:6px;border-radius:50%;background:${md.dataset.statusColor};display:inline-block;"></span>
-       ${md.dataset.status}
-     </span>`;
+    var md = document.querySelector('.md[data-id="' + id + '"]');
+    if (!md) return;
+    var d = md.dataset;
 
-  document.getElementById('detailsEmail').textContent = md.dataset.email;
-  document.getElementById('detailsPhone').textContent = md.dataset.phone;
-  document.getElementById('detailsPlan').textContent = md.dataset.plan;
-  document.getElementById('detailsDuration').textContent = md.dataset.duration;
-  document.getElementById('detailsPeriod').textContent = `${md.dataset.start} – ${md.dataset.end}`;
+    // Avatar (built with DOM methods rather than innerHTML)
+    var avatar = document.getElementById('detailsAvatar');
+    avatar.textContent = '';
+    if (d.photo) {
+      var img = document.createElement('img');
+      img.src = d.photo;
+      img.alt = '';
+      avatar.appendChild(img);
+    } else {
+      avatar.textContent = d.name.split(' ').filter(Boolean).map(function (w) { return w[0]; })
+        .join('').substring(0, 2).toUpperCase();
+    }
 
-  const days = parseInt(md.dataset.daysRemaining) || 0;
-  const pct = parseInt(md.dataset.progressPct) || 0;
-  const barColor = md.dataset.barColor;
+    setText('detailsName', d.name);
 
-  document.getElementById('daysRemainingLabel').textContent =
-    days === 0 ? 'Expired' : `${days} day${days !== 1 ? 's' : ''} left`;
-  document.getElementById('daysRemainingLabel').style.color = barColor;
-  document.getElementById('daysRemainingBar').style.width = pct + '%';
-  document.getElementById('daysRemainingBar').style.background = barColor;
+    // Status badge
+    var badge = document.getElementById('detailsBadge');
+    badge.textContent = '';
+    var pill = document.createElement('span');
+    pill.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:100px;' +
+      'font-size:12px;font-weight:700;background:' + d.statusBg + ';color:' + d.statusColor + ';' +
+      'border:1px solid color-mix(in srgb, ' + d.statusColor + ' 27%, transparent);';
+    var dot = document.createElement('span');
+    dot.style.cssText = 'width:6px;height:6px;border-radius:50%;display:inline-block;background:' + d.statusColor + ';';
+    pill.appendChild(dot);
+    pill.appendChild(document.createTextNode(d.status));
+    badge.appendChild(pill);
 
-  document.getElementById('detailsViewBtn').href = md.dataset.url;
+    setText('detailsEmail', d.email);
+    setText('detailsPhone', d.phone);
+    setText('detailsPlan', d.plan);
+    setText('detailsDuration', d.duration);
+    setText('detailsPeriod', d.start + ' – ' + d.end);
 
-  document.getElementById('detailsEmpty').style.display = 'none';
-  document.getElementById('detailsContent').classList.add('visible');
-}
+    var days = parseInt(d.daysRemaining, 10) || 0;
+    var pct = Math.max(0, Math.min(100, parseInt(d.progressPct, 10) || 0));
+    var label = document.getElementById('daysRemainingLabel');
+    var bar = document.getElementById('daysRemainingBar');
+    label.textContent = days === 0 ? 'Expired' : days + ' day' + (days !== 1 ? 's' : '') + ' left';
+    label.style.color = d.barColor;
+    bar.style.width = pct + '%';
+    bar.style.background = d.barColor;
 
-function filterMembers(query) {
-  const q = query.toLowerCase();
-  document.querySelectorAll('.member-item').forEach(item => {
-    const match = (item.dataset.name || '').includes(q) || (item.dataset.email || '').includes(q);
-    item.style.display = match ? '' : 'none';
-  });
-}
+    document.getElementById('detailsViewBtn').href = d.url;
 
-document.addEventListener('DOMContentLoaded', function() {
-  const first = document.querySelector('.member-item');
-  if (first) first.click();
-});
+    detailsEmpty.style.display = 'none';
+    detailsContent.classList.add('visible');
+
+    // On phones/tablets the details panel sits below the list, so bring it into view after a tap
+    if (userInitiated && isStacked.matches && detailsPanel) {
+      detailsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function filterMembers(query) {
+    var q = query.trim().toLowerCase();
+    var visible = 0;
+    document.querySelectorAll('.member-item').forEach(function (item) {
+      var match = (item.dataset.name || '').indexOf(q) !== -1 || (item.dataset.email || '').indexOf(q) !== -1;
+      item.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    if (noResults) {
+      noResults.style.display = (visible === 0 && document.querySelector('.member-item')) ? 'block' : 'none';
+    }
+  }
+
+  // Click + keyboard (Enter / Space) on member rows via delegation
+  if (memberList) {
+    memberList.addEventListener('click', function (e) {
+      var item = e.target.closest('.member-item');
+      if (item) showMemberDetail(item.dataset.id, item, true);
+    });
+    memberList.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var item = e.target.closest('.member-item');
+      if (item) {
+        e.preventDefault();
+        showMemberDetail(item.dataset.id, item, true);
+      }
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', function () { filterMembers(this.value); });
+  }
+
+  // Preselect first member (without scrolling the page)
+  var first = document.querySelector('.member-item');
+  if (first) showMemberDetail(first.dataset.id, first, false);
+})();
 </script>
 
 @endsection
