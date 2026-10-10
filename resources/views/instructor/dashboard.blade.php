@@ -4,6 +4,24 @@
 
 @section('content')
 
+{{-- Alert: members are waiting for this coach to review a plan change --}}
+@php
+  $planChangeWaiting = \App\Models\PlanChangeRequest::where('instructor_id', auth()->id())
+                        ->where('status', 'Pending')->count();
+@endphp
+@if($planChangeWaiting > 0)
+  <a href="{{ route('instructor.requests') }}#plan-change-requests"
+     style="display:flex;align-items:center;gap:12px;padding:14px 18px;margin-bottom:20px;border-radius:12px;text-decoration:none;
+            background:var(--accent-soft);border:1px solid var(--accent);color:var(--text);">
+    <span style="font-size:20px;">🔔</span>
+    <span style="flex:1;font-size:14px;">
+      <strong>{{ $planChangeWaiting }} plan change {{ \Illuminate\Support\Str::plural('request', $planChangeWaiting) }}</strong>
+      waiting for your approval.
+    </span>
+    <span style="font-weight:700;color:var(--accent);white-space:nowrap;">Review →</span>
+  </a>
+@endif
+
 {{-- Page Header --}}
 <div class="dash-head">
   <h1>

@@ -153,9 +153,9 @@
             <h1>Coach <span>Requests</span></h1>
             <p>Review and respond to incoming member requests.</p>
         </div>
-        @if($pending->count())
+        @if($pending->count() + $planPending->count())
             <span class="pending-badge">
-                {{ $pending->count() }} pending
+                {{ $pending->count() + $planPending->count() }} pending
             </span>
         @endif
     </div>
@@ -258,8 +258,73 @@
         @endif
     </div>
 
+    {{-- PLAN CHANGE REQUESTS (members assigned to this coach) --}}
+    <div style="margin-bottom:36px;" id="plan-change-requests">
+        <div class="section-title">Plan Change Requests</div>
+
+        @if($planPending->isEmpty())
+            <div class="card">
+                <div class="empty-state">
+                    <div class="empty-state-title">No plan change requests</div>
+                    <div class="empty-state-sub">When one of your members asks to switch fitness plans, it will appear here.</div>
+                </div>
+            </div>
+        @else
+            <div class="card">
+                @foreach($planPending as $pc)
+                @php $pcMember = $pc->member; $pcUser = $pcMember?->user; @endphp
+                <div class="request-item">
+                    @if($pcUser && $pcUser->photo)
+                        <img src="{{ asset('storage/'.$pcUser->photo) }}" class="request-avatar" alt=""/>
+                    @else
+                        <div class="request-avatar-placeholder">{{ strtoupper(substr($pcMember->name ?? 'M', 0, 2)) }}</div>
+                    @endif
+
+                    <div class="request-info">
+                        <div class="request-name">{{ $pcMember->full_name ?? 'Unknown Member' }}</div>
+                        <div class="request-contact">{{ $pcUser->email ?? '—' }}</div>
+
+                        <div class="hold-box">
+                            <span>Current plan: <strong>{{ $pc->current_plan ?: '—' }}</strong></span>
+                            <span>Requested plan: <strong>{{ $pc->requested_plan }}</strong></span>
+                            <span>Requested: <strong>{{ ($pc->requested_at ?? $pc->created_at)->format('M d, Y g:i A') }}</strong></span>
+                        </div>
+
+                        @if($pc->reason)
+                            <div class="request-message">"{{ $pc->reason }}"</div>
+                        @endif
+
+                        <div class="request-meta">
+                            <span class="badge badge-pending">Pending</span>
+                            <span class="request-time">{{ ($pc->requested_at ?? $pc->created_at)->diffForHumans() }}</span>
+                        </div>
+                    </div>
+
+                    <div class="request-actions">
+                        <form action="{{ route('instructor.plan-changes.approve', $pc->id) }}" method="POST"
+                              onsubmit="return confirm('Approve the change to {{ $pc->requested_plan }}?');">
+                            @csrf
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <svg viewBox="0 0 24 24" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                Approve Request
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-danger btn-sm js-reject-plan"
+                                data-action="{{ route('instructor.plan-changes.reject', $pc->id) }}"
+                                data-member="{{ $pcMember->full_name ?? 'this member' }}"
+                                data-plan="{{ $pc->requested_plan }}">
+                            <svg viewBox="0 0 24 24" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            Reject Request
+                        </button>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
     {{-- HISTORY --}}
-    @if($history->isNotEmpty())
+    @if(count($history) > 0)
     <div>
         <div class="section-title">Recent History</div>
         <div class="card">
@@ -325,6 +390,49 @@
     </div>
     @endif
 
+    {{-- PLAN CHANGE HISTORY --}}
+    @if($planHistory->isNotEmpty())
+    <div style="margin-top:36px;">
+        <div class="section-title">Plan Change History</div>
+        <div class="card">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr><th>Member</th><th>Change</th><th>Reviewed</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($planHistory as $ph)
+                        <tr>
+                            <td>
+                                <div class="table-member">
+                                    <div class="table-avatar">{{ strtoupper(substr($ph->member->name ?? 'M', 0, 2)) }}</div>
+                                    <div>
+                                        <div class="table-member-name">{{ $ph->member->full_name ?? '—' }}</div>
+                                        <div class="table-member-email">{{ $ph->member->user->email ?? '' }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="color:var(--muted);font-size:13px;">{{ $ph->current_plan ?: '—' }} → {{ $ph->requested_plan }}</td>
+                            <td style="font-size:13px;color:var(--muted);">{{ $ph->reviewed_at?->format('M d, Y') ?? '—' }}</td>
+                            <td>
+                                @if($ph->isApproved())
+                                    <span class="badge badge-active">Approved</span>
+                                @else
+                                    <span class="badge badge-expired">Rejected</span>
+                                    @if($ph->coach_feedback)
+                                        <div class="reason-text">{{ $ph->coach_feedback }}</div>
+                                    @endif
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- REJECT MODAL (reason required) --}}
     <div class="modal-backdrop" id="rejectModal">
         <form class="modal-box" id="rejectForm" method="POST">
@@ -359,6 +467,45 @@
 
             const close = () => modal.classList.remove('open');
             document.getElementById('rejectCancel').addEventListener('click', close);
+            modal.addEventListener('click', e => { if (e.target === modal) close(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+        })();
+    </script>
+
+    {{-- REJECT PLAN CHANGE MODAL (reason required) --}}
+    <div class="modal-backdrop" id="rejectPlanModal">
+        <form class="modal-box" id="rejectPlanForm" method="POST">
+            @csrf
+            <h3>Reject plan change</h3>
+            <p id="rejectPlanLabel">Tell the member why you are declining. Their current plan stays unchanged.</p>
+            <textarea name="rejection_reason" id="rejectPlanReason" required minlength="5" maxlength="500"
+                      placeholder="e.g. Let's finish this training block before switching."></textarea>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary btn-sm" id="rejectPlanCancel">Cancel</button>
+                <button type="submit" class="btn btn-danger btn-sm">Reject request</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        (function () {
+            const modal  = document.getElementById('rejectPlanModal');
+            const form   = document.getElementById('rejectPlanForm');
+            const reason = document.getElementById('rejectPlanReason');
+            const label  = document.getElementById('rejectPlanLabel');
+
+            document.querySelectorAll('.js-reject-plan').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    form.action = btn.dataset.action;
+                    label.textContent = 'Why are you declining ' + btn.dataset.member + '\'s change to ' + btn.dataset.plan + '? Their current plan stays unchanged.';
+                    reason.value = '';
+                    modal.classList.add('open');
+                    reason.focus();
+                });
+            });
+
+            const close = () => modal.classList.remove('open');
+            document.getElementById('rejectPlanCancel').addEventListener('click', close);
             modal.addEventListener('click', e => { if (e.target === modal) close(); });
             document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
         })();

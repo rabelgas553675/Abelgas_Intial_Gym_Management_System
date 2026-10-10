@@ -41,15 +41,15 @@ class InstructorController extends Controller
         $totalAssigned = $members->count();
         $active        = $members->filter(fn($m) => !$m->isExpired() && !$m->isDueWithinDays(7))->count();
         $nearDue       = $members->filter(fn($m) =>  $m->isDueWithinDays(7) && !$m->isExpired())->count();
-        $pendingCount  = CoachRequest::where('instructor_id', $instructorId)
-                                     ->where('status', 'pending')
+        $pendingCount  = CoachRequest::where('instructor_id', '=', $instructorId, 'and')
+                         ->where('status', '=', 'pending', 'and')
                                      ->count();
 
         // 7. Graph degree = number of direct member edges for this instructor
         $graphDegree = $graph->degree($instructorId);
 
         // 8. Recent payments for this instructor (keep as Eloquent for dashboard widget)
-        $payments = Payment::where('instructor_id', $instructorId)
+        $payments = Payment::where('instructor_id', '=', $instructorId, 'and')
                            ->with('member')
                            ->latest('payment_date')
                            ->take(10)
@@ -79,7 +79,7 @@ class InstructorController extends Controller
     {
         $instructorId = Auth::id();
 
-        $allAssigned = Member::whereNotNull('instructor_id')->get();
+        $allAssigned = Member::whereNotNull('instructor_id', 'and')->get();
         $graph       = GraphManager::buildFromMembers($allAssigned->all());
 
         if (!$graph->isReachable($instructorId, $member->id)) {
@@ -142,7 +142,7 @@ class InstructorController extends Controller
         $instructorId = Auth::id();
 
         // 1. Load all payments for this instructor with member relationship
-        $allPayments = Payment::where('instructor_id', $instructorId)
+        $allPayments = Payment::where('instructor_id', '=', $instructorId, 'and')
                               ->with('member.user')
                               ->get();
 

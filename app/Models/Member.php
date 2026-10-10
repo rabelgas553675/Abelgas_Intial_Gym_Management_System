@@ -35,6 +35,7 @@ class Member extends Model
         'attendances'    => 'attendance',
         'workoutPlans'   => 'workout plan',
         'coachRequests'  => 'coach request',
+        'planChangeRequests' => 'plan change request',
     ];
 
     protected $fillable = [
@@ -302,6 +303,11 @@ class Member extends Model
     public function coachRequests(): HasMany
     {
         return $this->hasMany(CoachRequest::class);
+    }
+
+    public function planChangeRequests(): HasMany
+    {
+        return $this->hasMany(PlanChangeRequest::class);
     }
 
     public function instructorFees(): HasMany

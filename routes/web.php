@@ -67,6 +67,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/attendance-history',     [MemberDashboardController::class, 'attendanceHistory']) ->name('attendance-history');
         Route::get('/attendance',             [MemberDashboardController::class, 'attendanceHistory']) ->name('attendance');
         Route::post('/subscription/update',   [MemberDashboardController::class, 'updateSubscription'])->name('subscription.update');
+        // Plan changes are REQUESTS reviewed by the assigned coach; the member may withdraw a pending one.
+        Route::post('/plan-change/{planChangeRequest}/cancel', [MemberDashboardController::class, 'cancelPlanChange'])->whereNumber('planChangeRequest')->name('plan-change.cancel');
         Route::get('/schedule',               [WorkoutPlanController::class, 'memberSchedule'])        ->name('schedule');
         // ✅ Waiting for approval page
         Route::get('/waiting',                [MemberDashboardController::class, 'waiting'])           ->name('waiting');
@@ -86,6 +88,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/requests',                         [CoachRequestController::class, 'index'])  ->name('requests');
         Route::post('/requests/{coachRequest}/approve', [CoachRequestController::class, 'approve'])->name('requests.approve');
         Route::post('/requests/{coachRequest}/reject',  [CoachRequestController::class, 'reject']) ->name('requests.reject');
+
+        // ── Fitness-plan change requests (coach approval) ───────
+        Route::post('/plan-changes/{planChangeRequest}/approve', [CoachRequestController::class, 'approvePlanChange'])->whereNumber('planChangeRequest')->name('plan-changes.approve');
+        Route::post('/plan-changes/{planChangeRequest}/reject',  [CoachRequestController::class, 'rejectPlanChange']) ->whereNumber('planChangeRequest')->name('plan-changes.reject');
     });
 
     // ── STAFF PORTAL ─────────────────────────────────────────────

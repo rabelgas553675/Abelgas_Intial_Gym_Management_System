@@ -56,6 +56,13 @@
     .sub-details .item .label { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; font-weight:600; margin-bottom:4px; }
     .sub-details .item .value { font-weight:700; font-size:15px; line-height:1.35; }
 
+    /* pending plan-change request (coach approval) */
+    .plan-request-box { background:var(--accent-soft); border:1px dashed var(--accent); border-radius:12px; padding:12px 16px; font-size:13px; line-height:1.5; }
+    .plan-request-box .row { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .plan-request-box .row span { color:var(--muted); }
+    .plan-request-box .status { display:inline-block; margin-top:6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--accent); }
+    .plan-request-box .note { margin-top:4px; color:var(--muted); font-size:12px; }
+
     .coach-section { display:grid; gap:12px; }
     .coach-box { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
     .coach-box.current  { border-color:rgba(224,169,59,0.55); }
@@ -336,6 +343,14 @@
                     </div>
                 </div>
 
+                @if(!empty($planRequest))
+                    <div class="plan-request-box">
+                        <div class="row"><span>Requested plan</span><strong>{{ $planRequest->requested_plan }}</strong></div>
+                        <span class="status">Pending Coach Approval</span>
+                        <div class="note">Your current plan will remain active until your coach reviews your request.</div>
+                    </div>
+                @endif
+
                 <div class="sub-details">
                     <div class="item">
                         <div class="label">Duration</div>
@@ -598,8 +613,21 @@
         <button onclick="document.getElementById('editSubModal').style.display='none'" class="modal-close">✕</button>
 
         <div class="modal-title">Edit Subscription</div>
-        <div class="modal-sub">No charge will be made.</div>
+        <div class="modal-sub">No charge will be made. Your coach must approve a plan change before it takes effect.</div>
 
+        @if(!empty($planRequest))
+            <div class="plan-request-box" style="margin-bottom:16px;">
+                <div class="row"><span>Current plan</span><strong>{{ $member->fitness_plan }}</strong></div>
+                <div class="row"><span>Requested plan</span><strong>{{ $planRequest->requested_plan }}</strong></div>
+                <span class="status">Pending Coach Approval</span>
+                <div class="note">You can cancel or follow this request on the Choose Your Plan page.</div>
+            </div>
+            <div class="modal-actions">
+                <a href="{{ route('member.select-plan') }}" class="btn btn-primary">View Request</a>
+                <button type="button" class="btn btn-secondary"
+                        onclick="document.getElementById('editSubModal').style.display='none'">Close</button>
+            </div>
+        @else
         <form method="POST" action="{{ route('member.subscription.update') }}">
             @csrf
 
@@ -619,17 +647,18 @@
                 @endforeach
             </div>
 
-            {{-- The controller validates these two as required: keep the current values. --}}
-            <input type="hidden" name="membership_type" value="{{ $snapshot->planType ?? $member->membership_type }}">
-            <input type="hidden" name="instructor_id" value="{{ $member->instructor_id }}">
+            <div class="modal-section-label">Reason (optional)</div>
+            <textarea name="reason" maxlength="500" rows="2" placeholder="Tell your coach why you'd like this plan."
+                      style="width:100%;padding:10px 12px;border-radius:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border);font:inherit;font-size:13px;margin-bottom:12px;"></textarea>
 
             {{-- ── ACTIONS ── --}}
             <div class="modal-actions">
-                <button type="submit" class="btn btn-primary">✓ Save Changes</button>
+                <button type="submit" class="btn btn-primary">✓ Request Plan Change</button>
                 <button type="button" class="btn btn-secondary"
                         onclick="document.getElementById('editSubModal').style.display='none'">Cancel</button>
             </div>
         </form>
+        @endif
     </div>
 </div>
 

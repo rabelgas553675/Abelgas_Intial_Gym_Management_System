@@ -117,13 +117,13 @@ body.modal-open .cursor,body.modal-open .cursor-ring{display:none;}
 .section-eyebrow{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:4px;color:var(--accent);text-transform:uppercase;margin-bottom:10px;}
 .section-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(36px,5vw,60px);font-weight:900;letter-spacing:1px;line-height:1;text-transform:uppercase;margin-bottom:48px;}
 .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,0.05);}
-.feat-card{background:#0d0d0d;padding:36px 32px;border-top:2px solid transparent;transition:all 0.3s;}
+.feat-card{background:#0d0d0d;padding:36px 32px;border-top:2px solid transparent;transition:all 0.3s;display:flex;flex-direction:column;min-width:0;}
 .feat-card:hover{background:#1a1813;border-top-color:var(--accent);}
-.feat-card:hover .feat-icon-wrap{background:rgba(224,169,59,0.18);}
-.feat-icon-wrap{width:44px;height:44px;background:var(--accent-soft);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;transition:background 0.3s;}
-.feat-icon-wrap svg{width:22px;height:22px;stroke:var(--accent);fill:none;}
-.feat-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
-.feat-desc{font-size:14px;color:#777;line-height:1.7;}
+.feat-card:hover .feat-icon-wrap{background:rgba(224,169,59,0.18);border-color:var(--accent);}
+.feat-icon-wrap{width:44px;height:44px;background:var(--accent-soft);border:1px solid rgba(224,169,59,0.18);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;flex-shrink:0;transition:background 0.3s,border-color 0.3s;}
+.feat-icon-wrap svg{width:22px;height:22px;stroke:var(--accent);fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.feat-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(18px,1.6vw,20px);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;overflow-wrap:anywhere;}
+.feat-desc{font-size:14px;color:#8a8a8a;line-height:1.7;max-width:46ch;}
 .plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;}
 .plan-card{background:#0a0a0a;border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:32px 28px;position:relative;transition:all 0.3s;}
 .plan-card:hover{transform:translateY(-4px);border-color:rgba(224,169,59,0.3);}
@@ -255,15 +255,55 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
   <div class="hero-diamond"><div class="diamond"></div><div class="diamond-sm"></div></div>
 </section>
 
-<section class="section section-mid" id="features">
-  <div class="reveal"><div class="section-eyebrow">Why APEX FITNESS GYM</div><div class="section-title">EVERYTHING YOU NEED</div></div>
+<section class="section section-mid" id="features" aria-labelledby="features-title">
+  <div class="reveal">
+    <div class="section-eyebrow">Why APEX FITNESS GYM</div>
+    <h2 class="section-title" id="features-title">EVERYTHING YOUR GYM NEEDS</h2>
+  </div>
   <div class="features-grid reveal">
-    <div class="feat-card"><div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div><div class="feat-title">Member Management</div><p class="feat-desc">Complete CRUD with photo upload, personal info, membership plans, and auto end-date calculation.</p></div>
-    <div class="feat-card"><div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div><div class="feat-title">Payment Tracking</div><p class="feat-desc">Record payments via Cash, GCash, or Bank Transfer. Track monthly and total revenue in real time.</p></div>
-    <div class="feat-card"><div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div><div class="feat-title">Role-Based Access</div><p class="feat-desc">Admin, Staff, Instructor, and Member roles — each seeing only what they need.</p></div>
-    <div class="feat-card"><div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><div class="feat-title">Membership Plans</div><p class="feat-desc">Monthly, Quarterly, and Annual plans with auto-computed fees and due dates.</p></div>
-    <div class="feat-card"><div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div><div class="feat-title">Live Dashboard</div><p class="feat-desc">Real-time stats: active members, expired accounts, revenue this month, and recent registrations.</p></div>
-    <div class="feat-card"><div class="feat-icon-wrap"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div><div class="feat-title">Laravel Breeze Auth</div><p class="feat-desc">Secure authentication with protected routes, session handling, and role-based redirects.</p></div>
+
+    {{-- 1. Member Records --}}
+    <article class="feat-card">
+      <div class="feat-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24"><path stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+      <h3 class="feat-title">Member Records</h3>
+      <p class="feat-desc">Keep member information, profile photos, contact details, and membership status organized in one place. Easily search, view, add, and update member records.</p>
+    </article>
+
+    {{-- 2. Membership Plans --}}
+    <article class="feat-card">
+      <div class="feat-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24"><path stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>
+      <h3 class="feat-title">Membership Plans</h3>
+      <p class="feat-desc">Manage monthly, quarterly, and annual membership plans. Track subscription details, payment status, and membership expiration dates.</p>
+    </article>
+
+    {{-- 3. Attendance Monitoring (verify wording, e.g. add QR scanning only if implemented) --}}
+    <article class="feat-card">
+      <div class="feat-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24"><path stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div>
+      <h3 class="feat-title">Attendance Monitoring</h3>
+      <p class="feat-desc">Monitor gym visits and keep a clear attendance record for every member, so staff always know who has checked in.</p>
+    </article>
+
+    {{-- 4. Payment Tracking --}}
+    <article class="feat-card">
+      <div class="feat-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24"><path stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg></div>
+      <h3 class="feat-title">Payment Tracking</h3>
+      <p class="feat-desc">Record membership payments made in Cash, GCash, or Bank Transfer. Review transaction history and track pending and completed payments.</p>
+    </article>
+
+    {{-- 5. Workout Programs & Coaching --}}
+    <article class="feat-card">
+      <div class="feat-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24"><path stroke-width="1.5" d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg></div>
+      <h3 class="feat-title">Workout Programs &amp; Coaching</h3>
+      <p class="feat-desc">Organize workout programs, instructor schedules, and coaching requests, with members and instructors seeing the information relevant to their roles.</p>
+    </article>
+
+    {{-- 6. Safe & Secure Login --}}
+    <article class="feat-card">
+      <div class="feat-icon-wrap" aria-hidden="true"><svg viewBox="0 0 24 24"><path stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+      <h3 class="feat-title">Safe &amp; Secure Login</h3>
+      <p class="feat-desc">Accounts are password-protected, and role-based access means admins, staff, instructors, and members only see the pages and actions their role allows.</p>
+    </article>
+
   </div>
 </section>
 
@@ -278,7 +318,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
 <footer id="footer-section">
   <div class="footer-name">APEX<span>FITNESS</span> GYM</div>
-  <div class="footer-copy">© 2026 APEX FITNESS GYM. Built with Laravel + Breeze.</div>
+  <div class="footer-copy">© 2026 APEX FITNESS GYM. All rights reserved.</div>
 </footer>
 
 <div class="modal-overlay" id="modalOverlay" onclick="handleOverlay(event)">

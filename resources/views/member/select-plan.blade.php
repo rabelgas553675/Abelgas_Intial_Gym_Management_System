@@ -144,6 +144,32 @@
         .btn-submit.active { background:linear-gradient(135deg, var(--accent-2), var(--accent-dark)); color:#1a1a1a; cursor:pointer; }
         .btn-submit.active:hover { box-shadow:0 6px 20px rgba(224,169,59,0.3); transform:scale(1.01); }
 
+
+        /* ── plan change request (coach approval) ── */
+        .request-card { border-radius:12px; padding:16px 18px; margin-bottom:24px; border:1px solid var(--border); background:var(--surface); }
+        .request-card.pending  { border-color:var(--accent); background:var(--selected-bg); }
+        .request-card.approved { border-color:#4ade80; background:rgba(74,222,128,0.08); }
+        .request-card.rejected { border-color:var(--danger); background:var(--danger-soft); }
+        .request-card h3 { font-size:1rem; font-weight:700; margin-bottom:10px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+        .status-pill { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; padding:3px 10px; border-radius:20px; background:var(--accent-soft); color:var(--accent-text); border:1px solid var(--accent); }
+        .request-card.approved .status-pill { color:#16a34a; border-color:#4ade80; background:rgba(74,222,128,0.12); }
+        .request-card.rejected .status-pill { color:var(--danger); border-color:var(--danger); background:var(--danger-soft); }
+        .request-rows { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px 16px; margin-bottom:10px; }
+        .request-rows .lbl { font-size:0.7rem; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); font-weight:600; }
+        .request-rows .val { font-weight:700; }
+        .request-note { font-size:0.85rem; color:var(--muted); line-height:1.5; }
+        .request-note strong { color:var(--text); }
+        .btn-cancel-request { margin-top:12px; padding:9px 16px; border-radius:10px; border:1px solid var(--danger); background:transparent; color:var(--danger); font-family:inherit; font-size:0.85rem; font-weight:700; cursor:pointer; }
+        .btn-cancel-request:hover { background:var(--danger-soft); }
+        .card.is-requested { border-style:dashed; border-color:var(--accent); }
+        .badge.badge-pending { background:var(--surface2); color:var(--accent-text); border:1px solid var(--accent); }
+        .reason-box { width:100%; max-width:520px; }
+        .reason-box label { display:block; font-size:0.8rem; font-weight:600; color:var(--muted); margin-bottom:6px; }
+        .reason-box textarea { width:100%; min-height:72px; resize:vertical; padding:10px 12px; border-radius:10px; background:var(--surface2); color:var(--text); border:1px solid var(--border); font-family:inherit; font-size:0.9rem; }
+        .reason-box textarea:focus { outline:none; border-color:var(--accent); }
+        .plan-locked .selectable-label { cursor:not-allowed; }
+        .plan-locked .plan-card { opacity:.75; }
+
         /* ── theme toggle (bottom-right pill, same spot as the dashboard) ── */
         .theme-toggle {
             position:fixed; right:14px; bottom:14px; z-index:50;
@@ -206,8 +232,10 @@
 
         {{-- Current plan status + feedback from the last save --}}
         @php
-            $currentPlan  = $member?->fitness_plan;
-            $selectedPlan = old('fitness_plan') ?? $currentPlan ?? '';
+            $currentPlan   = $member?->fitness_plan;           // the member's ACTUAL, coach-approved plan
+            $requestedPlan = $planRequest?->requested_plan;    // only a pending request, never the real plan
+            $selectedPlan  = $planRequest ? ($currentPlan ?? '') : (old('fitness_plan') ?? $currentPlan ?? '');
+            $canRequest    = $member && !$planRequest && ($hasCoach ?? false);
         @endphp
 
         @if(session('success'))
@@ -226,12 +254,52 @@
                 <strong>{{ $currentPlan ?: 'No fitness plan selected yet' }}</strong>
             </div>
 
-            {{-- Changing the fitness plan only updates the plan. It never creates a payment,
-                 renews the membership or changes the coach. --}}
+            {{-- Pending request: shown separately from the actual plan --}}
+            @if($planRequest)
+                <div class="request-card pending" id="plan-request-status">
+                    <h3>Plan Change Request <span class="status-pill">Pending Coach Approval</span></h3>
+                    <div class="request-rows">
+                        <div><div class="lbl">Current plan</div><div class="val">{{ $planRequest->current_plan ?: '—' }}</div></div>
+                        <div><div class="lbl">Requested plan</div><div class="val">{{ $planRequest->requested_plan }}</div></div>
+                        <div><div class="lbl">Submitted</div><div class="val">{{ ($planRequest->requested_at ?? $planRequest->created_at)->format('M j, Y g:i A') }}</div></div>
+                        <div><div class="lbl">Coach</div><div class="val">{{ $planRequest->coach?->name ?? '—' }}</div></div>
+                    </div>
+                    @if($planRequest->reason)
+                        <p class="request-note"><strong>Your reason:</strong> {{ $planRequest->reason }}</p>
+                    @endif
+                    <p class="request-note">Your current plan will remain active until your coach reviews your request.</p>
+                    <form action="{{ route('member.plan-change.cancel', $planRequest->id) }}" method="POST"
+                          onsubmit="return confirm('Cancel this plan change request?');">
+                        @csrf
+                        <button type="submit" class="btn-cancel-request">Cancel Request</button>
+                    </form>
+                </div>
+            @elseif($lastReviewed && $lastReviewed->reviewed_at && $lastReviewed->reviewed_at->gt(now()->subDays(14)))
+                @php $approved = $lastReviewed->isApproved(); @endphp
+                <div class="request-card {{ $approved ? 'approved' : 'rejected' }}">
+                    <h3>Plan Change Request <span class="status-pill">{{ $lastReviewed->status }}</span></h3>
+                    @if($approved)
+                        <p class="request-note">Your coach approved your request. <strong>{{ $lastReviewed->requested_plan }}</strong> is now your fitness plan.</p>
+                    @else
+                        <p class="request-note">Your coach declined your request to change to <strong>{{ $lastReviewed->requested_plan }}</strong>. Your plan stays <strong>{{ $lastReviewed->current_plan ?: '—' }}</strong>.</p>
+                        @if($lastReviewed->coach_feedback)
+                            <p class="request-note"><strong>Coach's reason:</strong> {{ $lastReviewed->coach_feedback }}</p>
+                        @endif
+                    @endif
+                    <p class="request-note">Reviewed {{ $lastReviewed->reviewed_at->format('M j, Y g:i A') }}@if($lastReviewed->reviewer) by {{ $lastReviewed->reviewer->name }}@endif.</p>
+                </div>
+            @endif
+
+            @if(!$planRequest && !($hasCoach ?? false))
+                <div class="alert alert-error">Plan changes are reviewed by your coach. You need an approved coach before you can request a different plan.</div>
+            @endif
+
+            {{-- Submitting only creates a request for the assigned coach. Nothing about the member's
+                 plan, subscription, payments or coach changes until the coach approves it. --}}
             <form action="{{ route('member.subscription.update') }}" method="POST" id="plan-form">
                 @csrf
 
-                <div class="section-group">
+                <div class="section-group {{ $canRequest ? '' : 'plan-locked' }}">
                     <h2 class="section-title">1. Fitness Plan</h2>
                     <div class="grid-plans">
                         @php
@@ -250,10 +318,12 @@
                             @php $isSelected = $selectedPlan === $plan['name']; @endphp
                             <label class="selectable-label">
                                 <input type="radio" name="fitness_plan" value="{{ $plan['name'] }}"
-                                       class="plan-radio" style="display:none;" {{ $isSelected ? 'checked' : '' }}/>
-                                <div class="card plan-card {{ $isSelected ? 'selected' : '' }}">
+                                       class="plan-radio" style="display:none;" {{ $isSelected ? 'checked' : '' }} {{ $canRequest ? '' : 'disabled' }}/>
+                                <div class="card plan-card {{ $isSelected ? 'selected' : '' }} {{ $requestedPlan === $plan['name'] ? 'is-requested' : '' }}">
                                     @if($currentPlan === $plan['name'])
                                         <div class="badge">Current Plan</div>
+                                    @elseif($requestedPlan === $plan['name'])
+                                        <div class="badge badge-pending">Requested</div>
                                     @endif
                                     <div class="icon-box">{!! $plan['svg'] !!}</div>
                                     <div class="card-title">{{ $plan['name'] }}</div>
@@ -266,8 +336,14 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" id="submit-btn" class="btn-submit" disabled>Change Plan</button>
-                    <p class="hint">Changing your fitness plan doesn't affect your membership, coach or payments.</p>
+                    @if($canRequest)
+                        <div class="reason-box">
+                            <label for="reason">Reason for changing (optional)</label>
+                            <textarea id="reason" name="reason" maxlength="500" placeholder="Tell your coach why you'd like this plan.">{{ old('reason') }}</textarea>
+                        </div>
+                    @endif
+                    <button type="submit" id="submit-btn" class="btn-submit" disabled>{{ $planRequest ? 'Request Pending' : 'Change Plan' }}</button>
+                    <p class="hint">Your coach reviews plan changes. Your current plan, membership, payments and coach don't change until your request is approved.</p>
                 </div>
             </form>
         @else
@@ -310,11 +386,12 @@
 
                 var btn = document.getElementById('submit-btn');
                 var currentPlan = @json($currentPlan);
+                var canRequest = @json((bool) $canRequest);
 
                 function updateButton() {
                     var checked = form.querySelector('.plan-radio:checked');
                     // Only allow saving when a plan different from the current one is selected.
-                    var canSave = !!checked && checked.value !== currentPlan;
+                    var canSave = canRequest && !!checked && checked.value !== currentPlan;
                     btn.disabled = !canSave;
                     btn.classList.toggle('active', canSave);
                 }

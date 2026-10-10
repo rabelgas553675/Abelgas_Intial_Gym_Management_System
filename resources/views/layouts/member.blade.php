@@ -211,10 +211,12 @@
       color: var(--accent);
       overflow: hidden;
       flex-shrink: 0;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
 
     .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
+    /* Profile shortcut: the avatar + name replace the old "Profile" menu item */
     .user-chip--link {
       padding: 2px 12px 2px 4px;
       border-radius: 8px;
@@ -223,7 +225,10 @@
       transition: all 0.15s;
     }
     .user-chip--link:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    .user-chip--link:hover .user-avatar { border-color: var(--accent); }
     .user-chip--link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .user-chip--link.active { background: rgba(255,255,255,0.05); color: var(--text); }
+    .user-chip--link.active .user-avatar { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 
     .btn-logout {
       display: flex;
@@ -477,7 +482,7 @@
         border-top: 1px solid var(--border);
       }
       .nav-account-user { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-      .nav-account-name { font-size: 14px; font-weight: 600; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .nav-account-name { font-size: 14px; font-weight: 600; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; }
       .nav-account .btn-logout { width: 100%; height: auto; padding: 11px 14px; }
       .nav-account .btn-logout span { display: inline; }
     }
@@ -541,7 +546,10 @@
     html:root[data-theme="light"] .nav-link.active { color: #fff; background: rgba(255,255,255,.07); }
     html:root[data-theme="light"] .nav-link.active svg { stroke: var(--accent-2); }
     html:root[data-theme="light"] .nav-link.active::after { background: var(--accent-2); }
-    html:root[data-theme="light"] .user-chip--link:hover { color: #fff; background: rgba(255,255,255,.07); }
+    html:root[data-theme="light"] .user-chip--link:hover,
+    html:root[data-theme="light"] .user-chip--link.active { color: #fff; background: rgba(255,255,255,.07); }
+    html:root[data-theme="light"] .user-chip--link:hover .user-avatar,
+    html:root[data-theme="light"] .user-chip--link.active .user-avatar { border-color: var(--accent-2); }
 
     html:root[data-theme="light"] .staff-badge { color: #111; box-shadow: none; }
     html:root[data-theme="light"] .user-avatar {
@@ -676,14 +684,7 @@
       My Schedule
     </a>
 
-    <a href="{{ route('member.profile') }}"
-       class="nav-link {{ $active === 'profile' ? 'active' : '' }}">
-      <svg viewBox="0 0 24 24" stroke-width="2">
-        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg>
-      Profile
-    </a>
+    {{-- "Profile" menu item removed: the avatar/name chip in the top bar now opens the profile page --}}
 
     <a href="{{ route('member.attendance-history') }}"
        class="nav-link {{ $active === 'attendance' ? 'active' : '' }}">
@@ -708,7 +709,7 @@
     {{-- Account block: only shown inside the drawer on small phones (≤480px) --}}
     <div class="nav-account">
       <div class="nav-account-user">
-        <span class="nav-account-name">{{ auth()->user()->name }}</span>
+        <a href="{{ route('member.profile') }}" class="nav-account-name" title="My Profile">{{ auth()->user()->name }}</a>
         <span class="staff-badge">{{ strtoupper(auth()->user()->role) }}</span>
       </div>
       <form method="POST" action="{{ route('logout') }}" style="margin:0;">
@@ -727,9 +728,11 @@
   <div class="topnav-right">
     <span class="staff-badge">{{ strtoupper(auth()->user()->role) }}</span>
 
+    {{-- Profile shortcut --}}
     <a href="{{ route('member.profile') }}"
-       class="user-chip user-chip--link"
-       title="My Profile">
+       class="user-chip user-chip--link {{ $active === 'profile' ? 'active' : '' }}"
+       title="My Profile"
+       aria-label="My Profile">
       <div class="user-avatar">
         @if(auth()->user()->photo)
           <img src="{{ asset('storage/'.auth()->user()->photo) }}" alt=""/>
@@ -808,7 +811,7 @@
       setOpen(!links.classList.contains('open'));
     });
     overlay.addEventListener('click', function () { setOpen(false); });
-    links.querySelectorAll('.nav-link').forEach(function (link) {
+    links.querySelectorAll('.nav-link, .nav-account-name').forEach(function (link) {
       link.addEventListener('click', function () { setOpen(false); });
     });
     document.addEventListener('keydown', function (e) {

@@ -122,8 +122,18 @@
       background:var(--accent-soft);border:1px solid rgba(224,169,59,0.3);
       display:flex;align-items:center;justify-content:center;
       font-weight:700;font-size:12px;color:var(--accent-2);overflow:hidden;flex-shrink:0;
+      transition:border-color 0.15s, box-shadow 0.15s;
     }
     .user-avatar img{width:100%;height:100%;object-fit:cover;}
+
+    /* Profile shortcut: the avatar + name replace the old "Profile" menu item */
+    .user-chip--link{padding:2px 12px 2px 4px;border-radius:8px;text-decoration:none;transition:all 0.15s;}
+    .user-chip--link:hover{background:rgba(255,255,255,0.05);color:#fff;}
+    .user-chip--link:hover .user-avatar{border-color:var(--accent-2);}
+    .user-chip--link:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px;}
+    .user-chip--link.active{background:rgba(255,255,255,0.05);color:#fff;}
+    .user-chip--link.active .user-avatar{border-color:var(--accent-2);box-shadow:0 0 0 2px var(--accent-soft);}
+
     .btn-logout-top{
       display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;
       background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.45);color:#f87171;
@@ -292,6 +302,10 @@
     html:root[data-theme="light"] .nav-item.active svg{stroke:var(--accent-2);}
     html:root[data-theme="light"] .nav-item.active::after{background:var(--accent-2);}
     html:root[data-theme="light"] .nav-badge{color:#111;}
+    html:root[data-theme="light"] .user-chip--link:hover,
+    html:root[data-theme="light"] .user-chip--link.active{color:#fff;background:rgba(255,255,255,0.07);}
+    html:root[data-theme="light"] .user-chip--link:hover .user-avatar,
+    html:root[data-theme="light"] .user-chip--link.active .user-avatar{border-color:var(--accent-2);}
     html:root[data-theme="light"] .user-avatar{background:rgba(224,169,59,0.14);border-color:rgba(224,169,59,0.45);color:var(--accent-2);}
     html:root[data-theme="light"] .btn-logout-top{background:transparent;border-color:rgba(248,113,113,0.45);color:#f87171;}
     html:root[data-theme="light"] .btn-logout-top:hover{background:rgba(248,113,113,0.12);}
@@ -327,6 +341,7 @@
       .page-content{padding:24px 20px;}
       .split-panel{grid-template-columns:300px 1fr;}
       .user-chip span.user-name-text{display:none;}
+      .user-chip--link{padding:2px;}
     }
 
     @media (max-width:900px){
@@ -441,6 +456,11 @@
   $pendingRequestsCount = \App\Models\CoachRequest::where('instructor_id', auth()->id())
                             ->where('status', 'pending')
                             ->count();
+
+  // Pending fitness-plan change requests also need this coach's attention.
+  $pendingRequestsCount += \App\Models\PlanChangeRequest::where('instructor_id', auth()->id())
+                            ->where('status', 'Pending')
+                            ->count();
 @endphp
 
 {{-- NAVBAR --}}
@@ -516,14 +536,7 @@
       @endif
     </a>
 
-    <a href="{{ route('instructor.profile') }}"
-       class="nav-item {{ $active === 'profile' ? 'active' : '' }}">
-      <svg viewBox="0 0 24 24" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-      </svg>
-      Profile
-    </a>
+    {{-- "Profile" menu item removed: the avatar/name chip in the top bar now opens the profile page --}}
 
     <a href="{{ route('instructor.payments') }}"
        class="nav-item {{ $active === 'payments' ? 'active' : '' }}">
@@ -538,7 +551,12 @@
 
   <div class="navbar-right">
     <span class="role-chip role-instructor">{{ strtoupper(auth()->user()->role) }}</span>
-    <div class="user-chip">
+
+    {{-- Profile shortcut --}}
+    <a href="{{ route('instructor.profile') }}"
+       class="user-chip user-chip--link {{ $active === 'profile' ? 'active' : '' }}"
+       title="My Profile"
+       aria-label="My Profile">
       <div class="user-avatar">
         @if(auth()->user()->photo)
           <img src="{{ asset('storage/'.auth()->user()->photo) }}" alt=""/>
@@ -547,7 +565,8 @@
         @endif
       </div>
       <span class="user-name-text">{{ auth()->user()->name }}</span>
-    </div>
+    </a>
+
     <form method="POST" action="{{ route('logout') }}" class="navbar-logout-form">
       @csrf
       <button type="submit" class="btn-logout-top" aria-label="Logout">

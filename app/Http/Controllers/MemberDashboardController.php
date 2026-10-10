@@ -6,11 +6,14 @@ use App\Models\Attendance;
 use App\Models\CoachRequest;
 use App\Models\Member;
 use App\Models\Payment;
+use App\Models\PlanChangeRequest;
 use App\Models\User;
 use App\Services\Algorithms\GreedyScheduler;
 use App\Services\Algorithms\MergeSort;
 use App\Services\CoachConfirmationService;
 use App\Services\MemberSnapshot;
+use App\Services\PlanChangeService;
+use DomainException;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,13 +40,14 @@ class MemberDashboardController extends Controller
      * DSA integration:
      *   - MergeSort::sortBy() replaces ->latest()
      */
-    public function index(CoachConfirmationService $coaches)
+    public function index(CoachConfirmationService $coaches, PlanChangeService $planChanges)
     {
         /** @var \App\Models\User $user */
         $user     = Auth::user();
         $member   = $this->getMember();
         $payments = collect();
         $snapshot = null;
+        $planRequest = null;
 
         if ($member) {
             // A scheduled coach whose start date has arrived becomes the current coach
@@ -52,6 +56,10 @@ class MemberDashboardController extends Controller
             $member->refresh();
 
             $snapshot = MemberSnapshot::for($member);
+
+            // Open plan-change request (shown under Current Subscription; the plan itself
+            // above is always the member's real, coach-approved plan).
+            $planRequest = $planChanges->pendingFor($member);
 
             // Every payment type, same history as the dedicated payments page.
             $rawPayments = Payment::query()
@@ -63,7 +71,7 @@ class MemberDashboardController extends Controller
             $payments = collect(MergeSort::sortBy($rawPayments, 'payment_date', 'desc'));
         }
 
-        return view('member.dashboard', compact('user', 'member', 'payments', 'snapshot'));
+        return view('member.dashboard', compact('user', 'member', 'payments', 'snapshot', 'planRequest'));
     }
 
     /**
@@ -356,28 +364,46 @@ class MemberDashboardController extends Controller
     }
 
     /**
-     * Show plan selection form.
+     * Show plan selection form, plus the status of the member's plan-change request.
      */
-    public function selectPlan()
+    public function selectPlan(PlanChangeService $planChanges)
     {
         $user   = Auth::user();
         $member = $this->getMember();
 
-        return view('member.select-plan', compact('user', 'member'));
+        $planRequest  = null;    // open request (Pending Coach Approval)
+        $lastReviewed = null;    // latest Approved / Rejected result, for member feedback
+        $hasCoach     = false;   // plan changes are reviewed by the assigned coach
+
+        if ($member) {
+            $planRequest = $planChanges->pendingFor($member);
+            $hasCoach    = PlanChangeService::assignedCoachId($member) !== null;
+
+            $lastReviewed = PlanChangeRequest::query()
+                ->where('member_id', $member->id)
+                ->whereIn('status', [PlanChangeRequest::APPROVED, PlanChangeRequest::REJECTED])
+                ->with('reviewer')
+                ->latest('reviewed_at')
+                ->latest('id')
+                ->first();
+        }
+
+        return view('member.select-plan', compact('user', 'member', 'planRequest', 'lastReviewed', 'hasCoach'));
     }
 
     /**
-     * Change the member's fitness plan — and nothing else.
+     * "Change Plan" — REQUESTS a fitness-plan change; it does NOT apply it.
      *
-     * Only `fitness_plan` is read from the request and written to the member.
-     * It never creates a payment, renews or re-dates the membership, changes the
-     * membership type/fee, or touches the assigned coach. Any other field sent
-     * with the request (e.g. membership_type, instructor_id) is ignored.
+     * Creates a Pending request for the member's assigned coach. The member's real
+     * plan, subscription, payments, dates and coach stay exactly as they were until
+     * the coach approves (CoachRequestController / PlanChangeService::approve()).
+     * Anything else sent with the request (membership_type, instructor_id, …) is ignored.
      */
-    public function updateSubscription(Request $request)
+    public function updateSubscription(Request $request, PlanChangeService $planChanges)
     {
         $data = $request->validate([
-            'fitness_plan' => 'required|in:Calisthenics,Bodybuilding,Plyometrics,Powerlifting,Endurance,Functional Training,Hybrid Training',
+            'fitness_plan' => ['required', 'in:' . implode(',', PlanChangeRequest::PLANS)],
+            'reason'       => ['nullable', 'string', 'max:500'],
         ]);
 
         $member = $this->getMember();
@@ -386,10 +412,37 @@ class MemberDashboardController extends Controller
             return back()->with('error', 'No membership found to update.');
         }
 
-        $member->update(['fitness_plan' => $data['fitness_plan']]);
+        try {
+            $planRequest = $planChanges->submit($member, $data['fitness_plan'], $data['reason'] ?? null);
+        } catch (DomainException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
 
-        return redirect()->route('member.dashboard')
-                         ->with('success', 'Fitness plan updated successfully!');
+        return redirect()->route('member.select-plan')->with(
+            'success',
+            "Your request to change your fitness plan to {$planRequest->requested_plan} has been submitted to your coach for approval. "
+            . "Your current plan remains {$planRequest->current_plan} until your request is approved."
+        );
+    }
+
+    /**
+     * Member withdraws their own request while it is still Pending.
+     */
+    public function cancelPlanChange(int $planChangeRequest, PlanChangeService $planChanges)
+    {
+        $member = $this->getMember();
+
+        if (!$member) {
+            return back()->with('error', 'No membership found.');
+        }
+
+        try {
+            $planChanges->cancel($member, $planChangeRequest);
+        } catch (DomainException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('member.select-plan')->with('success', 'Your plan change request was cancelled.');
     }
 
     /**
